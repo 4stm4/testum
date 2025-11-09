@@ -54,8 +54,8 @@ const translations = {
         
         // Dashboard
         welcomeTitle: '🔐 Testum',
-        welcomeSubtitle: 'SSH Platform Management',
-        welcomeDescription: 'Manage SSH keys and platforms with ease',
+        welcomeSubtitle: 'Remote SSH Execution Platform',
+        welcomeDescription: 'Execute commands and code on remote hosts via SSH',
         sshKeysCard: 'SSH Keys',
         sshKeysDescription: 'Manage public SSH keys for deployment',
         platformsCard: 'Platforms',
@@ -183,8 +183,8 @@ const translations = {
         
         // Dashboard
         welcomeTitle: '🔐 Testum',
-        welcomeSubtitle: 'Управление SSH платформами',
-        welcomeDescription: 'Управляйте SSH ключами и платформами с легкостью',
+        welcomeSubtitle: 'Платформа удаленного выполнения через SSH',
+        welcomeDescription: 'Выполняйте команды и код на удаленных хостах через SSH',
         sshKeysCard: 'SSH Ключи',
         sshKeysDescription: 'Управление публичными SSH ключами для развертывания',
         platformsCard: 'Платформы',

@@ -2,7 +2,18 @@
 
 ## Что было создано
 
-Полнофункциональный MVP веб-сервиса для управления SSH ключами и платформами с возможностью их развертывания и выполнения команд на удаленных хостах.
+**Платформа для удаленного выполнения команд и кода на SSH-хостах** с веб-интерфейсом, асинхронной очередью задач и real-time стримингом результатов.
+
+### 🎯 Основное назначение:
+- 🚀 **Удаленное выполнение команд** - запуск команд на одном или нескольких серверах
+- 📜 **Выполнение кода/скриптов** - deploy и запуск приложений, автоматизация задач
+- 🔑 **Управление SSH ключами** - централизованное хранение и развертывание ключей
+- 🖥️ **Управление платформами** - добавление и настройка удаленных хостов
+
+### 🔮 Планы развития:
+- 🐳 **Управление Docker контейнерами** на удаленных хостах
+- 🖥️ **Создание виртуальных машин** (KVM, QEMU, VirtualBox)
+- ☸️ **Интеграция с Kubernetes** для управления кластерами
 
 ## Структура проекта
 
@@ -59,19 +70,31 @@ testup/
 
 ## Реализованные функции
 
-### ✅ Core Features
+### ✅ Выполнение команд и задач
+- [x] Асинхронное выполнение команд на удаленных хостах (Celery)
+- [x] Real-time стриминг вывода команд через WebSocket
+- [x] Очередь задач с мониторингом статуса
+- [x] Сохранение логов выполнения в MinIO (S3)
+- [x] Multi-platform command execution
+
+### ✅ SSH ключи и платформы
 - [x] CRUD SSH public keys
 - [x] CRUD Platforms (host, port, username, auth method)
 - [x] Deploy keys to platforms (atomic, idempotent)
-- [x] Run commands on platforms
-- [x] Real-time task streaming via WebSocket
-- [x] Audit logging
+- [x] SSH host key verification с сохранением fingerprint
 
-### ✅ Security
-- [x] Fernet encryption for credentials
-- [x] SSH host key verification with fingerprint storage
-- [x] Atomic write for authorized_keys
-- [x] JWT authentication (basic)
+### ✅ Security & Audit
+- [x] JWT authentication (HTTP-only cookies)
+- [x] Fernet encryption для credentials
+- [x] Atomic write для authorized_keys
+- [x] Полное аудит-логирование всех действий
+
+### ✅ User Experience
+- [x] Современный веб-интерфейс (Portainer-style)
+- [x] Dark/Light theme switcher
+- [x] i18n поддержка (EN/RU)
+- [x] User settings (username/password management)
+- [x] Auto-update система с GitHub integration
 
 ### ✅ Infrastructure
 - [x] Docker Compose setup
@@ -138,29 +161,45 @@ testup/
 
 ```
 ┌──────────┐
-│ Browser  │
+│ Browser  │  ← Веб-интерфейс для управления
 └────┬─────┘
      │ HTTP/WS
      ▼
 ┌──────────┐     ┌──────────┐
-│Starlette │────▶│PostgreSQL│
+│Starlette │────▶│PostgreSQL│  ← Хранение ключей, платформ
 │  (ASGI)  │     └──────────┘
 └────┬─────┘
      │
-     │ Queue Tasks
+     │ Запуск команд
      ▼
 ┌──────────┐     ┌──────────┐
-│  Celery  │────▶│  Redis   │
-│  Worker  │     │(Pub/Sub) │
+│  Celery  │────▶│  Redis   │  ← Очередь задач + Pub/Sub
+│  Worker  │     │(Pub/Sub) │     для стриминга вывода
 └────┬─────┘     └──────────┘
      │
-     │ SSH
+     │ SSH подключение
      ▼
 ┌──────────┐     ┌──────────┐
-│ Paramiko │     │  MinIO   │
-│   SSH    │────▶│   (S3)   │
-└──────────┘     └──────────┘
+│ Paramiko │     │  MinIO   │  ← Сохранение логов
+│   SSH    │────▶│   (S3)   │     выполнения
+└────┬─────┘     └──────────┘
+     │
+     │ Выполнение команд
+     ▼
+┌──────────┐
+│ Remote   │  ← Целевые серверы для
+│  Hosts   │     выполнения команд
+└──────────┘
 ```
+
+### Процесс выполнения команды
+
+1. **UI запрос** - Пользователь отправляет команду через веб-интерфейс
+2. **Task создание** - Starlette создает задачу Celery
+3. **SSH подключение** - Celery worker подключается к хосту через Paramiko
+4. **Выполнение** - Команда выполняется на удаленном хосте
+5. **Стриминг** - Вывод транслируется в real-time через WebSocket + Redis Pub/Sub
+6. **Сохранение** - Результаты сохраняются в MinIO для истории
 
 ## Запуск
 
@@ -263,9 +302,12 @@ make format
 - Better error handling
 
 ### Medium Priority
-- Vault integration
-- Multi-platform deployment
-- Scheduled tasks
+- **Docker управление** - запуск контейнеров на удаленных хостах
+- **VM управление** - создание и управление виртуальными машинами (KVM, QEMU)
+- **Kubernetes интеграция** - управление K8s кластерами
+- Vault integration для секретов
+- Multi-platform deployment (одна команда на N хостов)
+- Scheduled tasks (cron-like)
 - OpenAPI/Swagger docs
 
 ### Low Priority
@@ -274,37 +316,25 @@ make format
 - Key rotation
 - Backup/restore
 
-## Метрики проекта
-
-- **Файлов создано**: 30+
-- **Строк кода**: ~3500+
-- **Тестов**: 15+
-- **API endpoints**: 12
-- **Модели БД**: 4
-- **Celery tasks**: 2
-- **WebSocket endpoints**: 1
-
-## Технологии
-
-- Python 3.11
-- Starlette (ASGI)
-- SQLAlchemy 2.0
-- Celery 5.3
-- Paramiko 3.3
-- Redis 5.0
-- PostgreSQL 15
-- MinIO (S3-compatible)
-- Jinja2 (templating)
-- Pytest (testing)
-
 ## Заключение
 
-Создан полнофункциональный MVP с:
-- ✅ Всеми требуемыми функциями
-- ✅ Безопасным хранением credentials
-- ✅ Real-time WebSocket стримингом
+Создана **платформа для удаленного выполнения команд и кода** с:
+- ✅ Асинхронным выполнением команд через Celery
+- ✅ Real-time WebSocket стримингом результатов
+- ✅ Безопасным хранением credentials (Fernet)
+- ✅ Современным веб-интерфейсом с темной темой и i18n
 - ✅ Docker-based deployment
 - ✅ Автоматизированными тестами
 - ✅ Полной документацией
 
-Готов к локальной разработке и тестированию. Для production требуются дополнительные улучшения безопасности и масштабируемости.
+**Готов к:**
+- ✅ Локальной разработке и тестированию
+- ✅ Деплою в Portainer
+- ✅ Выполнению команд на удаленных SSH-хостах
+
+**Планируется:**
+- 🔮 Управление Docker контейнерами
+- 🔮 Создание и управление виртуальными машинами
+- 🔮 Интеграция с Kubernetes
+
+Для production требуются дополнительные улучшения безопасности (Vault, RBAC) и масштабируемости (async SSH, rate limiting).
