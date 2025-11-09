@@ -310,7 +310,7 @@ def run_command_task(self, task_run_id: str, platform_id: str, command: str, tim
         task_run.stdout = stdout[:5000] if len(stdout) <= 5000 else stdout[:5000] + "... (truncated)"
         task_run.stderr = stderr[:5000] if len(stderr) <= 5000 else stderr[:5000] + "... (truncated)"
         task_run.result_location = result_location
-        task_run.metadata = {"exit_code": exit_code}
+        task_run.task_metadata = {"exit_code": exit_code}
         db.commit()
 
         status_msg = f"Command completed with exit code {exit_code}"

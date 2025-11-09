@@ -91,8 +91,8 @@ class TaskRun(Base):
     stderr = Column(Text, nullable=True)  # For small outputs
     error_message = Column(Text, nullable=True)
     
-    # Metadata
-    metadata = Column(JSON, nullable=True)  # Additional task-specific data
+    # Additional data
+    task_metadata = Column(JSON, nullable=True)  # Additional task-specific data
     
     # Timestamps
     started_at = Column(DateTime, nullable=True)
