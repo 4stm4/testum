@@ -38,9 +38,7 @@ SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
 
 ## Шаг 2: Создание стека в Portainer
 
-### ✅ РЕШЕНИЕ: Используйте специальную версию docker-compose для Portainer
-
-Portainer имеет проблемы со сборкой образов. Используйте готовую конфигурацию:
+### ✅ Метод: Web Editor (работает БЕЗ сборки образов)
 
 1. **Откройте Portainer**: http://ваш-сервер:9000
 
@@ -48,16 +46,14 @@ Portainer имеет проблемы со сборкой образов. Исп
 
 3. **Name**: `testum`
 
-4. **Build method**: Выберите **"Repository"**
+4. **Build method**: Выберите **"Web editor"**
 
-5. **Заполните поля репозитория**:
-   ```
-   Repository URL: https://github.com/4stm4/testum
-   Repository reference: refs/heads/main
-   Compose path: docker-compose.portainer.yml
-   ```
+5. **Скопируйте и вставьте** содержимое файла `docker-compose.portainer.yml` из вашего репозитория в редактор
    
-   ⚠️ **Важно**: Используйте `docker-compose.portainer.yml`, а не обычный `docker-compose.yml`!
+   Или используйте этот прямой URL:
+   ```
+   https://raw.githubusercontent.com/4stm4/testum/main/docker-compose.portainer.yml
+   ```
 
 6. **Environment variables** - Нажмите "+ Add environment variable" и добавьте:
 
