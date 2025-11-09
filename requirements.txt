@@ -22,6 +22,9 @@ boto3==1.29.7
 # HTTP client
 httpx==0.25.2
 
+# Version comparison
+packaging==23.2
+
 # Validation
 pydantic==2.5.2
 

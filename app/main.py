@@ -2,7 +2,7 @@
 import logging
 from starlette.applications import Starlette
 from starlette.routing import Route, Mount, WebSocketRoute
-from starlette.responses import JSONResponse, HTMLResponse, RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from starlette.middleware import Middleware
@@ -16,6 +16,7 @@ from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
 from app.ws import task_stream_websocket
 from app.auth import AuthMiddleware
+from app.updater import get_update_info, perform_update, UpdateError
 
 # Configure logging
 logging.basicConfig(
@@ -206,6 +207,33 @@ async def health_check(request: Request):
     return JSONResponse({"status": "healthy", "timestamp": datetime.utcnow().isoformat()})
 
 
+async def check_updates_endpoint(request: Request):
+    """Check for available updates from GitHub."""
+    try:
+        update_info = await get_update_info()
+        return JSONResponse(update_info)
+    except UpdateError as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+    except Exception as e:
+        logger.error(f"Unexpected error checking updates: {e}")
+        return JSONResponse({"error": "Internal server error"}, status_code=500)
+
+
+async def perform_update_endpoint(request: Request):
+    """Perform update from GitHub."""
+    try:
+        data = await request.json()
+        target_version = data.get("target_version")  # Optional: specific version tag
+        
+        result = await perform_update(target_version=target_version)
+        return JSONResponse(result)
+    except UpdateError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception as e:
+        logger.error(f"Unexpected error performing update: {e}")
+        return JSONResponse({"error": "Internal server error"}, status_code=500)
+
+
 # Create application
 routes = [
     Route("/", homepage),
@@ -220,6 +248,8 @@ routes = [
     Route("/api/auth/change-username", change_username_endpoint, methods=["POST"]),
     Route("/api/auth/change-password", change_password_endpoint, methods=["POST"]),
     Route("/api/settings", get_settings_endpoint, methods=["GET"]),
+    Route("/api/updates/check", check_updates_endpoint, methods=["GET"]),
+    Route("/api/updates/perform", perform_update_endpoint, methods=["POST"]),
     Mount("/api/keys", keys_router),
     Mount("/api/platforms", platforms_router),
     Mount("/api/tasks", tasks_router),
