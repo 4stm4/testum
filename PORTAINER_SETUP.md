@@ -15,7 +15,32 @@ print(Fernet.generate_key().decode())
 FERNET_KEY=8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
 ```
 
+### Генерация SECRET_KEY
+
+Вариант 1 - Python (рекомендуется):
+```python
+import secrets
+print(secrets.token_urlsafe(32))
+```
+
+Вариант 2 - OpenSSL:
+```bash
+openssl rand -base64 32
+```
+
+Вариант 3 - Онлайн:
+Перейдите на https://randomkeygen.com/ и скопируйте любой длинный ключ
+
+Или используйте готовый ключ (для тестирования):
+```
+SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
+```
+
 ## Шаг 2: Создание стека в Portainer
+
+### ✅ РЕШЕНИЕ: Используйте специальную версию docker-compose для Portainer
+
+Portainer имеет проблемы со сборкой образов. Используйте готовую конфигурацию:
 
 1. **Откройте Portainer**: http://ваш-сервер:9000
 
@@ -29,18 +54,22 @@ FERNET_KEY=8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
    ```
    Repository URL: https://github.com/4stm4/testum
    Repository reference: refs/heads/main
-   Compose path: docker-compose.yml
+   Compose path: docker-compose.portainer.yml
    ```
+   
+   ⚠️ **Важно**: Используйте `docker-compose.portainer.yml`, а не обычный `docker-compose.yml`!
 
 6. **Environment variables** - Нажмите "+ Add environment variable" и добавьте:
 
    ```
    FERNET_KEY=8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
-   SECRET_KEY=change-me-to-random-string-at-least-32-chars
+   SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
    ADMIN_USERNAME=admin
    ADMIN_PASSWORD=your_secure_password
    SSH_HOST_KEY_POLICY=auto_add
    ```
+
+   > **Важно**: Для production обязательно сгенерируйте свои уникальные ключи!
 
 7. **Нажмите "Deploy the stack"**
 

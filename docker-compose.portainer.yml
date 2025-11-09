@@ -1,0 +1,166 @@
+version: '3.8'
+
+# PORTAINER-FRIENDLY VERSION
+# This version uses pre-built images to avoid build issues in Portainer
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: testum_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testum
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - testum_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: testum_redis
+    restart: unless-stopped
+    networks:
+      - testum_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: testum_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - testum_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  app:
+    image: python:3.11-slim
+    container_name: testum_app
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      # Application
+      APP_ENV: production
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      
+      # Encryption (REQUIRED!)
+      FERNET_KEY: ${FERNET_KEY}
+      
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      
+      # MinIO
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: testum-artifacts
+      MINIO_SECURE: "false"
+      
+      # SSH
+      SSH_HOST_KEY_POLICY: ${SSH_HOST_KEY_POLICY:-auto_add}
+    ports:
+      - "8000:8000"
+    networks:
+      - testum_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini
+      - ./requirements.txt:/app/requirements.txt
+    command: >
+      sh -c "
+        apt-get update && apt-get install -y gcc postgresql-client &&
+        pip install --no-cache-dir -r requirements.txt &&
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
+
+  celery_worker:
+    image: python:3.11-slim
+    container_name: testum_celery
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      # Application
+      APP_ENV: production
+      FERNET_KEY: ${FERNET_KEY}
+      
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      
+      # MinIO
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: testum-artifacts
+      MINIO_SECURE: "false"
+      
+      # SSH
+      SSH_HOST_KEY_POLICY: ${SSH_HOST_KEY_POLICY:-auto_add}
+    networks:
+      - testum_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini
+      - ./requirements.txt:/app/requirements.txt
+    command: >
+      sh -c "
+        apt-get update && apt-get install -y gcc postgresql-client &&
+        pip install --no-cache-dir -r requirements.txt &&
+        celery -A app.celery_app worker --loglevel=info --concurrency=2
+      "
+
+networks:
+  testum_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
