@@ -38,7 +38,7 @@ SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
 
 ## Шаг 2: Создание стека в Portainer
 
-### ✅ Метод: Web Editor (работает БЕЗ сборки образов)
+### ✅ Простой метод: Используйте готовый docker-compose
 
 1. **Откройте Portainer**: http://ваш-сервер:9000
 
@@ -48,28 +48,15 @@ SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
 
 4. **Build method**: Выберите **"Web editor"**
 
-5. **Скопируйте и вставьте** содержимое файла `docker-compose.portainer.yml` из вашего репозитория в редактор
+5. **Скопируйте содержимое `docker-compose.portainer.yml`** из репозитория:
    
-   Или используйте этот прямой URL:
-   ```
    https://raw.githubusercontent.com/4stm4/testum/main/docker-compose.portainer.yml
-   ```
 
-6. **Environment variables** - Нажмите "+ Add environment variable" и добавьте:
-
-   ```
-   FERNET_KEY=8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
-   SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
-   ADMIN_USERNAME=admin
-   ADMIN_PASSWORD=your_secure_password
-   SSH_HOST_KEY_POLICY=auto_add
-   ```
-
-   > **⚠️ КРИТИЧЕСКИ ВАЖНО**: Обязательно добавьте ВСЕ 5 переменных!
-   > 
-   > **Не знаете как?** Читайте детальную инструкцию: [PORTAINER_ENV_VARS.md](PORTAINER_ENV_VARS.md)
-   > 
-   > **Важно**: Для production обязательно сгенерируйте свои уникальные ключи!
+6. **НЕ НУЖНО добавлять переменные окружения** - они уже прописаны в файле!
+   
+   > ⚠️ **Внимание**: В файле используются ТЕСТОВЫЕ credentials. Для production измените их прямо в файле перед деплоем:
+   > - `ADMIN_PASSWORD: admin123` → измените на свой
+   > - `FERNET_KEY: ...` → можете оставить или сгенерировать новый
 
 7. **Нажмите "Deploy the stack"**
 
