@@ -65,7 +65,9 @@ SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
    SSH_HOST_KEY_POLICY=auto_add
    ```
 
-   > **⚠️ КРИТИЧЕСКИ ВАЖНО**: Обязательно добавьте `FERNET_KEY`! Без него приложение не запустится!
+   > **⚠️ КРИТИЧЕСКИ ВАЖНО**: Обязательно добавьте ВСЕ 5 переменных!
+   > 
+   > **Не знаете как?** Читайте детальную инструкцию: [PORTAINER_ENV_VARS.md](PORTAINER_ENV_VARS.md)
    > 
    > **Важно**: Для production обязательно сгенерируйте свои уникальные ключи!
 
