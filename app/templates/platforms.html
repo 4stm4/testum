@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Platforms - Testum</title>
+    <link rel="stylesheet" href="/static/theme.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -244,11 +245,13 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">🔐 Testum</div>
+        <div class="logo"><span data-i18n="welcomeTitle">🔐 Testum</span></div>
         <div class="header-right">
+            <button id="themeToggle" class="theme-toggle" title="Toggle Theme">🌙</button>
+            <button id="langToggle" class="lang-toggle" title="Toggle Language">RU</button>
             <span class="version">v0.1.0</span>
             <a href="/api/auth/logout" class="logout-btn">
-                <span>🚪</span> Logout
+                <span>🚪</span> <span data-i18n="logout">Logout</span>
             </a>
         </div>
     </div>
@@ -256,35 +259,35 @@
     <div class="main-layout">
         <div class="sidebar">
             <div class="sidebar-section">
-                <div class="sidebar-title">Resources</div>
+                <div class="sidebar-title" data-i18n="resources">Resources</div>
                 <a href="/" class="sidebar-item">
-                    <span>📊</span> Dashboard
+                    <span>📊</span> <span data-i18n="dashboard">Dashboard</span>
                 </a>
                 <a href="/keys" class="sidebar-item">
-                    <span>🔑</span> SSH Keys
+                    <span>🔑</span> <span data-i18n="sshKeys">SSH Keys</span>
                 </a>
                 <a href="/platforms" class="sidebar-item active">
-                    <span>🖥️</span> Platforms
+                    <span>🖥️</span> <span data-i18n="platforms">Platforms</span>
                 </a>
             </div>
             <div class="sidebar-section">
-                <div class="sidebar-title">System</div>
+                <div class="sidebar-title" data-i18n="system">System</div>
                 <a href="/settings" class="sidebar-item">
-                    <span>⚙️</span> Settings
+                    <span>⚙️</span> <span data-i18n="settings">Settings</span>
                 </a>
                 <a href="/health" class="sidebar-item">
-                    <span>💚</span> Health Check
+                    <span>💚</span> <span data-i18n="healthCheck">Health Check</span>
                 </a>
                 <a href="/docs" class="sidebar-item">
-                    <span>📖</span> API Docs
+                    <span>📖</span> <span data-i18n="apiDocs">API Docs</span>
                 </a>
             </div>
         </div>
 
         <div class="content">
             <div class="page-header">
-                <h1>🖥️ Platforms</h1>
-                <p>Manage target SSH platforms for key deployment and command execution</p>
+                <h1><span data-i18n="platformsTitle">🖥️ Platforms</span></h1>
+                <p data-i18n="platformsSubtitle">Manage target SSH platforms for key deployment and command execution</p>
             </div>
 
             <div id="message"></div>
@@ -486,5 +489,6 @@
 
         loadPlatforms();
     </script>
+    <script src="/static/testum.js"></script>
 </body>
 </html>

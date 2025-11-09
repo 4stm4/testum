@@ -81,6 +81,227 @@
     --input-border: #d1d5db;
     --input-focus: #3b82f6;
     
+    --button-logout: #ef4444;
+    --button-logout-hover: #dc2626;
+    
+    --sidebar-icon-filter: brightness(0.8);
+}
+
+/* ===== GLOBAL OVERRIDES (Applied to all pages) ===== */
+
+body {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Headers */
+.header {
+    background: var(--bg-secondary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+.logo {
+    color: var(--accent-primary) !important;
+}
+
+.version {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* Sidebar */
+.sidebar {
+    background: var(--bg-secondary) !important;
+    border-right-color: var(--border-color) !important;
+}
+
+.sidebar-title {
+    color: var(--text-tertiary) !important;
+}
+
+.sidebar-link, .sidebar-item {
+    color: var(--text-primary) !important;
+}
+
+.sidebar-link:hover, .sidebar-item:hover {
+    background: var(--bg-tertiary) !important;
+    color: var(--accent-primary) !important;
+}
+
+.sidebar-link.active, .sidebar-item.active {
+    background: var(--bg-tertiary) !important;
+    color: var(--accent-primary) !important;
+    border-left-color: var(--accent-primary) !important;
+}
+
+/* Cards */
+.card, .key-card, .platform-card {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.card-title, .card h2, .card h3 {
+    color: var(--text-primary) !important;
+}
+
+.card-description, .card p {
+    color: var(--text-secondary) !important;
+}
+
+/* Titles and Text */
+.page-title, h1 {
+    color: var(--text-primary) !important;
+}
+
+.page-subtitle, .card-subtitle {
+    color: var(--text-tertiary) !important;
+}
+
+/* Buttons */
+button {
+    background: var(--accent-primary) !important;
+    color: var(--bg-primary) !important;
+}
+
+button:hover:not(:disabled) {
+    background: var(--accent-hover) !important;
+}
+
+button:disabled {
+    background: var(--text-tertiary) !important;
+    opacity: 0.5;
+}
+
+.logout-btn {
+    background: var(--button-logout) !important;
+    color: var(--bg-primary) !important;
+}
+
+.logout-btn:hover {
+    background: var(--button-logout-hover) !important;
+}
+
+/* Inputs */
+input, textarea, select {
+    background: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--text-primary) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--input-focus) !important;
+    outline: none;
+}
+
+/* Current values / Code blocks */
+.current-value, code {
+    background: var(--bg-tertiary) !important;
+    color: var(--accent-primary) !important;
+}
+
+/* Messages */
+.message.success {
+    background: var(--success-bg) !important;
+    color: var(--success-text) !important;
+    border-color: var(--success-border) !important;
+}
+
+.message.error {
+    background: var(--error-bg) !important;
+    color: var(--error-text) !important;
+    border-color: var(--error-border) !important;
+}
+
+.message.warning {
+    background: var(--warning-bg) !important;
+    color: var(--warning-text) !important;
+    border-color: var(--warning-border) !important;
+}
+
+.message.info {
+    background: var(--info-bg) !important;
+    color: var(--info-text) !important;
+    border-color: var(--info-border) !important;
+}
+
+/* Tables */
+table {
+    background: var(--bg-secondary) !important;
+}
+
+th {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+td {
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+tr:hover {
+    background: var(--bg-tertiary) !important;
+}
+
+/* Miscellaneous */
+.divider, hr {
+    background: var(--border-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Theme and Language toggles */
+.theme-toggle, .lang-toggle {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.theme-toggle:hover, .lang-toggle:hover {
+    background: var(--accent-primary) !important;
+    color: var(--bg-primary) !important;
+}
+
+
+/* ===== LIGHT THEME ===== */
+[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f7fa;
+    --bg-tertiary: #e5e7eb;
+    
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-tertiary: #9ca3af;
+    
+    --accent-primary: #3b82f6;
+    --accent-hover: #2563eb;
+    
+    --success-bg: #d1fae5;
+    --success-text: #065f46;
+    --success-border: #10b981;
+    
+    --error-bg: #fee2e2;
+    --error-text: #991b1b;
+    --error-border: #ef4444;
+    
+    --warning-bg: #fef3c7;
+    --warning-text: #92400e;
+    --warning-border: #f59e0b;
+    
+    --info-bg: #dbeafe;
+    --info-text: #1e40af;
+    --info-border: #3b82f6;
+    
+    --border-color: #e5e7eb;
+    --shadow: rgba(0, 0, 0, 0.1);
+    
+    --input-bg: #ffffff;
+    --input-border: #d1d5db;
+    --input-focus: #3b82f6;
+    
     --button-logout: #dc2626;
     --button-logout-hover: #b91c1c;
     

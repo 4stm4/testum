@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Testum</title>
+    <link rel="stylesheet" href="/static/theme.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -150,17 +151,19 @@
     </style>
 </head>
 <body>
+    <button id="themeToggle" class="theme-toggle" style="position: fixed; top: 20px; right: 20px; z-index: 1000;" title="Toggle Theme">🌙</button>
+    
     <div class="login-container">
         <div class="logo-section">
             <div class="logo">🔐</div>
-            <div class="app-name">Testum</div>
-            <div class="tagline">SSH Platform Management</div>
+            <div class="app-name" data-i18n="welcomeTitle">Testum</div>
+            <div class="tagline" data-i18n="welcomeSubtitle">SSH Platform Management</div>
         </div>
 
         <div class="login-card">
             <div class="login-header">
-                <h1>Welcome Back</h1>
-                <p>Please enter your credentials to continue</p>
+                <h1 data-i18n="welcomeBack">Welcome Back</h1>
+                <p data-i18n="loginPrompt">Please enter your credentials to continue</p>
             </div>
 
             <div id="message" class="message"></div>
@@ -255,5 +258,6 @@
             window.location.href = '/';
         }
     </script>
+    <script src="/static/testum.js"></script>
 </body>
 </html>
