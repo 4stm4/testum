@@ -31,6 +31,9 @@
 
 - ✅ **Authentication** - JWT-based авторизация с защитой всех роутов
 - ✅ **Settings** - Управление учетной записью (изменение username/password)
+- ✅ **Auto-Update** - Система автоматических обновлений из GitHub
+- ✅ **Theme Switcher** - Переключение между темной и светлой темой
+- ✅ **i18n Support** - Поддержка английского и русского языков
 - ✅ **CRUD SSH Public Keys** - создание, просмотр, удаление SSH ключей
 - ✅ **CRUD Platforms** - управление платформами (хосты с SSH доступом)
 - ✅ **Deploy Keys** - атомарное развертывание ключей на платформы с idempotency
@@ -527,7 +530,10 @@ GET task:{task_id}
 - [QUICK_TEST.md](QUICK_TEST.md) - Быстрый старт за 2 минуты
 - [PORTAINER_SETUP.md](PORTAINER_SETUP.md) - Детальная инструкция для Portainer
 - [AUTHENTICATION.md](AUTHENTICATION.md) - **Система авторизации**
-- [SETTINGS.md](SETTINGS.md) - **Страница настроек учетной записи (NEW!)**
+- [SETTINGS.md](SETTINGS.md) - **Страница настроек учетной записи**
+- [THEMES_I18N.md](THEMES_I18N.md) - **Темы и интернационализация (NEW!)**
+- [UPDATES.md](UPDATES.md) - **Система автообновлений из GitHub (NEW!)**
+- [QUICK_UPDATE_GUIDE.md](QUICK_UPDATE_GUIDE.md) - **Быстрый гайд по обновлениям (NEW!)**
 - [API_EXAMPLES.md](API_EXAMPLES.md) - Примеры API запросов
 - [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) - Детальное описание проекта
 - [DECISIONS.md](DECISIONS.md) - Архитектурные решения
