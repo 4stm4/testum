@@ -173,6 +173,34 @@ async def change_password_endpoint(request: Request):
     })
 
 
+async def get_settings_endpoint(request: Request):
+    """Get current system settings (non-sensitive)."""
+    # Mask sensitive values
+    def mask_connection_string(url: str) -> str:
+        """Mask password in connection string."""
+        if '@' in url:
+            parts = url.split('@')
+            if '://' in parts[0]:
+                protocol_user = parts[0].split('://')
+                if ':' in protocol_user[1]:
+                    user = protocol_user[1].split(':')[0]
+                    return f"{protocol_user[0]}://{user}:••••••@{parts[1]}"
+        return url
+    
+    return JSONResponse({
+        "app_env": config.APP_ENV,
+        "admin_username": config.ADMIN_USERNAME,
+        "database_url": mask_connection_string(config.DATABASE_URL),
+        "redis_url": mask_connection_string(config.REDIS_URL),
+        "celery_broker_url": mask_connection_string(config.CELERY_BROKER_URL),
+        "celery_result_backend": mask_connection_string(config.CELERY_RESULT_BACKEND),
+        "minio_endpoint": config.MINIO_ENDPOINT,
+        "minio_bucket": config.MINIO_BUCKET,
+        "minio_secure": config.MINIO_SECURE,
+        "ssh_host_key_policy": config.SSH_HOST_KEY_POLICY,
+    })
+
+
 async def health_check(request: Request):
     """Health check endpoint."""
     return JSONResponse({"status": "healthy", "timestamp": datetime.utcnow().isoformat()})
@@ -191,6 +219,7 @@ routes = [
     Route("/api/auth/logout", logout_endpoint, methods=["GET", "POST"]),
     Route("/api/auth/change-username", change_username_endpoint, methods=["POST"]),
     Route("/api/auth/change-password", change_password_endpoint, methods=["POST"]),
+    Route("/api/settings", get_settings_endpoint, methods=["GET"]),
     Mount("/api/keys", keys_router),
     Mount("/api/platforms", platforms_router),
     Mount("/api/tasks", tasks_router),

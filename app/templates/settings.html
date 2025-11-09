@@ -283,7 +283,7 @@
 
             <!-- Account Information -->
             <div class="card">
-                <h2>Account Information</h2>
+                <h2>👤 Account Information</h2>
                 <div class="card-description">
                     View your current account details
                 </div>
@@ -296,6 +296,105 @@
                     <div class="current-value">Administrator</div>
                 </div>
             </div>
+
+            <!-- Application Settings -->
+            <div class="card">
+                <h2>⚙️ Application Settings</h2>
+                <div class="card-description">
+                    Core application configuration (read-only, update via docker-compose.yml)
+                </div>
+                <div class="form-group">
+                    <label>Environment</label>
+                    <div class="current-value" id="appEnv">Loading...</div>
+                </div>
+                <div class="form-group">
+                    <label>Secret Key</label>
+                    <div class="current-value">••••••••••••••••••••</div>
+                    <small style="color: #6c7086; display: block; margin-top: 5px;">
+                        Hidden for security. Change in docker-compose.yml if needed.
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>Fernet Encryption Key</label>
+                    <div class="current-value" id="fernetKey">••••••••••••••••••••</div>
+                    <small style="color: #6c7086; display: block; margin-top: 5px;">
+                        Used for encrypting passwords and private keys
+                    </small>
+                </div>
+            </div>
+
+            <!-- Database Settings -->
+            <div class="card">
+                <h2>🗄️ Database Settings</h2>
+                <div class="card-description">
+                    Database connection configuration (read-only)
+                </div>
+                <div class="form-group">
+                    <label>Database URL</label>
+                    <div class="current-value" id="databaseUrl">Loading...</div>
+                </div>
+                <div class="form-group">
+                    <label>Redis URL</label>
+                    <div class="current-value" id="redisUrl">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Celery Settings -->
+            <div class="card">
+                <h2>📨 Task Queue Settings</h2>
+                <div class="card-description">
+                    Celery task queue configuration (read-only)
+                </div>
+                <div class="form-group">
+                    <label>Broker URL</label>
+                    <div class="current-value" id="celeryBroker">Loading...</div>
+                </div>
+                <div class="form-group">
+                    <label>Result Backend</label>
+                    <div class="current-value" id="celeryBackend">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Storage Settings -->
+            <div class="card">
+                <h2>📦 Storage Settings</h2>
+                <div class="card-description">
+                    MinIO S3-compatible storage configuration (read-only)
+                </div>
+                <div class="form-group">
+                    <label>MinIO Endpoint</label>
+                    <div class="current-value" id="minioEndpoint">Loading...</div>
+                </div>
+                <div class="form-group">
+                    <label>Bucket Name</label>
+                    <div class="current-value" id="minioBucket">Loading...</div>
+                </div>
+                <div class="form-group">
+                    <label>Access Key</label>
+                    <div class="current-value" id="minioAccessKey">••••••••••</div>
+                </div>
+                <div class="form-group">
+                    <label>Secure Connection (TLS)</label>
+                    <div class="current-value" id="minioSecure">Loading...</div>
+                </div>
+            </div>
+
+            <!-- SSH Settings -->
+            <div class="card">
+                <h2>🔐 SSH Settings</h2>
+                <div class="card-description">
+                    SSH connection behavior configuration
+                </div>
+                <div class="form-group">
+                    <label>Host Key Policy</label>
+                    <div class="current-value" id="sshPolicy">Loading...</div>
+                    <small style="color: #6c7086; display: block; margin-top: 5px;">
+                        auto_add = Automatically accept new host keys (TOFU - Trust On First Use)
+                    </small>
+                </div>
+            </div>
+
+            <div class="divider"></div>
 
             <!-- Change Username -->
             <div class="card">
@@ -409,6 +508,39 @@
             }
         }
 
+        // Load system settings
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+                
+                if (response.ok) {
+                    // Application Settings
+                    document.getElementById('appEnv').textContent = settings.app_env || 'N/A';
+                    
+                    // Database Settings
+                    document.getElementById('databaseUrl').textContent = settings.database_url || 'N/A';
+                    document.getElementById('redisUrl').textContent = settings.redis_url || 'N/A';
+                    
+                    // Celery Settings
+                    document.getElementById('celeryBroker').textContent = settings.celery_broker_url || 'N/A';
+                    document.getElementById('celeryBackend').textContent = settings.celery_result_backend || 'N/A';
+                    
+                    // Storage Settings
+                    document.getElementById('minioEndpoint').textContent = settings.minio_endpoint || 'N/A';
+                    document.getElementById('minioBucket').textContent = settings.minio_bucket || 'N/A';
+                    document.getElementById('minioSecure').textContent = settings.minio_secure ? 'Yes (TLS)' : 'No (Plain HTTP)';
+                    
+                    // SSH Settings
+                    document.getElementById('sshPolicy').textContent = settings.ssh_host_key_policy || 'N/A';
+                } else {
+                    console.error('Failed to load settings');
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+
         // Change Username
         document.getElementById('usernameForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -496,6 +628,7 @@
 
         // Load current user on page load
         loadCurrentUser();
+        loadSettings();
     </script>
 </body>
 </html>
