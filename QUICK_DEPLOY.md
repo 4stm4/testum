@@ -31,12 +31,14 @@ SSH_HOST_KEY_POLICY=auto_add
 
 ## 6. Проверка
 
-Дождитесь, когда все 5 контейнеров станут зелеными:
+Дождитесь, когда все 5 контейнеров станут зелеными (это займет 2-3 минуты):
 - testum_db (healthy)
 - testum_redis (healthy)
 - testum_minio (healthy)
-- testum_app (running)
-- testum_celery (running)
+- testum_app (running) - ждет установки зависимостей
+- testum_celery (running) - ждет установки зависимостей
+
+> **Важно**: Первый запуск медленный из-за клонирования репозитория и установки зависимостей.
 
 ## 7. Доступ
 
