@@ -100,6 +100,9 @@ services:
       cp -r /tmp/repo/* /app/ &&
       echo 'Installing Python packages...' &&
       pip install -q --no-cache-dir -r /app/requirements.txt && 
+      echo '=== Checking environment variables ===' &&
+      echo 'FERNET_KEY is set:' && if [ -z \"$$FERNET_KEY\" ]; then echo 'NO - FERNET_KEY is missing!'; exit 1; else echo 'YES'; fi &&
+      echo 'DATABASE_URL:' $$DATABASE_URL &&
       echo 'Running database migrations...' &&
       cd /app &&
       alembic upgrade head && 
