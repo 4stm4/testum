@@ -29,6 +29,7 @@
 
 ## 🎯 Возможности
 
+- ✅ **Authentication** - JWT-based авторизация с защитой всех роутов
 - ✅ **CRUD SSH Public Keys** - создание, просмотр, удаление SSH ключей
 - ✅ **CRUD Platforms** - управление платформами (хосты с SSH доступом)
 - ✅ **Deploy Keys** - атомарное развертывание ключей на платформы с idempotency
@@ -159,6 +160,24 @@ curl http://localhost:8000/health
 curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}'
+```
+
+### Authentication
+
+```bash
+# Login
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "password": "admin123"
+  }'
+
+# Response:
+# {"access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...", "token_type": "bearer"}
+
+# Use token in cookie for subsequent requests
+# All routes except /login, /health, /docs require authentication
 ```
 
 ### SSH Keys
@@ -445,8 +464,8 @@ GET task:{task_id}
 
 ## 🚧 Известные ограничения
 
-1. **Аутентификация**: Простая JWT аутентификация без refresh tokens
-2. **Пользователи**: Один hardcoded админ (для MVP)
+1. **Аутентификация**: Один hardcoded админ (для MVP, migration 003 готова для multi-user)
+2. **JWT Refresh**: Отсутствуют refresh tokens
 3. **SSH**: Синхронные операции в Celery (блокируют worker)
 4. **Rate Limiting**: Отсутствует
 5. **Pagination**: Не реализована для больших списков
@@ -454,7 +473,8 @@ GET task:{task_id}
 ## 🎯 Дальнейшие улучшения
 
 ### High Priority
-- [ ] Полноценная система пользователей и ролей
+- [ ] Полноценная система пользователей (migration 003 готова)
+- [ ] Password hashing (bcrypt) и user roles
 - [ ] Async SSH операции (asyncssh вместо Paramiko)
 - [ ] Rate limiting и throttling
 - [ ] Pagination для API
@@ -501,7 +521,17 @@ GET task:{task_id}
 - Достаточно для single-server deployment
 - Для production рекомендуется HashiCorp Vault
 
-## 📝 Лицензия
+## � Дополнительная документация
+
+- [QUICK_TEST.md](QUICK_TEST.md) - Быстрый старт за 2 минуты
+- [PORTAINER_SETUP.md](PORTAINER_SETUP.md) - Детальная инструкция для Portainer
+- [AUTHENTICATION.md](AUTHENTICATION.md) - **Система авторизации (NEW!)**
+- [API_EXAMPLES.md](API_EXAMPLES.md) - Примеры API запросов
+- [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) - Детальное описание проекта
+- [DECISIONS.md](DECISIONS.md) - Архитектурные решения
+- [NEXT_STEPS.md](NEXT_STEPS.md) - Планы развития
+
+## �📝 Лицензия
 
 MIT License
 
