@@ -65,6 +65,8 @@ SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
    SSH_HOST_KEY_POLICY=auto_add
    ```
 
+   > **⚠️ КРИТИЧЕСКИ ВАЖНО**: Обязательно добавьте `FERNET_KEY`! Без него приложение не запустится!
+   > 
    > **Важно**: Для production обязательно сгенерируйте свои уникальные ключи!
 
 7. **Нажмите "Deploy the stack"**
@@ -133,14 +135,18 @@ app:
   image: testum-app:latest
 ```
 
-### Ошибка "FERNET_KEY not configured"
+### Ошибка "FERNET_KEY not configured" или "FERNET_KEY environment variable is required"
 
-**Причина**: Не установлена переменная окружения
+**Причина**: Не установлена переменная окружения FERNET_KEY
 
 **Решение**: 
 1. Перейдите в Portainer → Stacks → testum → Editor
-2. Добавьте `FERNET_KEY` в Environment variables
-3. Нажмите "Update the stack"
+2. Прокрутите вниз до раздела "Environment variables"
+3. Убедитесь, что добавлена переменная:
+   - **name**: `FERNET_KEY`
+   - **value**: `8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=` (или свой сгенерированный)
+4. Нажмите "Update the stack"
+5. Или удалите и создайте стек заново с переменными
 
 ### Контейнер app падает с ошибкой "connection refused"
 

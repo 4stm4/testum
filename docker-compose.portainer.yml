@@ -95,6 +95,7 @@ services:
       apt-get update -qq && 
       apt-get install -y -qq gcc postgresql-client git && 
       echo 'Cloning repository...' &&
+      rm -rf /tmp/repo &&
       git clone https://github.com/4stm4/testum.git /tmp/repo &&
       cp -r /tmp/repo/* /app/ &&
       echo 'Installing Python packages...' &&
@@ -139,6 +140,7 @@ services:
       apt-get update -qq && 
       apt-get install -y -qq gcc postgresql-client git && 
       echo 'Cloning repository...' &&
+      rm -rf /tmp/repo &&
       git clone https://github.com/4stm4/testum.git /tmp/repo &&
       cp -r /tmp/repo/* /app/ &&
       echo 'Installing Python packages...' &&
