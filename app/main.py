@@ -1,0 +1,128 @@
+"""Main Starlette application."""
+import logging
+from starlette.applications import Starlette
+from starlette.routing import Route, Mount, WebSocketRoute
+from starlette.responses import JSONResponse, HTMLResponse
+from starlette.staticfiles import StaticFiles
+from starlette.templating import Jinja2Templates
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
+import jwt
+from datetime import datetime, timedelta
+
+from app.config import config
+from app.api.keys import keys_router
+from app.api.platforms import platforms_router, tasks_router
+from app.ws import task_stream_websocket
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "name": "%(name)s", "message": "%(message)s"}',
+)
+logger = logging.getLogger(__name__)
+
+# Templates
+templates = Jinja2Templates(directory="app/templates")
+
+
+# Middleware
+middleware = [
+    Middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+]
+
+
+# Auth helpers
+def create_jwt_token(username: str) -> str:
+    """Create JWT token."""
+    payload = {
+        "sub": username,
+        "exp": datetime.utcnow() + timedelta(hours=24),
+        "iat": datetime.utcnow(),
+    }
+    return jwt.encode(payload, config.SECRET_KEY, algorithm="HS256")
+
+
+def verify_jwt_token(token: str) -> dict:
+    """Verify JWT token."""
+    try:
+        payload = jwt.decode(token, config.SECRET_KEY, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise ValueError("Token expired")
+    except jwt.InvalidTokenError:
+        raise ValueError("Invalid token")
+
+
+# Routes
+async def homepage(request: Request):
+    """Homepage with links to keys and platforms."""
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+async def keys_page(request: Request):
+    """SSH Keys page."""
+    return templates.TemplateResponse("keys.html", {"request": request})
+
+
+async def platforms_page(request: Request):
+    """Platforms page."""
+    return templates.TemplateResponse("platforms.html", {"request": request})
+
+
+async def task_page(request: Request):
+    """Task monitoring page."""
+    task_id = request.path_params.get("task_id")
+    return templates.TemplateResponse("task.html", {"request": request, "task_id": task_id})
+
+
+async def login_endpoint(request: Request):
+    """Simple login endpoint."""
+    data = await request.json()
+    username = data.get("username")
+    password = data.get("password")
+
+    # Simple auth check (for MVP)
+    if username == config.ADMIN_USERNAME and password == config.ADMIN_PASSWORD:
+        token = create_jwt_token(username)
+        return JSONResponse({
+            "access_token": token,
+            "token_type": "bearer",
+        })
+    else:
+        return JSONResponse({"error": "Invalid credentials"}, status_code=401)
+
+
+async def health_check(request: Request):
+    """Health check endpoint."""
+    return JSONResponse({"status": "healthy", "timestamp": datetime.utcnow().isoformat()})
+
+
+# Create application
+routes = [
+    Route("/", homepage),
+    Route("/keys", keys_page),
+    Route("/platforms", platforms_page),
+    Route("/tasks/{task_id}", task_page),
+    Route("/health", health_check),
+    Route("/api/auth/login", login_endpoint, methods=["POST"]),
+    Mount("/api/keys", keys_router),
+    Mount("/api/platforms", platforms_router),
+    Mount("/api/tasks", tasks_router),
+    WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),
+]
+
+app = Starlette(
+    debug=config.APP_ENV == "development",
+    routes=routes,
+    middleware=middleware,
+)
+
+logger.info(f"Application started in {config.APP_ENV} mode")

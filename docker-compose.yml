@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: testum_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testum
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - testum_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: testum_redis
+    restart: unless-stopped
+    networks:
+      - testum_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: testum_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - testum_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  app:
+    image: ghcr.io/4stm4/testum-app:latest
+    container_name: testum_app
+    restart: unless-stopped
+    environment:
+      # Application
+      APP_ENV: production
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      
+      # Encryption (REQUIRED!)
+      FERNET_KEY: ${FERNET_KEY}
+      
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      
+      # MinIO
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: testum-artifacts
+      MINIO_SECURE: "false"
+      
+      # SSH
+      SSH_HOST_KEY_POLICY: ${SSH_HOST_KEY_POLICY:-auto_add}
+    ports:
+      - "8000:8000"
+    networks:
+      - testum_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
+
+  celery_worker:
+    image: ghcr.io/4stm4/testup-app:latest
+    container_name: testup_celery
+    restart: unless-stopped
+    environment:
+      # Application
+      APP_ENV: production
+      FERNET_KEY: ${FERNET_KEY}
+      
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/testup
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      
+      # MinIO
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: testup-artifacts
+      MINIO_SECURE: "false"
+      
+      # SSH
+      SSH_HOST_KEY_POLICY: ${SSH_HOST_KEY_POLICY:-auto_add}
+    networks:
+      - testup_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
+
+  # Optional: Test SSH server for development/testing
+  # Uncomment if needed
+  # sshd_test:
+  #   image: linuxserver/openssh-server:latest
+  #   container_name: testum_sshd_test
+  #   restart: unless-stopped
+  #   environment:
+  #     PUID: 1000
+  #     PGID: 1000
+  #     PASSWORD_ACCESS: "true"
+  #     USER_PASSWORD: testpass
+  #     USER_NAME: testuser
+  #   ports:
+  #     - "2222:2222"
+  #   volumes:
+  #     - sshd_test_data:/config
+  #   networks:
+  #     - testum_network
+
+networks:
+  testum_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
+  # sshd_test_data:
