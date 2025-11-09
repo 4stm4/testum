@@ -1,6 +1,6 @@
-# Ocultum API Examples
+# Testum API Examples
 
-This file contains example API requests for testing Ocultum.
+This file contains example API requests for testing Testum.
 
 ## Prerequisites
 

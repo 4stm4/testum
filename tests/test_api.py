@@ -16,7 +16,7 @@ def test_homepage(client: TestClient):
     """Test homepage."""
     response = client.get("/")
     assert response.status_code == 200
-    assert b"Ocultum" in response.content
+    assert b"Testum" in response.content
 
 
 def test_create_ssh_key(client: TestClient):

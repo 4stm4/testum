@@ -4,7 +4,7 @@ from app.config import config
 
 # Create Celery app
 celery_app = Celery(
-    "ocultum",
+    "testum",
     broker=config.CELERY_BROKER_URL,
     backend=config.CELERY_RESULT_BACKEND,
     include=["app.tasks"],
