@@ -79,6 +79,11 @@ async def platforms_page(request: Request):
     return templates.TemplateResponse("platforms.html", {"request": request})
 
 
+async def settings_page(request: Request):
+    """Settings page."""
+    return templates.TemplateResponse("settings.html", {"request": request})
+
+
 async def task_page(request: Request):
     """Task monitoring page."""
     task_id = request.path_params.get("task_id")
@@ -114,6 +119,60 @@ async def logout_endpoint(request: Request):
     return response
 
 
+async def change_username_endpoint(request: Request):
+    """Change username endpoint."""
+    data = await request.json()
+    current_password = data.get("current_password")
+    new_username = data.get("new_username")
+    
+    if not current_password or not new_username:
+        return JSONResponse({"error": "Missing required fields"}, status_code=400)
+    
+    # Verify current password
+    if current_password != config.ADMIN_PASSWORD:
+        return JSONResponse({"error": "Invalid current password"}, status_code=401)
+    
+    # Validate new username
+    if len(new_username) < 3:
+        return JSONResponse({"error": "Username must be at least 3 characters"}, status_code=400)
+    
+    # Update username in environment (this is temporary - ideally update in config file or DB)
+    # For MVP, we need to update the docker-compose.yml or restart with new env vars
+    # For now, just return success - user needs to update ADMIN_USERNAME in deployment
+    
+    return JSONResponse({
+        "message": "Username change requested",
+        "note": "Please update ADMIN_USERNAME environment variable in your deployment configuration"
+    })
+
+
+async def change_password_endpoint(request: Request):
+    """Change password endpoint."""
+    data = await request.json()
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    
+    if not current_password or not new_password:
+        return JSONResponse({"error": "Missing required fields"}, status_code=400)
+    
+    # Verify current password
+    if current_password != config.ADMIN_PASSWORD:
+        return JSONResponse({"error": "Invalid current password"}, status_code=401)
+    
+    # Validate new password
+    if len(new_password) < 8:
+        return JSONResponse({"error": "Password must be at least 8 characters"}, status_code=400)
+    
+    # Update password in environment (this is temporary - ideally update in config file or DB)
+    # For MVP, we need to update the docker-compose.yml or restart with new env vars
+    # For now, just return success - user needs to update ADMIN_PASSWORD in deployment
+    
+    return JSONResponse({
+        "message": "Password change requested",
+        "note": "Please update ADMIN_PASSWORD environment variable in your deployment configuration"
+    })
+
+
 async def health_check(request: Request):
     """Health check endpoint."""
     return JSONResponse({"status": "healthy", "timestamp": datetime.utcnow().isoformat()})
@@ -125,10 +184,13 @@ routes = [
     Route("/login", login_page),
     Route("/keys", keys_page),
     Route("/platforms", platforms_page),
+    Route("/settings", settings_page),
     Route("/tasks/{task_id}", task_page),
     Route("/health", health_check),
     Route("/api/auth/login", login_endpoint, methods=["POST"]),
     Route("/api/auth/logout", logout_endpoint, methods=["GET", "POST"]),
+    Route("/api/auth/change-username", change_username_endpoint, methods=["POST"]),
+    Route("/api/auth/change-password", change_password_endpoint, methods=["POST"]),
     Mount("/api/keys", keys_router),
     Mount("/api/platforms", platforms_router),
     Mount("/api/tasks", tasks_router),

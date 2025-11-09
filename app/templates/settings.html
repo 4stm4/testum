@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Testum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #1e1e2e;
+            color: #cdd6f4;
+            overflow-x: hidden;
+        }
+        .header {
+            background: #181825;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #313244;
+        }
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #89b4fa;
+        }
+        .version {
+            background: #313244;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            color: #a6adc8;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logout-btn {
+            background: #f38ba8;
+            color: #1e1e2e;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .logout-btn:hover {
+            background: #f28faf;
+            transform: translateY(-1px);
+        }
+        .main-layout {
+            display: flex;
+            min-height: calc(100vh - 60px);
+        }
+        .sidebar {
+            width: 250px;
+            background: #181825;
+            border-right: 1px solid #313244;
+            padding: 20px 0;
+        }
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+        .sidebar-title {
+            color: #6c7086;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0 20px;
+            margin-bottom: 10px;
+        }
+        .sidebar-item {
+            padding: 12px 20px;
+            color: #cdd6f4;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .sidebar-item:hover {
+            background: #313244;
+            border-left: 3px solid #89b4fa;
+        }
+        .sidebar-item.active {
+            background: #313244;
+            border-left: 3px solid #89b4fa;
+            color: #89b4fa;
+        }
+        .sidebar-item span {
+            margin-right: 10px;
+        }
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .page-header {
+            margin-bottom: 30px;
+        }
+        .page-header h1 {
+            color: #cdd6f4;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .page-header p {
+            color: #a6adc8;
+        }
+        .card {
+            background: #181825;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #313244;
+        }
+        .card h2 {
+            color: #cdd6f4;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+        .card-description {
+            color: #a6adc8;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #cdd6f4;
+            font-size: 0.95em;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #1e1e2e;
+            border: 1px solid #313244;
+            border-radius: 6px;
+            color: #cdd6f4;
+            font-size: 1em;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #89b4fa;
+        }
+        button {
+            background: #89b4fa;
+            color: #1e1e2e;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            margin-right: 10px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #7aa2f7;
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            background: #6c7086;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .message {
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #1e2d28;
+            color: #a6e3a1;
+            border-color: #a6e3a1;
+        }
+        .error {
+            background: #2d1e22;
+            color: #f38ba8;
+            border-color: #f38ba8;
+        }
+        .info {
+            background: #162d3b;
+            color: #89b4fa;
+            border-color: #89b4fa;
+        }
+        .warning {
+            background: #2d2616;
+            color: #fab387;
+            border-color: #fab387;
+        }
+        .divider {
+            height: 1px;
+            background: #313244;
+            margin: 30px 0;
+        }
+        .danger-zone {
+            border: 1px solid #f38ba8;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .danger-zone h3 {
+            color: #f38ba8;
+            margin-bottom: 10px;
+        }
+        .danger-zone p {
+            color: #a6adc8;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        .current-value {
+            background: #313244;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-family: monospace;
+            color: #89b4fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🔐 Testum</div>
+        <div class="header-right">
+            <span class="version">v0.1.0</span>
+            <a href="/api/auth/logout" class="logout-btn">
+                <span>🚪</span> Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Resources</div>
+                <a href="/" class="sidebar-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="/keys" class="sidebar-item">
+                    <span>🔑</span> SSH Keys
+                </a>
+                <a href="/platforms" class="sidebar-item">
+                    <span>🖥️</span> Platforms
+                </a>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">System</div>
+                <a href="/settings" class="sidebar-item active">
+                    <span>⚙️</span> Settings
+                </a>
+                <a href="/health" class="sidebar-item">
+                    <span>💚</span> Health Check
+                </a>
+                <a href="/docs" class="sidebar-item">
+                    <span>📖</span> API Docs
+                </a>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="page-header">
+                <h1>⚙️ Settings</h1>
+                <p>Manage your account settings and preferences</p>
+            </div>
+
+            <div id="message"></div>
+
+            <!-- Account Information -->
+            <div class="card">
+                <h2>Account Information</h2>
+                <div class="card-description">
+                    View your current account details
+                </div>
+                <div class="form-group">
+                    <label>Current Username</label>
+                    <div class="current-value" id="currentUsername">Loading...</div>
+                </div>
+                <div class="form-group">
+                    <label>Account Type</label>
+                    <div class="current-value">Administrator</div>
+                </div>
+            </div>
+
+            <!-- Change Username -->
+            <div class="card">
+                <h2>Change Username</h2>
+                <div class="card-description">
+                    Update your login username. You will need to log in again after changing it.
+                </div>
+                <form id="usernameForm">
+                    <div class="form-group">
+                        <label for="current_password_username">Current Password (for verification)</label>
+                        <input 
+                            type="password" 
+                            id="current_password_username" 
+                            name="current_password" 
+                            required 
+                            placeholder="Enter your current password"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="new_username">New Username</label>
+                        <input 
+                            type="text" 
+                            id="new_username" 
+                            name="new_username" 
+                            required 
+                            placeholder="Enter new username"
+                            minlength="3"
+                        >
+                    </div>
+                    <button type="submit" id="usernameBtn">Update Username</button>
+                </form>
+            </div>
+
+            <!-- Change Password -->
+            <div class="card">
+                <h2>Change Password</h2>
+                <div class="card-description">
+                    Update your password to keep your account secure. Use a strong password with at least 8 characters.
+                </div>
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label for="current_password">Current Password</label>
+                        <input 
+                            type="password" 
+                            id="current_password" 
+                            name="current_password" 
+                            required 
+                            placeholder="Enter your current password"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="new_password">New Password</label>
+                        <input 
+                            type="password" 
+                            id="new_password" 
+                            name="new_password" 
+                            required 
+                            placeholder="Enter new password (min 8 characters)"
+                            minlength="8"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm New Password</label>
+                        <input 
+                            type="password" 
+                            id="confirm_password" 
+                            name="confirm_password" 
+                            required 
+                            placeholder="Re-enter new password"
+                            minlength="8"
+                        >
+                    </div>
+                    <button type="submit" id="passwordBtn">Update Password</button>
+                </form>
+            </div>
+
+            <!-- Info box -->
+            <div class="message info">
+                <strong>ℹ️ Note:</strong> After changing your username or password, you will be automatically logged out and need to sign in again with your new credentials.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showMessage(text, type = 'success') {
+            const msg = document.getElementById('message');
+            msg.innerHTML = `<div class="message ${type}">${text}</div>`;
+            setTimeout(() => msg.innerHTML = '', 5000);
+        }
+
+        function setButtonLoading(buttonId, isLoading, originalText, loadingText) {
+            const btn = document.getElementById(buttonId);
+            btn.disabled = isLoading;
+            btn.textContent = isLoading ? loadingText : originalText;
+        }
+
+        // Load current username
+        async function loadCurrentUser() {
+            // Get username from cookie token (decode JWT)
+            const token = document.cookie.split('; ').find(row => row.startsWith('access_token='));
+            if (token) {
+                try {
+                    const jwt = token.split('=')[1];
+                    const payload = JSON.parse(atob(jwt.split('.')[1]));
+                    document.getElementById('currentUsername').textContent = payload.sub || 'admin';
+                } catch (e) {
+                    document.getElementById('currentUsername').textContent = 'admin';
+                }
+            } else {
+                document.getElementById('currentUsername').textContent = 'admin';
+            }
+        }
+
+        // Change Username
+        document.getElementById('usernameForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current_password_username').value;
+            const newUsername = document.getElementById('new_username').value;
+
+            setButtonLoading('usernameBtn', true, 'Update Username', 'Updating...');
+
+            try {
+                const response = await fetch('/api/auth/change-username', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        current_password: currentPassword,
+                        new_username: newUsername 
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('✅ Username updated successfully! Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/api/auth/logout';
+                    }, 2000);
+                } else {
+                    showMessage('❌ Error: ' + (result.error || 'Failed to update username'), 'error');
+                    setButtonLoading('usernameBtn', false, 'Update Username', 'Updating...');
+                }
+            } catch (error) {
+                showMessage('❌ Connection error: ' + error.message, 'error');
+                setButtonLoading('usernameBtn', false, 'Update Username', 'Updating...');
+            }
+        });
+
+        // Change Password
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            // Validate passwords match
+            if (newPassword !== confirmPassword) {
+                showMessage('❌ New passwords do not match!', 'error');
+                return;
+            }
+
+            // Validate password strength
+            if (newPassword.length < 8) {
+                showMessage('❌ Password must be at least 8 characters long!', 'error');
+                return;
+            }
+
+            setButtonLoading('passwordBtn', true, 'Update Password', 'Updating...');
+
+            try {
+                const response = await fetch('/api/auth/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        current_password: currentPassword,
+                        new_password: newPassword 
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('✅ Password updated successfully! Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/api/auth/logout';
+                    }, 2000);
+                } else {
+                    showMessage('❌ Error: ' + (result.error || 'Failed to update password'), 'error');
+                    setButtonLoading('passwordBtn', false, 'Update Password', 'Updating...');
+                }
+            } catch (error) {
+                showMessage('❌ Connection error: ' + error.message, 'error');
+                setButtonLoading('passwordBtn', false, 'Update Password', 'Updating...');
+            }
+        });
+
+        // Load current user on page load
+        loadCurrentUser();
+    </script>
+</body>
+</html>
