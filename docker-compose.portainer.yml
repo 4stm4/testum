@@ -87,14 +87,14 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    volumes:
-      - ./:/app
     entrypoint: /bin/bash
     command: >
       -c "
       apt-get update -qq && 
-      apt-get install -y -qq gcc postgresql-client && 
-      pip install -q --no-cache-dir -r requirements.txt && 
+      apt-get install -y -qq gcc postgresql-client git && 
+      git clone https://github.com/4stm4/testum.git /tmp/repo &&
+      cp -r /tmp/repo/* /app/ &&
+      pip install -q --no-cache-dir -r /app/requirements.txt && 
       alembic upgrade head && 
       uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
@@ -124,14 +124,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./:/app
     entrypoint: /bin/bash
     command: >
       -c "
       apt-get update -qq && 
-      apt-get install -y -qq gcc postgresql-client && 
-      pip install -q --no-cache-dir -r requirements.txt && 
+      apt-get install -y -qq gcc postgresql-client git && 
+      git clone https://github.com/4stm4/testum.git /tmp/repo &&
+      cp -r /tmp/repo/* /app/ &&
+      pip install -q --no-cache-dir -r /app/requirements.txt && 
       celery -A app.celery_app worker --loglevel=info --concurrency=2
       "
 
