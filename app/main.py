@@ -223,6 +223,7 @@ routes = [
     Mount("/api/keys", keys_router),
     Mount("/api/platforms", platforms_router),
     Mount("/api/tasks", tasks_router),
+    Mount("/static", StaticFiles(directory="app/templates"), name="static"),
     WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),
 ]
 
