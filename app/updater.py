@@ -138,6 +138,28 @@ async def check_git_status() -> Dict[str, Any]:
         raise UpdateError(f"Failed to check git status: {str(e)}")
 
 
+async def trigger_app_restart() -> bool:
+    """
+    Trigger application restart by touching a reload trigger file.
+    Uvicorn with --reload will detect file changes and restart automatically.
+    
+    Returns:
+        bool: True if restart was triggered, False otherwise
+    """
+    try:
+        # Create/touch a trigger file to force reload
+        trigger_file = os.path.join(os.getcwd(), "app", "main.py")
+        if os.path.exists(trigger_file):
+            # Touch the file to trigger reload
+            os.utime(trigger_file, None)
+            logger.info("Application restart triggered via file touch")
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Failed to trigger restart: {e}")
+        return False
+
+
 async def perform_update(target_version: Optional[str] = None) -> Dict[str, Any]:
     """
     Perform git pull to update the application.
@@ -212,6 +234,9 @@ async def perform_update(target_version: Optional[str] = None) -> Dict[str, Any]
         
         logger.info(f"Successfully updated from {current_commit} to {new_commit}")
         
+        # Trigger application restart
+        restart_success = await trigger_app_restart()
+        
         return {
             "success": True,
             "updated": True,
@@ -219,7 +244,8 @@ async def perform_update(target_version: Optional[str] = None) -> Dict[str, Any]
             "previous_commit": current_commit,
             "new_commit": new_commit,
             "method": update_method,
-            "restart_required": True,
+            "restart_triggered": restart_success,
+            "restart_required": not restart_success,
         }
         
     except subprocess.CalledProcessError as e:

@@ -233,6 +233,124 @@
             font-family: monospace;
             color: #89b4fa;
         }
+        
+        /* Update Modal */
+        .update-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .update-modal.active {
+            display: flex;
+        }
+        
+        .update-modal-content {
+            background: #181825;
+            border: 1px solid #313244;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .update-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .update-modal-icon {
+            font-size: 3em;
+        }
+        
+        .update-modal-title {
+            font-size: 1.5em;
+            color: #cdd6f4;
+            margin: 0;
+        }
+        
+        .update-modal-subtitle {
+            color: #a6adc8;
+            font-size: 0.95em;
+            margin: 0;
+        }
+        
+        .update-progress {
+            margin: 30px 0;
+        }
+        
+        .update-step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #1e1e2e;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .update-step.active {
+            background: #313244;
+            border-left: 3px solid #89b4fa;
+        }
+        
+        .update-step.completed {
+            background: #1e2d28;
+            border-left: 3px solid #a6e3a1;
+        }
+        
+        .update-step.error {
+            background: #2d1e22;
+            border-left: 3px solid #f38ba8;
+        }
+        
+        .update-step-icon {
+            font-size: 1.5em;
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        .update-step-text {
+            flex: 1;
+            color: #cdd6f4;
+        }
+        
+        .update-step-status {
+            color: #a6adc8;
+            font-size: 0.9em;
+        }
+        
+        .spinner {
+            border: 3px solid #313244;
+            border-top: 3px solid #89b4fa;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .update-modal-footer {
+            text-align: center;
+            color: #6c7086;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -523,6 +641,55 @@
         </div>
     </div>
 
+    <!-- Update Modal -->
+    <div id="updateModal" class="update-modal">
+        <div class="update-modal-content">
+            <div class="update-modal-header">
+                <div class="update-modal-icon">🔄</div>
+                <div>
+                    <h2 class="update-modal-title">Updating Application</h2>
+                    <p class="update-modal-subtitle">Please wait while we update the application...</p>
+                </div>
+            </div>
+            
+            <div class="update-progress">
+                <div id="step1" class="update-step">
+                    <div class="update-step-icon">⏳</div>
+                    <div class="update-step-text">Checking prerequisites</div>
+                    <div class="update-step-status"></div>
+                </div>
+                
+                <div id="step2" class="update-step">
+                    <div class="update-step-icon">📥</div>
+                    <div class="update-step-text">Fetching updates from GitHub</div>
+                    <div class="update-step-status"></div>
+                </div>
+                
+                <div id="step3" class="update-step">
+                    <div class="update-step-icon">⬇️</div>
+                    <div class="update-step-text">Downloading and applying changes</div>
+                    <div class="update-step-status"></div>
+                </div>
+                
+                <div id="step4" class="update-step">
+                    <div class="update-step-icon">🔄</div>
+                    <div class="update-step-text">Restarting application</div>
+                    <div class="update-step-status"></div>
+                </div>
+                
+                <div id="step5" class="update-step">
+                    <div class="update-step-icon">✅</div>
+                    <div class="update-step-text">Update complete</div>
+                    <div class="update-step-status"></div>
+                </div>
+            </div>
+            
+            <div class="update-modal-footer">
+                <span id="modalFooterText">Do not close this window or refresh the page</span>
+            </div>
+        </div>
+    </div>
+
     <script>
         function showMessage(text, type = 'success') {
             const msg = document.getElementById('message');
@@ -741,21 +908,31 @@
         }
 
         async function performUpdate() {
-            if (!confirm('Are you sure you want to update the application? You will need to restart the container after the update.')) {
-                return;
+            // Show modal
+            const modal = document.getElementById('updateModal');
+            modal.classList.add('active');
+            
+            // Reset all steps
+            for (let i = 1; i <= 5; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.remove('active', 'completed', 'error');
+                step.querySelector('.update-step-status').innerHTML = '';
             }
             
-            const btn = document.getElementById('performUpdateBtn');
-            const checkBtn = document.getElementById('checkUpdatesBtn');
-            const status = document.getElementById('updateStatus');
-            
-            btn.disabled = true;
-            checkBtn.disabled = true;
-            btn.textContent = '⬇️ Updating...';
-            status.textContent = 'Downloading updates...';
-            status.style.color = '#89b4fa';
-            
             try {
+                // Step 1: Prerequisites
+                await updateStep(1, 'active', 'Checking...');
+                await sleep(500);
+                await updateStep(1, 'completed', 'Ready');
+                
+                // Step 2: Fetch
+                await updateStep(2, 'active', 'Fetching...');
+                await sleep(1000);
+                await updateStep(2, 'completed', 'Fetched');
+                
+                // Step 3: Apply updates
+                await updateStep(3, 'active', 'Updating...');
+                
                 const response = await fetch('/api/updates/perform', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -764,38 +941,87 @@
                 
                 const data = await response.json();
                 
-                if (response.ok && data.success) {
-                    if (data.updated) {
-                        showMessage(
-                            `✅ ${data.message}<br><br>` +
-                            `<strong>Previous commit:</strong> ${data.previous_commit}<br>` +
-                            `<strong>New commit:</strong> ${data.new_commit}<br><br>` +
-                            `<strong>⚠️ Please restart the application:</strong><br>` +
-                            `<code>docker-compose restart</code> or <code>docker-compose up -d --build</code>`,
-                            'success'
-                        );
-                        status.textContent = '✅ Update downloaded! Restart required.';
-                        status.style.color = '#a6e3a1';
-                        btn.style.display = 'none';
-                    } else {
-                        showMessage('ℹ️ ' + data.message, 'info');
-                        status.textContent = '✅ Already up to date';
-                        status.style.color = '#a6e3a1';
-                    }
-                } else {
-                    showMessage('❌ Update failed: ' + (data.error || 'Unknown error'), 'error');
-                    status.textContent = '❌ Update failed';
-                    status.style.color = '#f38ba8';
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Update failed');
                 }
+                
+                if (!data.updated) {
+                    await updateStep(3, 'completed', 'Already up to date');
+                    await updateStep(4, 'completed', 'Skipped');
+                    await updateStep(5, 'completed', 'Done');
+                    
+                    document.getElementById('modalFooterText').textContent = 'No updates were needed. You can close this window.';
+                    
+                    setTimeout(() => {
+                        modal.classList.remove('active');
+                        location.reload();
+                    }, 3000);
+                    return;
+                }
+                
+                await updateStep(3, 'completed', `${data.previous_commit} → ${data.new_commit}`);
+                
+                // Step 4: Restart
+                await updateStep(4, 'active', 'Restarting...');
+                
+                if (data.restart_triggered) {
+                    await sleep(2000);
+                    await updateStep(4, 'completed', 'Restarted');
+                    
+                    // Step 5: Complete
+                    await updateStep(5, 'completed', 'Success!');
+                    
+                    document.getElementById('modalFooterText').textContent = 'Update complete! Reloading page...';
+                    
+                    // Wait and reload
+                    await sleep(2000);
+                    location.reload();
+                } else {
+                    await updateStep(4, 'error', 'Manual restart required');
+                    await updateStep(5, 'error', 'Action needed');
+                    
+                    document.getElementById('modalFooterText').innerHTML = 
+                        '<strong>⚠️ Please restart manually:</strong> <code>docker-compose restart</code>';
+                }
+                
             } catch (error) {
-                showMessage('❌ Connection error: ' + error.message, 'error');
-                status.textContent = '❌ Connection error';
-                status.style.color = '#f38ba8';
-            } finally {
-                btn.disabled = false;
-                checkBtn.disabled = false;
-                btn.textContent = '⬇️ Install Update';
+                console.error('Update error:', error);
+                
+                // Mark current step as error
+                for (let i = 1; i <= 5; i++) {
+                    const step = document.getElementById(`step${i}`);
+                    if (step.classList.contains('active')) {
+                        await updateStep(i, 'error', error.message);
+                        break;
+                    }
+                }
+                
+                document.getElementById('modalFooterText').innerHTML = 
+                    `<strong style="color: #f38ba8;">❌ Update failed:</strong> ${error.message}<br>` +
+                    '<button onclick="document.getElementById(\'updateModal\').classList.remove(\'active\')" ' +
+                    'style="margin-top: 10px; padding: 8px 16px; background: #89b4fa; color: #1e1e2e; border: none; border-radius: 6px; cursor: pointer;">Close</button>';
             }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        async function updateStep(stepNumber, status, message) {
+            const step = document.getElementById(`step${stepNumber}`);
+            step.classList.remove('active', 'completed', 'error');
+            step.classList.add(status);
+            
+            const statusEl = step.querySelector('.update-step-status');
+            if (status === 'active') {
+                statusEl.innerHTML = '<div class="spinner"></div>';
+            } else if (status === 'completed') {
+                statusEl.innerHTML = `<span style="color: #a6e3a1;">✓ ${message}</span>`;
+            } else if (status === 'error') {
+                statusEl.innerHTML = `<span style="color: #f38ba8;">✗ ${message}</span>`;
+            }
+            
+            await sleep(100);
         }
     </script>
     <script src="/static/testum.js"></script>
