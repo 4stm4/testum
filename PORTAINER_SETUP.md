@@ -48,9 +48,9 @@ SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
 
 4. **Build method**: Выберите **"Web editor"**
 
-5. **Скопируйте содержимое `docker-compose.portainer.yml`** из репозитория:
+5. **Скопируйте содержимое `docker-compose.yml`** из репозитория:
    
-   https://raw.githubusercontent.com/4stm4/testum/main/docker-compose.portainer.yml
+   https://raw.githubusercontent.com/4stm4/testum/main/docker-compose.yml
 
 6. **НЕ НУЖНО добавлять переменные окружения** - они уже прописаны в файле!
    

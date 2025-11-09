@@ -1,5 +1,8 @@
 version: '3.8'
 
+# QUICK TEST VERSION - With hardcoded test credentials
+# DO NOT USE IN PRODUCTION! For testing only.
+
 services:
   db:
     image: postgres:15-alpine
@@ -42,8 +45,8 @@ services:
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9010:9000"
+      - "9011:9001"
     networks:
       - testum_network
     healthcheck:
@@ -53,39 +56,26 @@ services:
       retries: 3
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: testum-app:latest
+    image: python:3.11-slim
     container_name: testum_app
     restart: unless-stopped
+    working_dir: /app
     environment:
-      # Application
       APP_ENV: production
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
-      
-      # Encryption (REQUIRED!)
-      FERNET_KEY: ${FERNET_KEY}
-      
-      # Database
+      SECRET_KEY: test-secret-key-change-me-in-production
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
       DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
-      
-      # Redis
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      
-      # MinIO
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
-      
-      # SSH
-      SSH_HOST_KEY_POLICY: ${SSH_HOST_KEY_POLICY:-auto_add}
+      SSH_HOST_KEY_POLICY: auto_add
     ports:
       - "8000:8000"
     networks:
@@ -97,41 +87,47 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    entrypoint: /bin/bash
     command: >
-      sh -c "
-        alembic upgrade head &&
-        uvicorn app.main:app --host 0.0.0.0 --port 8000
+      -c "
+      set -e &&
+      echo 'Installing system dependencies...' &&
+      apt-get update -qq && 
+      apt-get install -y -qq gcc postgresql-client git && 
+      echo 'Cloning repository...' &&
+      rm -rf /tmp/repo &&
+      git clone https://github.com/4stm4/testum.git /tmp/repo &&
+      cp -r /tmp/repo/* /app/ &&
+      echo 'Installing Python packages...' &&
+      pip install -q --no-cache-dir -r /app/requirements.txt && 
+      echo '=== Checking environment variables ===' &&
+      echo 'FERNET_KEY is set:' && if [ -z \"$$FERNET_KEY\" ]; then echo 'NO - FERNET_KEY is missing!'; exit 1; else echo 'YES'; fi &&
+      echo 'DATABASE_URL:' $$DATABASE_URL &&
+      echo 'Running database migrations...' &&
+      cd /app &&
+      alembic upgrade head && 
+      echo 'Starting application...' &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
   celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: testum-app:latest
+    image: python:3.11-slim
     container_name: testum_celery
     restart: unless-stopped
+    working_dir: /app
     environment:
-      # Application
       APP_ENV: production
-      FERNET_KEY: ${FERNET_KEY}
-      
-      # Database
+      FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
       DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
-      
-      # Redis
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      
-      # MinIO
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
-      
-      # SSH
-      SSH_HOST_KEY_POLICY: ${SSH_HOST_KEY_POLICY:-auto_add}
+      SSH_HOST_KEY_POLICY: auto_add
     networks:
       - testum_network
     depends_on:
@@ -139,26 +135,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
-
-  # Optional: Test SSH server for development/testing
-  # Uncomment if needed
-  # sshd_test:
-  #   image: linuxserver/openssh-server:latest
-  #   container_name: testum_sshd_test
-  #   restart: unless-stopped
-  #   environment:
-  #     PUID: 1000
-  #     PGID: 1000
-  #     PASSWORD_ACCESS: "true"
-  #     USER_PASSWORD: testpass
-  #     USER_NAME: testuser
-  #   ports:
-  #     - "2222:2222"
-  #   volumes:
-  #     - sshd_test_data:/config
-  #   networks:
-  #     - testum_network
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      set -e &&
+      echo 'Installing system dependencies...' &&
+      apt-get update -qq && 
+      apt-get install -y -qq gcc postgresql-client git && 
+      echo 'Cloning repository...' &&
+      rm -rf /tmp/repo &&
+      git clone https://github.com/4stm4/testum.git /tmp/repo &&
+      cp -r /tmp/repo/* /app/ &&
+      echo 'Installing Python packages...' &&
+      pip install -q --no-cache-dir -r /app/requirements.txt && 
+      echo 'Starting Celery worker...' &&
+      cd /app &&
+      celery -A app.celery_app worker --loglevel=info --concurrency=2
+      "
 
 networks:
   testum_network:
@@ -167,4 +160,3 @@ networks:
 volumes:
   postgres_data:
   minio_data:
-  # sshd_test_data:

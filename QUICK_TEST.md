@@ -16,8 +16,8 @@
    - Name: `testum`
    - Build method: **Web editor**
 
-3. **Скопируйте содержимое файла `docker-compose.portainer.yml`**
-   - Откройте: https://raw.githubusercontent.com/4stm4/testum/main/docker-compose.portainer.yml
+3. **Скопируйте содержимое файла `docker-compose.yml`**
+   - Откройте: https://raw.githubusercontent.com/4stm4/testum/main/docker-compose.yml
    - Скопируйте ВСЁ
    - Вставьте в Web editor
 
@@ -48,7 +48,7 @@ ADMIN_PASSWORD: admin123
 
 ## Для production
 
-Отредактируйте `docker-compose.portainer.yml` перед деплоем:
+Отредактируйте `docker-compose.yml` перед деплоем:
 - Измените `ADMIN_PASSWORD` на свой
 - Опционально: сгенерируйте новый `FERNET_KEY` и `SECRET_KEY`
 

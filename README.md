@@ -10,7 +10,7 @@
 ### Деплой в Portainer:
 
 1. Portainer → Stacks → Add stack → Web editor
-2. Скопируйте [`docker-compose.portainer.yml`](docker-compose.portainer.yml)
+2. Скопируйте [`docker-compose.yml`](docker-compose.yml)
 3. Deploy!
 4. Откройте http://ваш-сервер:8000 (admin / admin123)
 
