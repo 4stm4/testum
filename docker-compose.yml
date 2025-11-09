@@ -53,7 +53,10 @@ services:
       retries: 3
 
   app:
-    image: ghcr.io/4stm4/testum-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: testum-app:latest
     container_name: testum_app
     restart: unless-stopped
     environment:
@@ -101,8 +104,11 @@ services:
       "
 
   celery_worker:
-    image: ghcr.io/4stm4/testup-app:latest
-    container_name: testup_celery
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: testum-app:latest
+    container_name: testum_celery
     restart: unless-stopped
     environment:
       # Application
@@ -110,7 +116,7 @@ services:
       FERNET_KEY: ${FERNET_KEY}
       
       # Database
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/testup
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
       
       # Redis
       REDIS_URL: redis://redis:6379/0
@@ -121,13 +127,13 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: testup-artifacts
+      MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
       
       # SSH
       SSH_HOST_KEY_POLICY: ${SSH_HOST_KEY_POLICY:-auto_add}
     networks:
-      - testup_network
+      - testum_network
     depends_on:
       db:
         condition: service_healthy
