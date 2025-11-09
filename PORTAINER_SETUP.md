@@ -103,7 +103,7 @@ Portainer автоматически:
 
 - **Web UI**: http://ваш-сервер:8000
 - **API Docs**: http://ваш-сервер:8000/docs
-- **MinIO Console**: http://ваш-сервер:9001
+- **MinIO Console**: http://ваш-сервер:9011
 
 **Логин по умолчанию** (если использовали настройки выше):
 - Username: `admin`
@@ -112,6 +112,8 @@ Portainer автоматически:
 **MinIO** (для управления файлами):
 - Username: `minioadmin`
 - Password: `minioadmin`
+
+> **Примечание**: MinIO использует порты 9010 (API) и 9011 (Console) вместо стандартных 9000/9001, чтобы избежать конфликтов.
 
 ## Troubleshooting
 

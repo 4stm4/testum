@@ -41,6 +41,7 @@ SSH_HOST_KEY_POLICY=auto_add
 ## 7. Доступ
 
 - **Web UI**: http://ваш-сервер:8000
+- **MinIO Console**: http://ваш-сервер:9011
 - **Username**: admin
 - **Password**: your_secure_password
 
