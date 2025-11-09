@@ -2,7 +2,7 @@
 import logging
 from starlette.applications import Starlette
 from starlette.routing import Route, Mount, WebSocketRoute
-from starlette.responses import JSONResponse, HTMLResponse
+from starlette.responses import JSONResponse, HTMLResponse, RedirectResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from starlette.middleware import Middleware
@@ -15,6 +15,7 @@ from app.config import config
 from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
 from app.ws import task_stream_websocket
+from app.auth import AuthMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -35,7 +36,8 @@ middleware = [
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-    )
+    ),
+    Middleware(AuthMiddleware),
 ]
 
 
@@ -83,6 +85,11 @@ async def task_page(request: Request):
     return templates.TemplateResponse("task.html", {"request": request, "task_id": task_id})
 
 
+async def login_page(request: Request):
+    """Login page."""
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
 async def login_endpoint(request: Request):
     """Simple login endpoint."""
     data = await request.json()
@@ -100,6 +107,13 @@ async def login_endpoint(request: Request):
         return JSONResponse({"error": "Invalid credentials"}, status_code=401)
 
 
+async def logout_endpoint(request: Request):
+    """Logout endpoint - clears the cookie."""
+    response = RedirectResponse(url="/login", status_code=302)
+    response.delete_cookie("access_token")
+    return response
+
+
 async def health_check(request: Request):
     """Health check endpoint."""
     return JSONResponse({"status": "healthy", "timestamp": datetime.utcnow().isoformat()})
@@ -108,11 +122,13 @@ async def health_check(request: Request):
 # Create application
 routes = [
     Route("/", homepage),
+    Route("/login", login_page),
     Route("/keys", keys_page),
     Route("/platforms", platforms_page),
     Route("/tasks/{task_id}", task_page),
     Route("/health", health_check),
     Route("/api/auth/login", login_endpoint, methods=["POST"]),
+    Route("/api/auth/logout", logout_endpoint, methods=["GET", "POST"]),
     Mount("/api/keys", keys_router),
     Mount("/api/platforms", platforms_router),
     Mount("/api/tasks", tasks_router),

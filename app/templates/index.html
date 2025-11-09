@@ -46,6 +46,33 @@
             color: #a6adc8;
         }
         
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logout-btn {
+            background: #f38ba8;
+            color: #1e1e2e;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .logout-btn:hover {
+            background: #f28faf;
+            transform: translateY(-1px);
+        }
+        
         /* Main Layout */
         .main-layout {
             display: flex;
@@ -202,12 +229,17 @@
 </head>
 <body>
     <!-- Header -->
-    <div class="header">
+        <div class="header">
         <div class="logo">
             <span class="logo-icon">🔐</span>
-            <span>Testum</span>
+            Testum
         </div>
-        <span class="version">v0.1.0</span>
+        <div class="header-right">
+            <span class="version">v0.1.0</span>
+            <a href="/api/auth/logout" class="logout-btn">
+                <span>🚪</span> Logout
+            </a>
+        </div>
     </div>
     
     <!-- Main Layout -->
