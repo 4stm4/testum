@@ -1,7 +1,8 @@
 version: '3.8'
 
-# QUICK TEST VERSION - With hardcoded test credentials
-# DO NOT USE IN PRODUCTION! For testing only.
+# Testum Docker Compose Configuration
+# Ready for Portainer deployment with pre-configured environment variables
+# For production: change ADMIN_PASSWORD and optionally regenerate FERNET_KEY
 
 services:
   db:
