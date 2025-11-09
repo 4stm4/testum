@@ -90,12 +90,19 @@ services:
     entrypoint: /bin/bash
     command: >
       -c "
+      set -e &&
+      echo 'Installing system dependencies...' &&
       apt-get update -qq && 
       apt-get install -y -qq gcc postgresql-client git && 
+      echo 'Cloning repository...' &&
       git clone https://github.com/4stm4/testum.git /tmp/repo &&
       cp -r /tmp/repo/* /app/ &&
+      echo 'Installing Python packages...' &&
       pip install -q --no-cache-dir -r /app/requirements.txt && 
+      echo 'Running database migrations...' &&
+      cd /app &&
       alembic upgrade head && 
+      echo 'Starting application...' &&
       uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
@@ -127,11 +134,17 @@ services:
     entrypoint: /bin/bash
     command: >
       -c "
+      set -e &&
+      echo 'Installing system dependencies...' &&
       apt-get update -qq && 
       apt-get install -y -qq gcc postgresql-client git && 
+      echo 'Cloning repository...' &&
       git clone https://github.com/4stm4/testum.git /tmp/repo &&
       cp -r /tmp/repo/* /app/ &&
+      echo 'Installing Python packages...' &&
       pip install -q --no-cache-dir -r /app/requirements.txt && 
+      echo 'Starting Celery worker...' &&
+      cd /app &&
       celery -A app.celery_app worker --loglevel=info --concurrency=2
       "
 
