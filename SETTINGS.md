@@ -18,6 +18,38 @@
 - **Current Username** - текущий логин (извлекается из JWT токена)
 - **Account Type** - тип аккаунта (Administrator)
 
+### ⚙️ Application Settings (Read-Only)
+
+Показывает основные настройки приложения:
+- **Environment** - режим работы (production/development)
+- **Secret Key** - скрыт для безопасности
+- **Fernet Encryption Key** - скрыт, используется для шифрования credentials
+
+### 🗄️ Database Settings (Read-Only)
+
+Отображает конфигурацию подключений к базам данных:
+- **Database URL** - PostgreSQL connection string (пароли замаскированы)
+- **Redis URL** - Redis connection string (пароли замаскированы)
+
+### 📨 Task Queue Settings (Read-Only)
+
+Конфигурация Celery:
+- **Broker URL** - Redis broker для очереди задач
+- **Result Backend** - Redis backend для результатов
+
+### 📦 Storage Settings (Read-Only)
+
+Настройки MinIO S3-совместимого хранилища:
+- **MinIO Endpoint** - адрес сервера MinIO
+- **Bucket Name** - имя bucket для хранения артефактов
+- **Access Key** - скрыт для безопасности
+- **Secure Connection (TLS)** - использование TLS
+
+### 🔐 SSH Settings (Read-Only)
+
+Настройки SSH подключений:
+- **Host Key Policy** - политика проверки host keys (auto_add = TOFU)
+
 ### 🔄 Change Username
 
 Форма для изменения имени пользователя.
@@ -59,6 +91,31 @@
 **API Endpoint:** `POST /api/auth/change-password`
 
 ## API Endpoints
+
+### GET /api/settings
+
+Получение текущих системных настроек (без чувствительных данных).
+
+**Response (200 OK):**
+```json
+{
+  "app_env": "production",
+  "admin_username": "admin",
+  "database_url": "postgresql://postgres:••••••@db:5432/testum",
+  "redis_url": "redis://••••••@redis:6379/0",
+  "celery_broker_url": "redis://••••••@redis:6379/0",
+  "celery_result_backend": "redis://••••••@redis:6379/0",
+  "minio_endpoint": "minio:9000",
+  "minio_bucket": "testum-artifacts",
+  "minio_secure": false,
+  "ssh_host_key_policy": "auto_add"
+}
+```
+
+**Примечания:**
+- Пароли в connection strings автоматически маскируются
+- Access/Secret keys не возвращаются в ответе
+- Требуется авторизация
 
 ### POST /api/auth/change-username
 
