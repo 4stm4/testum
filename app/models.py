@@ -53,7 +53,7 @@ class Platform(Base):
     host = Column(String(255), nullable=False)
     port = Column(Integer, default=22, nullable=False)
     username = Column(String(255), nullable=False)
-    auth_method = Column(Enum(AuthMethodEnum), nullable=False)
+    auth_method = Column(Enum(AuthMethodEnum, values_callable=lambda x: [e.value for e in x]), nullable=False)
     
     # Encrypted credentials
     encrypted_password = Column(LargeBinary, nullable=True)
