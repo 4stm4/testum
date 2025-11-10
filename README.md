@@ -1,7 +1,7 @@
 # testum - Remote SSH Execution Platform
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![Python](https://img.shields.io/badge/python-3.13-blue)
+![Python](https://img.shields.io/badge/python-3.12-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Платформа для удаленного выполнения команд и кода на SSH-хостах**

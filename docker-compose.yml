@@ -57,7 +57,7 @@ services:
       retries: 3
 
   app:
-    image: python:3.13-slim
+    image: python:3.12-slim
     container_name: testum_app
     restart: unless-stopped
     working_dir: /app
@@ -112,7 +112,7 @@ services:
       "
 
   celery_worker:
-    image: python:3.13-slim
+    image: python:3.12-slim
     container_name: testum_celery
     restart: unless-stopped
     working_dir: /app
