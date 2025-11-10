@@ -73,8 +73,8 @@ open http://localhost:8000
 ```
 
 **Доступы по умолчанию:**
-- Web UI: admin / admin123
-- MinIO Console: http://localhost:9001 (minioadmin / minioadmin)
+- Web UI: http://localhost:8000 (admin / admin123)
+- MinIO Console: http://localhost:9011 (minioadmin / minioadmin)
 
 ## 📖 Использование
 
