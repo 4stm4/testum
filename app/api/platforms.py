@@ -1,5 +1,6 @@
 """Platforms API endpoints."""
 import uuid
+import logging
 from typing import List, Optional
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -19,6 +20,8 @@ from app.schemas import (
 from app.crypto import crypto
 from app.audit import log_audit
 from app.tasks import deploy_keys_task, run_command_task
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -44,7 +47,9 @@ async def create_platform(request: Request):
     db: Session = next(get_db())
     try:
         data = await request.json()
+        logger.info(f"Received platform data: {data}")
         platform_data = PlatformCreate(**data)
+        logger.info(f"Parsed platform_data.auth_method: {platform_data.auth_method}")
 
         # Validate auth method and credentials
         if platform_data.auth_method == "password" and not platform_data.password:
@@ -64,7 +69,7 @@ async def create_platform(request: Request):
             host=platform_data.host,
             port=platform_data.port,
             username=platform_data.username,
-            auth_method=platform_data.auth_method,
+            auth_method=platform_data.auth_method.lower(),
             encrypted_password=encrypted_password,
             ssh_key_id=platform_data.ssh_key_id,
         )
