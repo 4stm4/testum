@@ -283,6 +283,97 @@ async def get_task_status(request: Request):
         db.close()
 
 
+async def get_platform_info(request: Request):
+    """Get system information from platform."""
+    platform_id = request.path_params["platform_id"]
+    db: Session = next(get_db())
+    
+    try:
+        platform = db.query(Platform).filter(Platform.id == platform_id).first()
+        if not platform:
+            return JSONResponse({"error": "Platform not found"}, status_code=404)
+        
+        # Decrypt credentials
+        from app import crypto
+        password = None
+        private_key = None
+        
+        if platform.auth_method.value == "password" and platform.encrypted_password:
+            password = crypto.decrypt_string(platform.encrypted_password)
+        elif platform.auth_method.value == "private_key":
+            if platform.ssh_key_id:
+                ssh_key = db.query(SSHKey).filter(SSHKey.id == platform.ssh_key_id).first()
+                if ssh_key and ssh_key.encrypted_private_key:
+                    private_key = crypto.decrypt_string(ssh_key.encrypted_private_key)
+            elif platform.encrypted_private_key:
+                private_key = crypto.decrypt_string(platform.encrypted_private_key)
+        
+        # Connect and gather info
+        from app.ssh_helper import SSHHelper
+        ssh = SSHHelper(
+            host=platform.host,
+            port=platform.port,
+            username=platform.username,
+            password=password,
+            private_key=private_key,
+        )
+        
+        info = {}
+        
+        try:
+            ssh.connect()
+            
+            # Get OS info
+            os_release = ssh.execute_command("cat /etc/os-release 2>/dev/null || cat /etc/redhat-release 2>/dev/null || echo 'Unknown'")
+            info["os_release"] = os_release.strip()
+            
+            # Get hostname
+            hostname = ssh.execute_command("hostname")
+            info["hostname"] = hostname.strip()
+            
+            # Get uptime
+            uptime = ssh.execute_command("uptime -p 2>/dev/null || uptime")
+            info["uptime"] = uptime.strip()
+            
+            # Get kernel
+            kernel = ssh.execute_command("uname -r")
+            info["kernel"] = kernel.strip()
+            
+            # Get CPU info
+            cpu_info = ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
+            cpu_cores = ssh.execute_command("nproc")
+            info["cpu"] = f"{cpu_info.strip()} ({cpu_cores.strip()} cores)"
+            
+            # Get memory
+            mem_info = ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used, \"$4\" free\"}'")
+            info["memory"] = mem_info.strip()
+            
+            # Get disk
+            disk_info = ssh.execute_command("df -h / | tail -1 | awk '{print $2\" total, \"$3\" used, \"$4\" free, \"$5\" used%\"}'")
+            info["disk"] = disk_info.strip()
+            
+            # Get load average
+            load_avg = ssh.execute_command("cat /proc/loadavg | awk '{print $1\" \"$2\" \"$3}'")
+            info["load_average"] = load_avg.strip()
+            
+            info["status"] = "online"
+            
+        except Exception as e:
+            logger.error(f"Failed to gather info from {platform.host}: {e}")
+            info["status"] = "offline"
+            info["error"] = str(e)
+        finally:
+            ssh.disconnect()
+        
+        return JSONResponse(info)
+        
+    except Exception as e:
+        logger.error(f"Error getting platform info: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+    finally:
+        db.close()
+
+
 # Routes
 routes = [
     Route("/", list_platforms, methods=["GET"]),
@@ -291,6 +382,7 @@ routes = [
     Route("/{platform_id:uuid}", delete_platform, methods=["DELETE"]),
     Route("/{platform_id:uuid}/deploy_keys", deploy_keys, methods=["POST"]),
     Route("/{platform_id:uuid}/run_command", run_command, methods=["POST"]),
+    Route("/{platform_id:uuid}/info", get_platform_info, methods=["GET"]),
 ]
 
 platforms_router = Router(routes=routes)

@@ -397,7 +397,7 @@
         }
         
         // Render platforms list
-        function renderPlatforms(platforms) {
+        async function renderPlatforms(platforms) {
             const container = document.getElementById('platformsList');
             
             if (platforms.length === 0) {
@@ -413,8 +413,9 @@
                 return;
             }
             
+            // Show platforms first, then load info asynchronously
             container.innerHTML = platforms.slice(0, 5).map(p => `
-                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <div id="platform-${p.id}" style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
                         <div>
                             <div style="font-size: 18px; font-weight: 600; margin-bottom: 5px;">${p.name}</div>
@@ -431,11 +432,78 @@
                         </div>
                         <div>
                             <div style="color: var(--text-secondary);">Status</div>
-                            <div style="color: var(--success-color); font-weight: 500;">● Online</div>
+                            <div id="status-${p.id}" style="color: var(--text-secondary);">⏳ Loading...</div>
                         </div>
+                    </div>
+                    <div id="info-${p.id}" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); font-size: 12px; display: none;">
+                        <!-- System info will be loaded here -->
                     </div>
                 </div>
             `).join('');
+            
+            // Load system info for each platform
+            platforms.slice(0, 5).forEach(async (p) => {
+                try {
+                    const response = await fetch(`/api/platforms/${p.id}/info`);
+                    if (response.ok) {
+                        const info = await response.json();
+                        updatePlatformInfo(p.id, info);
+                    } else {
+                        document.getElementById(`status-${p.id}`).innerHTML = '<span style="color: var(--error-color);">● Offline</span>';
+                    }
+                } catch (error) {
+                    document.getElementById(`status-${p.id}`).innerHTML = '<span style="color: var(--error-color);">● Error</span>';
+                }
+            });
+        }
+        
+        function updatePlatformInfo(platformId, info) {
+            const statusEl = document.getElementById(`status-${platformId}`);
+            const infoEl = document.getElementById(`info-${platformId}`);
+            
+            if (info.status === 'online') {
+                statusEl.innerHTML = '<span style="color: var(--success-color); font-weight: 500;">● Online</span>';
+                
+                // Parse OS info
+                let osName = 'Unknown OS';
+                if (info.os_release) {
+                    const match = info.os_release.match(/PRETTY_NAME="([^"]+)"/);
+                    if (match) osName = match[1];
+                    else osName = info.os_release.split('\n')[0];
+                }
+                
+                infoEl.style.display = 'grid';
+                infoEl.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
+                infoEl.style.gap = '10px';
+                infoEl.innerHTML = `
+                    <div>
+                        <div style="color: var(--text-secondary); margin-bottom: 3px;">OS</div>
+                        <div style="font-weight: 500;">${osName}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary); margin-bottom: 3px;">Kernel</div>
+                        <div style="font-weight: 500;">${info.kernel || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary); margin-bottom: 3px;">CPU</div>
+                        <div style="font-weight: 500;">${info.cpu || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary); margin-bottom: 3px;">Memory</div>
+                        <div style="font-weight: 500;">${info.memory || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary); margin-bottom: 3px;">Disk</div>
+                        <div style="font-weight: 500;">${info.disk || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary); margin-bottom: 3px;">Uptime</div>
+                        <div style="font-weight: 500;">${info.uptime || 'N/A'}</div>
+                    </div>
+                `;
+            } else {
+                statusEl.innerHTML = '<span style="color: var(--error-color);">● Offline</span>';
+            }
         }
         
         // Load stats on page load
