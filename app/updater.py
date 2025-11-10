@@ -9,7 +9,7 @@ from packaging import version
 logger = logging.getLogger(__name__)
 
 # Current version
-CURRENT_VERSION = "0.1.1"
+CURRENT_VERSION = "0.1.2"
 
 # GitHub repository
 GITHUB_OWNER = "4stm4"
