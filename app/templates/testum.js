@@ -62,9 +62,11 @@ const translations = {
         platformsDescription: 'Configure target SSH hosts',
         tasksCard: 'Tasks',
         tasksDescription: 'Monitor running tasks',
+        healthCheckCard: 'System Status',
+        healthCheckDescription: 'Monitor system health and performance',
         statsTitle: 'Statistics',
-        totalKeys: 'Total Keys',
-        totalPlatforms: 'Total Platforms',
+        totalKeys: 'SSH Keys',
+        totalPlatforms: 'Platforms',
         activeTasks: 'Active Tasks',
         
         // SSH Keys Page
@@ -191,10 +193,12 @@ const translations = {
         platformsDescription: 'Настройка целевых SSH хостов',
         tasksCard: 'Задачи',
         tasksDescription: 'Мониторинг выполняемых задач',
+        healthCheckCard: 'Статус системы',
+        healthCheckDescription: 'Мониторинг состояния и производительности системы',
         statsTitle: 'Статистика',
-        totalKeys: 'Всего ключей',
-        totalPlatforms: 'Всего платформ',
-        activeTasks: 'Активных задач',
+        totalKeys: 'SSH Ключи',
+        totalPlatforms: 'Платформы',
+        activeTasks: 'Активные задачи',
         
         // SSH Keys Page
         sshKeysTitle: 'SSH Ключи',
