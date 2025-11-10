@@ -340,7 +340,7 @@
     </div>
 
     <script>
-        const API_BASE = '/api/platforms/';
+        const API_BASE = '/api/platforms';
 
         function showMessage(text, type = 'success') {
             const msg = document.getElementById('message');
@@ -380,7 +380,7 @@
 
         async function loadPlatforms() {
             try {
-                const response = await fetch(API_BASE);
+                const response = await fetch(API_BASE + '/');
                 const platforms = await response.json();
                 const container = document.getElementById('platformsList');
                 
@@ -495,7 +495,7 @@
             }
 
             try {
-                const response = await fetch(API_BASE, {
+                const response = await fetch(API_BASE + '/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData),
