@@ -96,9 +96,9 @@ services:
       apt-get update -qq && 
       apt-get install -y -qq gcc libpq-dev postgresql-client git && 
       echo 'Cloning repository...' &&
-      rm -rf /tmp/repo &&
-      git clone https://github.com/4stm4/testum.git /tmp/repo &&
-      cp -r /tmp/repo/* /app/ &&
+      git clone https://github.com/4stm4/testum.git /app &&
+      cd /app &&
+      git config --global --add safe.directory /app &&
       echo 'Installing Python packages...' &&
       pip install -q --no-cache-dir -r /app/requirements.txt && 
       echo '=== Checking environment variables ===' &&
@@ -144,9 +144,9 @@ services:
       apt-get update -qq && 
       apt-get install -y -qq gcc libpq-dev postgresql-client git && 
       echo 'Cloning repository...' &&
-      rm -rf /tmp/repo &&
-      git clone https://github.com/4stm4/testum.git /tmp/repo &&
-      cp -r /tmp/repo/* /app/ &&
+      git clone https://github.com/4stm4/testum.git /app &&
+      cd /app &&
+      git config --global --add safe.directory /app &&
       echo 'Installing Python packages...' &&
       pip install -q --no-cache-dir -r /app/requirements.txt && 
       echo 'Starting Celery worker...' &&
