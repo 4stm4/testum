@@ -10,6 +10,7 @@ class SSHKeyCreate(BaseModel):
     """Schema for creating SSH key."""
     name: str = Field(..., min_length=1, max_length=255)
     public_key: str = Field(..., min_length=1)
+    private_key: Optional[str] = None  # Optional: encrypted and stored for authentication
 
 
 class SSHKeyResponse(BaseModel):
@@ -17,6 +18,7 @@ class SSHKeyResponse(BaseModel):
     id: UUID
     name: str
     public_key: str
+    has_private_key: bool = False  # Indicator if private key is stored
     created_by: Optional[str]
     created_at: datetime
 
@@ -33,7 +35,7 @@ class PlatformCreate(BaseModel):
     username: str = Field(..., min_length=1, max_length=255)
     auth_method: str = Field(..., pattern="^(password|private_key)$")
     password: Optional[str] = None
-    private_key: Optional[str] = None
+    ssh_key_id: Optional[UUID] = None  # Reference to SSHKey for private_key auth
 
 
 class PlatformUpdate(BaseModel):
@@ -44,7 +46,7 @@ class PlatformUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=1, max_length=255)
     auth_method: Optional[str] = Field(None, pattern="^(password|private_key)$")
     password: Optional[str] = None
-    private_key: Optional[str] = None
+    ssh_key_id: Optional[UUID] = None
 
 
 class PlatformResponse(BaseModel):

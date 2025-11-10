@@ -140,8 +140,15 @@ def deploy_keys_task(self, task_run_id: str, platform_id: str, key_ids: Optional
         private_key = None
         if platform.auth_method.value == "password" and platform.encrypted_password:
             password = crypto.decrypt_string(platform.encrypted_password)
-        elif platform.auth_method.value == "private_key" and platform.encrypted_private_key:
-            private_key = crypto.decrypt_string(platform.encrypted_private_key)
+        elif platform.auth_method.value == "private_key":
+            # Get private key from SSHKey reference
+            if platform.ssh_key_id:
+                ssh_key = db.query(SSHKey).filter(SSHKey.id == platform.ssh_key_id).first()
+                if ssh_key and ssh_key.encrypted_private_key:
+                    private_key = crypto.decrypt_string(ssh_key.encrypted_private_key)
+            elif platform.encrypted_private_key:
+                # Legacy: use encrypted_private_key directly
+                private_key = crypto.decrypt_string(platform.encrypted_private_key)
 
         # Get keys to deploy
         if key_ids:
@@ -261,8 +268,15 @@ def run_command_task(self, task_run_id: str, platform_id: str, command: str, tim
         private_key = None
         if platform.auth_method.value == "password" and platform.encrypted_password:
             password = crypto.decrypt_string(platform.encrypted_password)
-        elif platform.auth_method.value == "private_key" and platform.encrypted_private_key:
-            private_key = crypto.decrypt_string(platform.encrypted_private_key)
+        elif platform.auth_method.value == "private_key":
+            # Get private key from SSHKey reference
+            if platform.ssh_key_id:
+                ssh_key = db.query(SSHKey).filter(SSHKey.id == platform.ssh_key_id).first()
+                if ssh_key and ssh_key.encrypted_private_key:
+                    private_key = crypto.decrypt_string(ssh_key.encrypted_private_key)
+            elif platform.encrypted_private_key:
+                # Legacy: use encrypted_private_key directly
+                private_key = crypto.decrypt_string(platform.encrypted_private_key)
 
         # Connect via SSH
         ssh = SSHHelper(

@@ -30,12 +30,13 @@ class TaskStatusEnum(str, enum.Enum):
 
 
 class SSHKey(Base):
-    """SSH public key model."""
+    """SSH key pair model."""
     __tablename__ = "ssh_keys"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False, index=True)
     public_key = Column(Text, nullable=False)
+    encrypted_private_key = Column(LargeBinary, nullable=True)  # Encrypted private key for authentication
     created_by = Column(String(255), nullable=True)  # For future user system
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -56,7 +57,10 @@ class Platform(Base):
     
     # Encrypted credentials
     encrypted_password = Column(LargeBinary, nullable=True)
-    encrypted_private_key = Column(LargeBinary, nullable=True)
+    encrypted_private_key = Column(LargeBinary, nullable=True)  # Legacy, use ssh_key_id instead
+    
+    # SSH Key reference (for private_key auth method)
+    ssh_key_id = Column(UUID(as_uuid=True), ForeignKey("ssh_keys.id"), nullable=True)
     
     # Host key fingerprint for verification
     known_host_fingerprint = Column(String(255), nullable=True)
@@ -64,6 +68,7 @@ class Platform(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
+    ssh_key = relationship("SSHKey")
     task_runs = relationship("TaskRun", back_populates="platform")
 
     def __repr__(self):

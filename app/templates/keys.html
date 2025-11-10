@@ -292,6 +292,11 @@
                         <label for="public_key" data-i18n="publicKey">Public Key</label>
                         <textarea id="public_key" name="public_key" required placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..."></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="private_key" data-i18n="privateKeyOptional">Private Key (Optional, for platform authentication)</label>
+                        <textarea id="private_key" name="private_key" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>
+                        <small style="color: var(--text-secondary);" data-i18n="privateKeyNote">If provided, this key can be used to authenticate to platforms</small>
+                    </div>
                     <button type="submit" data-i18n="addKey">+ Add Key</button>
                 </form>
             </div>
@@ -370,6 +375,12 @@
                 name: document.getElementById('name').value,
                 public_key: document.getElementById('public_key').value,
             };
+
+            // Add private key if provided
+            const privateKey = document.getElementById('private_key').value.trim();
+            if (privateKey) {
+                formData.private_key = privateKey;
+            }
 
             try {
                 const response = await fetch(API_BASE, {

@@ -49,16 +49,13 @@ async def create_platform(request: Request):
         # Validate auth method and credentials
         if platform_data.auth_method == "password" and not platform_data.password:
             return JSONResponse({"error": "Password required for password auth"}, status_code=400)
-        if platform_data.auth_method == "private_key" and not platform_data.private_key:
-            return JSONResponse({"error": "Private key required for private_key auth"}, status_code=400)
+        if platform_data.auth_method == "private_key" and not platform_data.ssh_key_id:
+            return JSONResponse({"error": "SSH Key required for private_key auth"}, status_code=400)
 
-        # Encrypt credentials
+        # Encrypt password if provided
         encrypted_password = None
-        encrypted_private_key = None
         if platform_data.password:
             encrypted_password = crypto.encrypt_string(platform_data.password)
-        if platform_data.private_key:
-            encrypted_private_key = crypto.encrypt_string(platform_data.private_key)
 
         # Create platform
         new_platform = Platform(
@@ -69,7 +66,7 @@ async def create_platform(request: Request):
             username=platform_data.username,
             auth_method=platform_data.auth_method,
             encrypted_password=encrypted_password,
-            encrypted_private_key=encrypted_private_key,
+            ssh_key_id=platform_data.ssh_key_id,
         )
 
         db.add(new_platform)
@@ -88,7 +85,7 @@ async def create_platform(request: Request):
 
         response_data = PlatformResponse.model_validate(new_platform).model_dump(mode="json")
         response_data["has_password"] = new_platform.encrypted_password is not None
-        response_data["has_private_key"] = new_platform.encrypted_private_key is not None
+        response_data["has_private_key"] = new_platform.ssh_key_id is not None
 
         return JSONResponse(response_data, status_code=201)
     except Exception as e:

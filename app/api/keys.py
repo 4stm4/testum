@@ -10,6 +10,7 @@ from app.db import get_db
 from app.models import SSHKey
 from app.schemas import SSHKeyCreate, SSHKeyResponse, MessageResponse
 from app.audit import log_audit
+from app import crypto
 
 router = Router()
 
@@ -19,7 +20,12 @@ async def list_keys(request: Request):
     db: Session = next(get_db())
     try:
         keys = db.query(SSHKey).all()
-        return JSONResponse([SSHKeyResponse.model_validate(key).model_dump(mode="json") for key in keys])
+        result = []
+        for key in keys:
+            key_dict = SSHKeyResponse.model_validate(key).model_dump(mode="json")
+            key_dict["has_private_key"] = key.encrypted_private_key is not None
+            result.append(key_dict)
+        return JSONResponse(result)
     finally:
         db.close()
 
@@ -31,11 +37,17 @@ async def create_key(request: Request):
         data = await request.json()
         key_data = SSHKeyCreate(**data)
 
+        # Encrypt private key if provided
+        encrypted_private_key = None
+        if key_data.private_key:
+            encrypted_private_key = crypto.encrypt_string(key_data.private_key)
+
         # Create key
         new_key = SSHKey(
             id=uuid.uuid4(),
             name=key_data.name,
             public_key=key_data.public_key,
+            encrypted_private_key=encrypted_private_key,
             created_by=request.state.user if hasattr(request.state, "user") else "admin",
         )
 

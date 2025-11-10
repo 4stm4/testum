@@ -322,9 +322,11 @@
                         <label for="password" data-i18n="password">Password</label>
                         <input type="password" id="password" name="password" placeholder="Enter password">
                     </div>
-                    <div class="form-group conditional" id="private_key_field">
-                        <label for="private_key" data-i18n="privateKey">Private Key</label>
-                        <textarea id="private_key" name="private_key" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>
+                    <div class="form-group conditional" id="ssh_key_field">
+                        <label for="ssh_key_id" data-i18n="sshKey">SSH Key</label>
+                        <select id="ssh_key_id" name="ssh_key_id">
+                            <option value="">Select SSH Key...</option>
+                        </select>
                     </div>
                     <button type="submit" data-i18n="addPlatform">+ Add Platform</button>
                 </form>
@@ -350,9 +352,31 @@
         document.getElementById('auth_method').addEventListener('change', (e) => {
             const method = e.target.value;
             document.getElementById('password_field').style.display = method === 'password' ? 'block' : 'none';
-            document.getElementById('private_key_field').style.display = method === 'private_key' ? 'block' : 'none';
+            document.getElementById('ssh_key_field').style.display = method === 'private_key' ? 'block' : 'none';
         });
         document.getElementById('auth_method').dispatchEvent(new Event('change'));
+
+        // Load SSH keys for dropdown
+        async function loadSSHKeys() {
+            try {
+                const response = await fetch('/api/keys');
+                const keys = await response.json();
+                const select = document.getElementById('ssh_key_id');
+                
+                // Keep the default option
+                select.innerHTML = '<option value="">Select SSH Key...</option>';
+                
+                // Add SSH keys
+                keys.forEach(key => {
+                    const option = document.createElement('option');
+                    option.value = key.id;
+                    option.textContent = key.name;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error('Failed to load SSH keys:', err);
+            }
+        }
 
         async function loadPlatforms() {
             try {
@@ -467,7 +491,7 @@
             if (formData.auth_method === 'password') {
                 formData.password = document.getElementById('password').value;
             } else {
-                formData.private_key = document.getElementById('private_key').value;
+                formData.ssh_key_id = document.getElementById('ssh_key_id').value;
             }
 
             try {
@@ -491,6 +515,7 @@
             }
         });
 
+        loadSSHKeys();
         loadPlatforms();
     </script>
     <script src="/static/testum.js"></script>
