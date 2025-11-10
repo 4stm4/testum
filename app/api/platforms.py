@@ -7,7 +7,7 @@ from starlette.routing import Router, Route
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import Platform, TaskRun, TaskTypeEnum, TaskStatusEnum, SSHKey, AuthMethodEnum
+from app.models import Platform, TaskRun, TaskTypeEnum, TaskStatusEnum, SSHKey
 from app.schemas import (
     PlatformCreate,
     PlatformResponse,
@@ -67,7 +67,7 @@ async def create_platform(request: Request):
             host=platform_data.host,
             port=platform_data.port,
             username=platform_data.username,
-            auth_method=AuthMethodEnum(platform_data.auth_method),
+            auth_method=platform_data.auth_method,
             encrypted_password=encrypted_password,
             encrypted_private_key=encrypted_private_key,
         )
