@@ -282,22 +282,22 @@
             <div id="message"></div>
             
             <div class="card">
-                <h2>Add New Key</h2>
+                <h2 data-i18n="addNewKey">Add New Key</h2>
                 <form id="keyForm">
                     <div class="form-group">
-                        <label for="name">Key Name</label>
+                        <label for="name" data-i18n="keyName">Key Name</label>
                         <input type="text" id="name" name="name" required placeholder="e.g., production-key">
                     </div>
                     <div class="form-group">
-                        <label for="public_key">Public Key</label>
+                        <label for="public_key" data-i18n="publicKey">Public Key</label>
                         <textarea id="public_key" name="public_key" required placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..."></textarea>
                     </div>
-                    <button type="submit">+ Add Key</button>
+                    <button type="submit" data-i18n="addKey">+ Add Key</button>
                 </form>
             </div>
 
             <div class="card">
-                <h2>Existing Keys</h2>
+                <h2 data-i18n="existingKeys">Existing Keys</h2>
                 <div id="keysList"></div>
             </div>
         </div>
@@ -319,7 +319,10 @@
                 const container = document.getElementById('keysList');
                 
                 if (keys.length === 0) {
-                    container.innerHTML = '<div class="empty-state">No SSH keys found. Add your first key above.</div>';
+                    container.innerHTML = '<div class="empty-state" data-i18n="noKeysFound">No SSH keys found. Add your first key above.</div>';
+                    if (typeof applyTranslations === 'function') {
+                        applyTranslations();
+                    }
                     return;
                 }
 
@@ -328,11 +331,15 @@
                         <div class="key-info">
                             <h3>${key.name}</h3>
                             <p>${key.public_key.substring(0, 80)}...</p>
-                            <small>Created: ${new Date(key.created_at).toLocaleString()}</small>
+                            <small><span data-i18n="created">Created:</span> ${new Date(key.created_at).toLocaleString()}</small>
                         </div>
-                        <button class="delete-btn" onclick="deleteKey('${key.id}')">🗑️ Delete</button>
+                        <button class="delete-btn" onclick="deleteKey('${key.id}')" data-i18n="delete">🗑️ Delete</button>
                     </div>
                 `).join('');
+                // Apply translations to dynamically created elements
+                if (typeof applyTranslations === 'function') {
+                    applyTranslations();
+                }
             } catch (error) {
                 showMessage('Failed to load keys: ' + error.message, 'error');
             }
