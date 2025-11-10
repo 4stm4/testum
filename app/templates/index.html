@@ -352,11 +352,96 @@
                 </div>
             </div>
             
+            <!-- Platforms List -->
+            <div style="margin-top: 40px;">
+                <h2 style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+                    <span data-i18n="connectedPlatforms">Connected Platforms</span>
+                    <a href="/platforms" style="font-size: 14px; color: var(--accent-primary); text-decoration: none;">
+                        <span data-i18n="viewAll">View All</span> →
+                    </a>
+                </h2>
+                <div id="platformsList" style="display: grid; gap: 15px;"></div>
+            </div>
+            
             <div class="footer">
                 Built with Starlette & Celery | Remote SSH Execution Platform
             </div>
         </div>
     </div>
+    
+    <script>
+        // Load dashboard statistics
+        async function loadStats() {
+            try {
+                // Load platforms count and list
+                const platformsResponse = await fetch('/api/platforms/');
+                if (platformsResponse.ok) {
+                    const platforms = await platformsResponse.json();
+                    document.querySelectorAll('.stat-card')[1].querySelector('.stat-value').textContent = platforms.length;
+                    renderPlatforms(platforms);
+                }
+                
+                // Load SSH keys count
+                const keysResponse = await fetch('/api/keys/');
+                if (keysResponse.ok) {
+                    const keys = await keysResponse.json();
+                    document.querySelectorAll('.stat-card')[0].querySelector('.stat-value').textContent = keys.length;
+                }
+                
+                // Active tasks - placeholder for now
+                document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = '0';
+                
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+        
+        // Render platforms list
+        function renderPlatforms(platforms) {
+            const container = document.getElementById('platformsList');
+            
+            if (platforms.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <div style="font-size: 48px; margin-bottom: 10px;">🖥️</div>
+                        <div data-i18n="noPlatforms">No platforms configured yet</div>
+                        <a href="/platforms" style="color: var(--accent-primary); text-decoration: none; margin-top: 10px; display: inline-block;">
+                            <span data-i18n="addFirstPlatform">Add your first platform</span> →
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = platforms.slice(0, 5).map(p => `
+                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <div>
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 5px;">${p.name}</div>
+                            <div style="color: var(--text-secondary); font-size: 14px;">${p.host}:${p.port}</div>
+                        </div>
+                        <div style="background: var(--accent-primary); color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
+                            ${p.auth_method === 'password' ? '🔑 Password' : '🔐 SSH Key'}
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px; font-size: 13px;">
+                        <div>
+                            <div style="color: var(--text-secondary);">Username</div>
+                            <div style="font-weight: 500;">${p.username}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary);">Status</div>
+                            <div style="color: var(--success-color); font-weight: 500;">● Online</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Load stats on page load
+        document.addEventListener('DOMContentLoaded', loadStats);
+    </script>
+    
     <script src="/static/testum.js"></script>
 </body>
 </html>

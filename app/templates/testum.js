@@ -68,6 +68,10 @@ const translations = {
         totalKeys: 'SSH Keys',
         totalPlatforms: 'Platforms',
         activeTasks: 'Active Tasks',
+        connectedPlatforms: 'Connected Platforms',
+        viewAll: 'View All',
+        noPlatforms: 'No platforms configured yet',
+        addFirstPlatform: 'Add your first platform',
         
         // SSH Keys Page
         sshKeysTitle: 'SSH Keys',
@@ -202,6 +206,10 @@ const translations = {
         totalKeys: 'SSH Ключи',
         totalPlatforms: 'Платформы',
         activeTasks: 'Активные задачи',
+        connectedPlatforms: 'Подключенные платформы',
+        viewAll: 'Показать все',
+        noPlatforms: 'Платформы ещё не настроены',
+        addFirstPlatform: 'Добавить первую платформу',
         
         // SSH Keys Page
         sshKeysTitle: 'SSH Ключи',
