@@ -173,6 +173,36 @@
             background: #7aa2f7;
             transform: translateY(-1px);
         }
+        .bulk-actions {
+            background: #181825;
+            border: 1px solid #313244;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .bulk-actions-label {
+            color: #a6adc8;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .bulk-actions button {
+            padding: 8px 16px;
+            font-size: 0.85em;
+        }
+        .bulk-actions button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .select-all-btn {
+            background: #313244;
+            color: #89b4fa;
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
         .platform-item {
             background: #1e1e2e;
             padding: 20px;
@@ -180,9 +210,22 @@
             margin-bottom: 15px;
             border: 1px solid #313244;
             transition: border-color 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
         }
         .platform-item:hover {
             border-color: #89b4fa;
+        }
+        .platform-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #89b4fa;
+            margin-top: 2px;
+        }
+        .platform-content {
+            flex: 1;
         }
         .platform-info h3 {
             color: #cdd6f4;
@@ -337,6 +380,14 @@
 
             <div class="card">
                 <h2 data-i18n="existingPlatforms">Existing Platforms</h2>
+                
+                <div id="bulkActionsPanel" class="bulk-actions" style="display: none;">
+                    <span class="bulk-actions-label">Selected: <strong id="selectedCount">0</strong></span>
+                    <button class="select-all-btn" onclick="toggleSelectAll()">Select All / None</button>
+                    <button class="deploy-btn" onclick="bulkDeployKeys()" id="bulkDeployBtn" disabled>🚀 Deploy Keys to Selected</button>
+                    <button class="deploy-btn" onclick="bulkRunCommand()" id="bulkRunBtn" disabled>⚡ Run Command on Selected</button>
+                </div>
+                
                 <div id="platformsList"></div>
             </div>
         </div>
@@ -392,29 +443,144 @@
                     return;
                 }
 
+                // Show bulk actions panel if there are platforms
+                document.getElementById('bulkActionsPanel').style.display = platforms.length > 0 ? 'flex' : 'none';
+
                 container.innerHTML = platforms.map(p => `
                     <div class="platform-item">
-                        <div class="platform-info">
-                            <h3>${p.name}</h3>
-                            <p><strong data-i18n="host">Host:</strong> ${p.host}:${p.port}</p>
-                            <p><strong data-i18n="username">Username:</strong> ${p.username}</p>
-                            <p><strong>Auth:</strong> ${p.auth_method}</p>
-                            <p><strong data-i18n="created">Created:</strong> ${new Date(p.created_at).toLocaleString()}</p>
-                        </div>
-                        <div class="platform-actions">
-                            <button class="deploy-btn" onclick="deployKeys('${p.id}')" data-i18n="deployKeys">🚀 Deploy Keys</button>
-                            <button class="deploy-btn" onclick="runCommand('${p.id}')" data-i18n="runCommand">⚡ Run Command</button>
-                            <button class="delete-btn" onclick="deletePlatform('${p.id}')" data-i18n="delete">🗑️ Delete</button>
+                        <input type="checkbox" class="platform-checkbox" data-platform-id="${p.id}" onchange="updateBulkActions()">
+                        <div class="platform-content">
+                            <div class="platform-info">
+                                <h3>${p.name}</h3>
+                                <p><strong data-i18n="host">Host:</strong> ${p.host}:${p.port}</p>
+                                <p><strong data-i18n="username">Username:</strong> ${p.username}</p>
+                                <p><strong>Auth:</strong> ${p.auth_method}</p>
+                                <p><strong data-i18n="created">Created:</strong> ${new Date(p.created_at).toLocaleString()}</p>
+                            </div>
+                            <div class="platform-actions">
+                                <button class="deploy-btn" onclick="deployKeys('${p.id}')" data-i18n="deployKeys">🚀 Deploy Keys</button>
+                                <button class="deploy-btn" onclick="runCommand('${p.id}')" data-i18n="runCommand">⚡ Run Command</button>
+                                <button class="delete-btn" onclick="deletePlatform('${p.id}')" data-i18n="delete">🗑️ Delete</button>
+                            </div>
                         </div>
                     </div>
                 `).join('');
+                
                 // Apply translations to dynamically created elements
                 if (typeof applyTranslations === 'function') {
                     applyTranslations();
                 }
+                
+                updateBulkActions();
             } catch (error) {
                 showMessage('Failed to load platforms: ' + error.message, 'error');
             }
+        }
+
+        // Bulk actions functions
+        function getSelectedPlatforms() {
+            const checkboxes = document.querySelectorAll('.platform-checkbox:checked');
+            return Array.from(checkboxes).map(cb => cb.dataset.platformId);
+        }
+
+        function updateBulkActions() {
+            const selected = getSelectedPlatforms();
+            const count = selected.length;
+            
+            document.getElementById('selectedCount').textContent = count;
+            document.getElementById('bulkDeployBtn').disabled = count === 0;
+            document.getElementById('bulkRunBtn').disabled = count === 0;
+        }
+
+        function toggleSelectAll() {
+            const checkboxes = document.querySelectorAll('.platform-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(cb => {
+                cb.checked = !allChecked;
+            });
+            
+            updateBulkActions();
+        }
+
+        async function bulkDeployKeys() {
+            const platformIds = getSelectedPlatforms();
+            if (platformIds.length === 0) return;
+            
+            if (!confirm(`Deploy all SSH keys to ${platformIds.length} selected platform(s)?`)) return;
+            
+            showMessage(`Starting deployment to ${platformIds.length} platform(s)...`);
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            for (const platformId of platformIds) {
+                try {
+                    const response = await fetch(`${API_BASE}/${platformId}/deploy_keys`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({}),
+                    });
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        successCount++;
+                        // Open first task in new tab
+                        if (successCount === 1) {
+                            window.open(`/tasks/${result.task_id}`, '_blank');
+                        }
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    failCount++;
+                }
+            }
+            
+            showMessage(`Deployment started: ${successCount} successful, ${failCount} failed`);
+        }
+
+        async function bulkRunCommand() {
+            const platformIds = getSelectedPlatforms();
+            if (platformIds.length === 0) return;
+            
+            const command = prompt(`Enter command to execute on ${platformIds.length} selected platform(s):`);
+            if (!command) return;
+            
+            const timeoutStr = prompt('Timeout in seconds (default: 60):', '60');
+            const timeout = parseInt(timeoutStr) || 60;
+            
+            showMessage(`Starting command execution on ${platformIds.length} platform(s)...`);
+            
+            let successCount = 0;
+            let failCount = 0;
+            const taskIds = [];
+            
+            for (const platformId of platformIds) {
+                try {
+                    const response = await fetch(`${API_BASE}/${platformId}/run_command`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command, timeout }),
+                    });
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        successCount++;
+                        taskIds.push(result.task_id);
+                        // Open first task in new tab
+                        if (successCount === 1) {
+                            window.open(`/tasks/${result.task_id}`, '_blank');
+                        }
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    failCount++;
+                }
+            }
+            
+            showMessage(`Command execution started: ${successCount} successful, ${failCount} failed. Check Jobs page for all results.`);
         }
 
         async function deletePlatform(id) {
