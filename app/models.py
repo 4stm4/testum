@@ -81,14 +81,14 @@ class TaskRun(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     celery_task_id = Column(String(255), nullable=False, unique=True, index=True)
-    type = Column(Enum(TaskTypeEnum), nullable=False, index=True)
+    type = Column(Enum(TaskTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
     
     # Platform reference
     platform_id = Column(UUID(as_uuid=True), ForeignKey("platforms.id"), nullable=True)
     platform = relationship("Platform", back_populates="task_runs")
     
     # Status
-    status = Column(Enum(TaskStatusEnum), default=TaskStatusEnum.PENDING, nullable=False, index=True)
+    status = Column(Enum(TaskStatusEnum, values_callable=lambda x: [e.value for e in x]), default=TaskStatusEnum.PENDING, nullable=False, index=True)
     
     # Results
     result_location = Column(String(512), nullable=True)  # S3 key or path
