@@ -85,6 +85,11 @@ async def settings_page(request: Request):
     return templates.TemplateResponse("settings.html", {"request": request})
 
 
+async def jobs_page(request: Request):
+    """Jobs page listing recent tasks."""
+    return templates.TemplateResponse("jobs.html", {"request": request})
+
+
 async def task_page(request: Request):
     """Task monitoring page."""
     task_id = request.path_params.get("task_id")
@@ -240,6 +245,7 @@ routes = [
     Route("/login", login_page),
     Route("/keys", keys_page),
     Route("/platforms", platforms_page),
+    Route("/jobs", jobs_page),
     Route("/settings", settings_page),
     Route("/tasks/{task_id}", task_page),
     Route("/health", health_check),

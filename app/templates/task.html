@@ -146,11 +146,13 @@
     </div>
 
     <script>
-        const taskId = '{{ task_id }}';
-        const logContainer = document.getElementById('logContainer');
-        const statusBadge = document.getElementById('statusBadge');
-        const connectionStatus = document.getElementById('connectionStatus');
-        let ws;
+    const taskId = '{{ task_id }}';
+    const logContainer = document.getElementById('logContainer');
+    const statusBadge = document.getElementById('statusBadge');
+    const connectionStatus = document.getElementById('connectionStatus');
+    let ws;
+    let reconnectAttempts = 0;
+    let statusPollTimer = null;
 
         function addLogLine(type, message, timestamp) {
             const line = document.createElement('div');
@@ -166,6 +168,23 @@
             statusBadge.className = `status ${status}`;
         }
 
+        function shouldKeepTrying() {
+            const status = statusBadge.textContent.toLowerCase();
+            return !(status === 'success' || status === 'failed');
+        }
+
+        function startStatusPolling() {
+            if (statusPollTimer) return;
+            statusPollTimer = setInterval(loadTaskStatus, 2000);
+        }
+
+        function stopStatusPolling() {
+            if (statusPollTimer) {
+                clearInterval(statusPollTimer);
+                statusPollTimer = null;
+            }
+        }
+
         function connectWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws/tasks/${taskId}`;
@@ -177,6 +196,8 @@
                 connectionStatus.textContent = '🟢 Connected to task stream';
                 connectionStatus.className = 'connection-status connected';
                 addLogLine('progress', 'WebSocket connection established', null);
+                reconnectAttempts = 0;
+                stopStatusPolling();
             };
 
             ws.onmessage = (event) => {
@@ -211,6 +232,16 @@
                 connectionStatus.textContent = '🔴 Disconnected from task stream';
                 connectionStatus.className = 'connection-status disconnected';
                 addLogLine('progress', 'WebSocket connection closed', null);
+                // Try to reconnect with backoff until terminal status
+                if (shouldKeepTrying()) {
+                    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000); // up to 10s
+                    reconnectAttempts += 1;
+                    addLogLine('progress', `Reconnecting in ${Math.round(delay/1000)}s...`, null);
+                    startStatusPolling(); // fallback to polling while reconnecting
+                    setTimeout(() => {
+                        if (shouldKeepTrying()) connectWebSocket();
+                    }, delay);
+                }
             };
         }
 
@@ -227,13 +258,14 @@
             }
         }
 
-        // Initialize
-        loadTaskStatus();
-        connectWebSocket();
+    // Initialize
+    loadTaskStatus();
+    connectWebSocket();
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (ws) ws.close();
+            stopStatusPolling();
         });
     </script>
 </body>

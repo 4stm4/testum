@@ -1,7 +1,7 @@
 """Platforms API endpoints."""
 import uuid
 import logging
-from typing import List, Optional
+# (Removed unused typing imports)
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Router, Route
@@ -14,7 +14,6 @@ from app.schemas import (
     PlatformResponse,
     DeployKeysRequest,
     RunCommandRequest,
-    TaskResponse,
     TaskStatusResponse,
 )
 from app.crypto import crypto
@@ -283,6 +282,56 @@ async def get_task_status(request: Request):
         db.close()
 
 
+async def list_tasks(request: Request):
+    """List recent tasks with optional pagination."""
+    db: Session = next(get_db())
+    try:
+        # Pagination params
+        try:
+            limit = int(request.query_params.get("limit", 50))
+            offset = int(request.query_params.get("offset", 0))
+        except ValueError:
+            return JSONResponse({"error": "Invalid pagination params"}, status_code=400)
+
+        # Optional filter by status/type
+        status_filter = request.query_params.get("status")
+        type_filter = request.query_params.get("type")
+
+        query = db.query(TaskRun)
+        if status_filter:
+            try:
+                # Accept lowercase status values
+                status_enum = TaskStatusEnum(status_filter)
+                query = query.filter(TaskRun.status == status_enum)
+            except Exception:
+                return JSONResponse({"error": "Invalid status value"}, status_code=400)
+
+        if type_filter:
+            try:
+                type_enum = TaskTypeEnum(type_filter)
+                query = query.filter(TaskRun.type == type_enum)
+            except Exception:
+                return JSONResponse({"error": "Invalid type value"}, status_code=400)
+
+        task_runs = (
+            query.order_by(TaskRun.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        result = []
+        for t in task_runs:
+            item = TaskStatusResponse.model_validate(t).model_dump(mode="json")
+            # Enrich with platform info if available
+            item["platform_name"] = t.platform.name if t.platform else None
+            result.append(item)
+
+        return JSONResponse(result)
+    finally:
+        db.close()
+
+
 async def get_platform_info(request: Request):
     """Get system information from platform."""
     platform_id = request.path_params["platform_id"]
@@ -389,6 +438,7 @@ platforms_router = Router(routes=routes)
 
 # Task status route (separate)
 task_routes = [
+    Route("/", list_tasks, methods=["GET"]),
     Route("/{task_id}", get_task_status, methods=["GET"]),
 ]
 

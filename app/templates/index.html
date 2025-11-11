@@ -279,6 +279,10 @@
                     <span class="sidebar-icon">🖥️</span>
                     <span data-i18n="platforms">Platforms</span>
                 </a>
+                <a href="/jobs" class="sidebar-link">
+                    <span class="sidebar-icon">📦</span>
+                    <span>Jobs</span>
+                </a>
             </div>
             
             <div class="sidebar-section">
@@ -335,6 +339,16 @@
                         </div>
                     </div>
                 </a>
+
+                <a href="/jobs" style="text-decoration: none;">
+                    <div class="card">
+                        <div class="card-icon">📦</div>
+                        <div class="card-title">Jobs</div>
+                        <div class="card-description">
+                            История задач и мониторинг выполнения (Task Monitor)
+                        </div>
+                    </div>
+                </a>
             </div>
             
             <div class="stats">
@@ -388,8 +402,17 @@
                     document.querySelectorAll('.stat-card')[0].querySelector('.stat-value').textContent = keys.length;
                 }
                 
-                // Active tasks - placeholder for now
-                document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = '0';
+                // Active tasks - count running from recent list
+                try {
+                    const tasksResp = await fetch('/api/tasks/?limit=100');
+                    if (tasksResp.ok) {
+                        const tasks = await tasksResp.json();
+                        const active = tasks.filter(t => t.status === 'running').length;
+                        document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = String(active);
+                    }
+                } catch (_) {
+                    document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = '—';
+                }
                 
             } catch (error) {
                 console.error('Failed to load stats:', error);
