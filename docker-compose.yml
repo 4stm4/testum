@@ -45,8 +45,28 @@ services:
           </div>
         </div>
         <script>
-          let n=0;const u=window.location.hostname;function c(){n++;const e=document.getElementById('t');e.textContent='Checking: attempt '+n;fetch('http://'+u+':8001/health').then(r=>{if(r.ok){e.textContent='Application ready! Redirecting...';setTimeout(()=>{window.location.href='http://'+u+':8001/login'},800);}else setTimeout(c,2000)}).catch(()=>setTimeout(c,2000))}
-          setTimeout(c,1500);
+          let n=0;
+          const proto=window.location.protocol; // keep same http/https as loader
+          const host=window.location.hostname;
+          function poll(){
+            n++;
+            const t=document.getElementById('t');
+            t.textContent='Checking app health (try '+n+')...';
+            fetch(proto+'//'+host+':8001/health', {cache:'no-store'})
+              .then(r=>{
+                if(r.ok){
+                  t.textContent='Application ready! Redirecting...';
+                  setTimeout(()=>{ window.location.href=proto+'//'+host+':8001/login'; }, 800);
+                } else {
+                  setTimeout(poll, 2000);
+                }
+              })
+              .catch(err=>{
+                t.textContent='Waiting for app on '+host+':8001 ('+err+')';
+                setTimeout(poll, 2000);
+              });
+          }
+          setTimeout(poll, 1200);
         </script>
       </body>
       </html>
