@@ -90,6 +90,12 @@ async def jobs_page(request: Request):
     return templates.TemplateResponse("jobs.html", {"request": request})
 
 
+async def job_detail_page(request: Request):
+    """Job detail page for a specific task."""
+    task_id = request.path_params.get("task_id")
+    return templates.TemplateResponse("job-detail.html", {"request": request, "task_id": task_id})
+
+
 async def task_page(request: Request):
     """Task monitoring page."""
     task_id = request.path_params.get("task_id")
@@ -246,6 +252,7 @@ routes = [
     Route("/keys", keys_page),
     Route("/platforms", platforms_page),
     Route("/jobs", jobs_page),
+    Route("/jobs/{task_id}", job_detail_page),
     Route("/settings", settings_page),
     Route("/tasks/{task_id}", task_page),
     Route("/health", health_check),

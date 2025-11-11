@@ -183,15 +183,19 @@
         function renderRow(t) {
             const started = t.started_at ? new Date(t.started_at).toLocaleString() : '—';
             const finished = t.finished_at ? new Date(t.finished_at).toLocaleString() : '—';
+            const shortId = t.id.substring(0, 8);
             return `<tr>
-                <td><code>${t.id}</code></td>
+                <td><a href="/jobs/${t.celery_task_id}" style="color: var(--accent-primary); font-weight: 600;" title="${t.id}">${shortId}...</a></td>
                 <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis;" title="${t.celery_task_id}"><code>${t.celery_task_id}</code></td>
                 <td>${t.type}</td>
                 <td><span class="status-chip ${t.status}">${t.status.toUpperCase()}</span></td>
                 <td>${t.platform_name ? `<span class="platform-link" title="${t.platform_id}">${t.platform_name}</span>` : '—'}</td>
                 <td>${started}</td>
                 <td>${finished}</td>
-                <td><a class="task-link" href="/tasks/${t.celery_task_id}" title="Monitor">🔍 Monitor</a></td>
+                <td>
+                    <a class="task-link" href="/jobs/${t.celery_task_id}" title="View Details">📋 Details</a> | 
+                    <a class="task-link" href="/tasks/${t.celery_task_id}" target="_blank" title="Live Monitor">🔍 Monitor</a>
+                </td>
             </tr>`;
         }
 
