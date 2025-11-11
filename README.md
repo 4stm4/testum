@@ -27,16 +27,23 @@
 ## 🏗️ Архитектура
 
 ```
-Browser (UI) → Starlette (ASGI) → PostgreSQL
-                     ↓
-                  Celery Worker → Redis (Queue + Pub/Sub)
-                     ↓
-                Paramiko (SSH) → MinIO (S3 logs)
-                     ↓
-              Remote Hosts (SSH)
+Browser → Nginx (Reverse Proxy + Loading Screen)
+            ↓
+         Starlette (ASGI) → PostgreSQL
+            ↓
+         Celery Worker → Redis (Queue + Pub/Sub)
+            ↓
+         Paramiko (SSH) → MinIO (S3 logs)
+            ↓
+         Remote Hosts (SSH)
 ```
 
-**Стек**: Starlette, PostgreSQL, Celery, Redis, MinIO, Paramiko, Jinja2
+**Стек**: Nginx, Starlette, PostgreSQL, Celery, Redis, MinIO, Paramiko, Jinja2
+
+**Особенности деплоя**:
+- Nginx показывает красивый loading screen во время первого запуска
+- Автоматическая проверка готовности приложения через health check
+- Git clone из GitHub при каждом старте контейнера
 
 ## 🚀 Быстрый старт
 
@@ -48,7 +55,15 @@ Browser (UI) → Starlette (ASGI) → PostgreSQL
    ```bash
    FERNET_KEY=<generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())">
    ADMIN_USERNAME=admin
-   ADMIN_PASSWORD=admin123
+   ADMIN_PASSWORD=admin123root@76f1ab574a6b:/app# cat /app/app/api/platforms.py | grep -A 5 "auth_method=" | head -15
+            auth_method=platform_data.auth_method.lower(),
+            encrypted_password=encrypted_password,
+            ssh_key_id=platform_data.ssh_key_id,
+        )
+
+        db.add(new_platform)
+root@76f1ab574a6b:/app# 
+
    SECRET_KEY=<random-string>
    ```
 4. Deploy!
