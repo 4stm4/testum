@@ -148,12 +148,41 @@
         .login-container {
             animation: fadeIn 0.5s ease-out;
         }
+        
+        /* Light theme improvements for login page */
+        [data-theme="light"] .login-card {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+        
+        [data-theme="light"] .login-btn {
+            color: #ffffff;
+        }
+        
+        [data-theme="light"] input {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+        }
+        
+        [data-theme="light"] input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
     </style>
 </head>
 <body>
-    <button id="themeToggle" class="theme-toggle" style="position: fixed; top: 20px; right: 20px; z-index: 1000;" title="Toggle Theme">🌙</button>
-    
     <div class="login-container">
+        <!-- Theme and Language toggles -->
+        <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 1000;">
+            <button id="themeToggle" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                🌙
+            </button>
+            <button id="langToggle" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                EN
+            </button>
+        </div>
+        
         <div class="logo-section">
             <div class="logo">🔐</div>
             <div class="app-name" data-i18n="welcomeTitle">Testum</div>
