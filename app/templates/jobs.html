@@ -6,7 +6,8 @@
     <title>Jobs - Task Runs</title>
     <link rel="stylesheet" href="/static/theme.css" />
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
         a { text-decoration: none; }
         .header { background: var(--bg-secondary); padding: 15px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
         .logo { font-size: 1.4em; font-weight: 600; color: var(--accent-primary); }
@@ -14,7 +15,15 @@
         .header-right { display: flex; gap: 12px; align-items: center; }
         .logout-btn { background: var(--button-logout); color: var(--bg-primary); padding: 8px 14px; border-radius: 6px; font-size: 0.85em; font-weight: 600; display: flex; gap: 6px; align-items: center; }
         .logout-btn:hover { background: var(--button-logout-hover); }
-        .container { max-width: 1200px; margin: 30px auto; padding: 0 30px; }
+        .main-layout { display: flex; min-height: calc(100vh - 60px); }
+        .sidebar { width: 240px; background: #181825; border-right: 1px solid #313244; padding: 20px 0; }
+        .sidebar-section { margin-bottom: 20px; }
+        .sidebar-title { color: #6c7086; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; padding: 0 20px; margin-bottom: 10px; font-weight: 600; }
+        .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #cdd6f4; text-decoration: none; transition: all 0.2s; font-size: 0.95em; }
+        .sidebar-link:hover { background: #313244; color: #89b4fa; }
+        .sidebar-link.active { background: #313244; color: #89b4fa; border-left: 3px solid #89b4fa; }
+        .sidebar-icon { font-size: 1.2em; width: 24px; text-align: center; }
+        .content { flex: 1; padding: 30px; }
         h1 { margin-bottom: 10px; }
         .subtitle { color: var(--text-secondary); margin-bottom: 25px; }
         .toolbar { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; flex-wrap: wrap; }
@@ -40,7 +49,6 @@
         .task-link { color: var(--accent-primary); font-weight: 600; }
         .filters-inline { display: flex; gap: 10px; }
         .footer { margin-top: 40px; font-size: 0.7em; color: var(--text-tertiary); text-align: center; }
-        .back-link { color: var(--accent-primary); font-size: 0.8em; display: inline-block; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -51,51 +59,93 @@
             <a href="/api/auth/logout" class="logout-btn"><span>🚪</span> Logout</a>
         </div>
     </div>
-    <div class="container">
-        <a href="/" class="back-link">← Back to Dashboard</a>
-        <h1>📦 Jobs</h1>
-        <div class="subtitle">История и состояние задач (Task Runs)</div>
-        <div class="toolbar">
-            <div class="filters-inline">
-                <select id="filterStatus">
-                    <option value="">Status: All</option>
-                    <option value="pending">Pending</option>
-                    <option value="running">Running</option>
-                    <option value="success">Success</option>
-                    <option value="failed">Failed</option>
-                </select>
-                <select id="filterType">
-                    <option value="">Type: All</option>
-                    <option value="deploy">Deploy</option>
-                    <option value="run_command">Run Command</option>
-                </select>
+    
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Resources</div>
+                <a href="/" class="sidebar-link">
+                    <span class="sidebar-icon">🏠</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/keys" class="sidebar-link">
+                    <span class="sidebar-icon">🔑</span>
+                    <span>SSH Keys</span>
+                </a>
+                <a href="/platforms" class="sidebar-link">
+                    <span class="sidebar-icon">🖥️</span>
+                    <span>Platforms</span>
+                </a>
+                <a href="/jobs" class="sidebar-link active">
+                    <span class="sidebar-icon">📦</span>
+                    <span>Jobs</span>
+                </a>
             </div>
-            <button id="refreshBtn">🔄 Refresh</button>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">System</div>
+                <a href="/settings" class="sidebar-link">
+                    <span class="sidebar-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+                <a href="/health" class="sidebar-link">
+                    <span class="sidebar-icon">❤️</span>
+                    <span>Health Check</span>
+                </a>
+                <a href="/docs" class="sidebar-link">
+                    <span class="sidebar-icon">📚</span>
+                    <span>API Docs</span>
+                </a>
+            </div>
         </div>
-        <div style="overflow-x:auto;">
-            <table id="tasksTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Celery ID</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Platform</th>
-                        <th>Started</th>
-                        <th>Finished</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="tasksBody">
-                    <tr><td colspan="8" class="empty">Loading tasks...</td></tr>
-                </tbody>
-            </table>
+        
+        <!-- Content -->
+        <div class="content">
+            <h1>📦 Jobs</h1>
+            <div class="subtitle">История и состояние задач (Task Runs)</div>
+            <div class="toolbar">
+                <div class="filters-inline">
+                    <select id="filterStatus">
+                        <option value="">Status: All</option>
+                        <option value="pending">Pending</option>
+                        <option value="running">Running</option>
+                        <option value="success">Success</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                    <select id="filterType">
+                        <option value="">Type: All</option>
+                        <option value="deploy">Deploy</option>
+                        <option value="run_command">Run Command</option>
+                    </select>
+                </div>
+                <button id="refreshBtn">🔄 Refresh</button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="tasksTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Celery ID</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Platform</th>
+                            <th>Started</th>
+                            <th>Finished</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksBody">
+                        <tr><td colspan="8" class="empty">Loading tasks...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <button id="prevPage" disabled>Prev</button>
+                <button id="nextPage" disabled>Next</button>
+            </div>
+            <div class="footer">Built with Starlette & Celery | Remote SSH Execution Platform</div>
         </div>
-        <div class="pagination">
-            <button id="prevPage" disabled>Prev</button>
-            <button id="nextPage" disabled>Next</button>
-        </div>
-        <div class="footer">Built with Starlette & Celery | Remote SSH Execution Platform</div>
     </div>
 
     <script>
