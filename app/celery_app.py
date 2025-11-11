@@ -24,7 +24,7 @@ celery_app.conf.update(
     worker_max_tasks_per_child=50,
 )
 
-# Auto-retry configuration
+# Task routing - use default 'celery' queue
 celery_app.conf.task_routes = {
-    "app.tasks.*": {"queue": "default"},
+    "app.tasks.*": {"queue": "celery"},
 }
