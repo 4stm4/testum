@@ -5,9 +5,9 @@ version: '3.8'
 # For production: change ADMIN_PASSWORD and optionally regenerate FERNET_KEY
 
 services:
-  loading:
+  nginx:
     image: nginx:alpine
-    container_name: testum_loading
+    container_name: testum_nginx
     restart: unless-stopped
     ports:
       - "8000:80"
@@ -148,7 +148,7 @@ services:
       MINIO_SECURE: "false"
       SSH_HOST_KEY_POLICY: auto_add
     ports:
-      - "8000:8000"
+      - "8001:8000"
     networks:
       - testum_network
     depends_on:
