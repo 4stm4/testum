@@ -230,7 +230,7 @@ async def run_command(request: Request):
             type=TaskTypeEnum.RUN_COMMAND,
             platform_id=platform_id,
             status=TaskStatusEnum.PENDING,
-            metadata={"command": command_request.command, "timeout": command_request.timeout},
+            task_metadata={"command": command_request.command, "timeout": command_request.timeout},
         )
         db.add(task_run)
         db.commit()

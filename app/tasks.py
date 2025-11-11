@@ -100,9 +100,6 @@ class DatabaseTask(Task):
 @celery_app.task(
     bind=True,
     base=DatabaseTask,
-    autoretry_for=(Exception,),
-    retry_kwargs={"max_retries": 3, "countdown": 5},
-    retry_backoff=True,
 )
 def deploy_keys_task(self, task_run_id: str, platform_id: str, key_ids: Optional[List[str]] = None):
     """
@@ -230,8 +227,6 @@ def deploy_keys_task(self, task_run_id: str, platform_id: str, key_ids: Optional
 @celery_app.task(
     bind=True,
     base=DatabaseTask,
-    autoretry_for=(Exception,),
-    retry_kwargs={"max_retries": 2, "countdown": 3},
 )
 def run_command_task(self, task_run_id: str, platform_id: str, command: str, timeout: int = 60):
     """
