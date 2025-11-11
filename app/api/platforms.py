@@ -352,7 +352,6 @@ async def get_platform_info(request: Request):
             return JSONResponse({"error": "Platform not found"}, status_code=404)
         
         # Decrypt credentials
-        from app import crypto
         password = None
         private_key = None
         
