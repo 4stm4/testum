@@ -221,14 +221,14 @@
                 updateStep('step-app', 'active');
             }
 
-            // Try to fetch from app
-            fetch('/health')
+            // Try to fetch from app on port 8001
+            fetch('http://' + window.location.hostname + ':8001/health')
                 .then(response => {
                     if (response.ok) {
-                        // App is ready, redirect to login page
+                        // App is ready, redirect to app port
                         statusText.textContent = 'Application ready! Redirecting...';
                         setTimeout(() => {
-                            window.location.href = '/login';
+                            window.location.href = 'http://' + window.location.hostname + ':8001/login';
                         }, 1000);
                     } else {
                         // Still loading

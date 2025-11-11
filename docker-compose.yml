@@ -5,21 +5,16 @@ version: '3.8'
 # For production: change ADMIN_PASSWORD and optionally regenerate FERNET_KEY
 
 services:
-  nginx:
-    image: nginx:alpine
-    container_name: testum_nginx
-    restart: unless-stopped
+  loading:
+    build:
+      context: ./loading
+    image: testum-loading:latest
+    container_name: testum_loading
+    restart: "no"
     ports:
       - "8000:80"
-    configs:
-      - source: nginx_config
-        target: /etc/nginx/conf.d/default.conf
-      - source: loading_page
-        target: /usr/share/nginx/html/index.html
     networks:
       - testum_network
-    depends_on:
-      - app
 
   db:
     image: postgres:15-alpine
@@ -93,8 +88,8 @@ services:
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
       SSH_HOST_KEY_POLICY: auto_add
-    expose:
-      - "8000"
+    ports:
+      - "8001:8000"
     networks:
       - testum_network
     depends_on:
@@ -177,9 +172,3 @@ networks:
 volumes:
   postgres_data:
   minio_data:
-
-configs:
-  nginx_config:
-    file: ./nginx/default.conf.template
-  loading_page:
-    file: ./nginx/loading.html
