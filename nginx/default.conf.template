@@ -5,11 +5,13 @@ upstream app {
 server {
     listen 80 default_server;
     server_name _;
+    
+    root /usr/share/nginx/html;
+    index index.html;
 
-    # Root location - show loading page first
+    # Root location - show loading page (index.html)
     location = / {
-        root /usr/share/nginx/html;
-        try_files /loading.html =404;
+        try_files /index.html =404;
     }
 
     # Health check - proxy to app

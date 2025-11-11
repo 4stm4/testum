@@ -13,7 +13,7 @@ services:
       - "8000:80"
     volumes:
       - ./nginx:/etc/nginx/templates:ro
-      - ./nginx/loading.html:/usr/share/nginx/html/loading.html:ro
+      - ./nginx/loading.html:/usr/share/nginx/html/index.html:ro
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
     networks:
