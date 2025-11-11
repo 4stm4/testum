@@ -19,6 +19,8 @@ from app.schemas import (
 from app.crypto import crypto
 from app.audit import log_audit
 from app.tasks import deploy_keys_task, run_command_task
+from app.celery_app import celery_app
+from celery.result import AsyncResult
 
 logger = logging.getLogger(__name__)
 
@@ -277,7 +279,14 @@ async def get_task_status(request: Request):
         if not task_run:
             return JSONResponse({"error": "Task not found"}, status_code=404)
 
-        return JSONResponse(TaskStatusResponse.model_validate(task_run).model_dump(mode="json"))
+        payload = TaskStatusResponse.model_validate(task_run).model_dump(mode="json")
+        try:
+            async_result = AsyncResult(task_id, app=celery_app)
+            payload["celery_state"] = async_result.state
+        except Exception:
+            payload["celery_state"] = "unknown"
+
+        return JSONResponse(payload)
     finally:
         db.close()
 
