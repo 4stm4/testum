@@ -58,6 +58,44 @@ async def create_platform(request: Request):
         if platform_data.auth_method == "private_key" and not platform_data.ssh_key_id:
             return JSONResponse({"error": "SSH Key required for private_key auth"}, status_code=400)
 
+        # Test connection before saving
+        from app.ssh_helper import SSHHelper
+        
+        ssh = SSHHelper(
+            host=platform_data.host,
+            port=platform_data.port,
+            username=platform_data.username
+        )
+        
+        try:
+            if platform_data.auth_method == "password":
+                ssh.connect_with_password(platform_data.password)
+            else:
+                # Get SSH key from database
+                ssh_key = db.query(SSHKey).filter(SSHKey.id == platform_data.ssh_key_id).first()
+                if not ssh_key:
+                    return JSONResponse({"error": "SSH Key not found"}, status_code=400)
+                
+                if not ssh_key.encrypted_private_key:
+                    return JSONResponse({"error": "SSH Key has no private key for authentication"}, status_code=400)
+                
+                # Decrypt private key
+                private_key_str = crypto.decrypt_string(ssh_key.encrypted_private_key)
+                ssh.connect_with_key(private_key_str)
+            
+            # Test command to verify connection
+            result = ssh.execute_command("echo 'Connection test successful'")
+            logger.info(f"Connection test result: {result}")
+            
+        except Exception as conn_err:
+            logger.error(f"Connection test failed: {conn_err}")
+            return JSONResponse({
+                "error": "Connection test failed",
+                "details": str(conn_err)
+            }, status_code=400)
+        finally:
+            ssh.disconnect()
+
         # Encrypt password if provided
         encrypted_password = None
         if platform_data.password:

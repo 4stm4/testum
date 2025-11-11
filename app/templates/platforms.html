@@ -649,6 +649,11 @@
         document.getElementById('platformForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '🔄 Testing connection...';
+            
             const formData = {
                 name: document.getElementById('name').value,
                 host: document.getElementById('host').value,
@@ -673,14 +678,22 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMessage('Platform added successfully');
+                    showMessage('✅ Platform added successfully! Connection test passed.');
                     e.target.reset();
                     loadPlatforms();
                 } else {
-                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
+                    // Show detailed error message
+                    let errorMsg = result.error || 'Unknown error';
+                    if (result.details) {
+                        errorMsg += '\n\nDetails: ' + result.details;
+                    }
+                    showMessage('❌ ' + errorMsg, 'error');
                 }
             } catch (error) {
                 showMessage('Failed to add platform: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         });
 
