@@ -212,8 +212,12 @@
                         updateStatus('success');
                     } else if (message.type === 'error') {
                         updateStatus('failed');
-                    } else if (message.type === 'progress' && message.payload.includes('Running')) {
-                        updateStatus('running');
+                    } else if (message.type === 'progress') {
+                        // Consider any progress as running unless already terminal
+                        const current = statusBadge.textContent.toLowerCase();
+                        if (current !== 'success' && current !== 'failed') {
+                            updateStatus('running');
+                        }
                     }
                 } catch (error) {
                     console.error('Failed to parse message:', error);
