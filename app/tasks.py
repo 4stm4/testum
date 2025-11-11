@@ -240,12 +240,18 @@ def run_command_task(self, task_run_id: str, platform_id: str, command: str, tim
     """
     db = self.db
     task_id = self.request.id
+    
+    logger.info(f"[run_command_task] Starting task {task_id} for task_run {task_run_id}")
+    publish_task_message(task_id, "progress", "Task started, connecting to database...")
 
     try:
         # Update task status
         task_run = db.query(TaskRun).filter(TaskRun.id == task_run_id).first()
         if not task_run:
-            raise ValueError(f"TaskRun {task_run_id} not found")
+            error_msg = f"TaskRun {task_run_id} not found"
+            logger.error(f"[run_command_task] {error_msg}")
+            publish_task_message(task_id, "error", error_msg)
+            raise ValueError(error_msg)
 
         task_run.status = TaskStatusEnum.RUNNING
         task_run.started_at = datetime.utcnow()
@@ -256,7 +262,13 @@ def run_command_task(self, task_run_id: str, platform_id: str, command: str, tim
         # Get platform
         platform = db.query(Platform).filter(Platform.id == platform_id).first()
         if not platform:
-            raise ValueError(f"Platform {platform_id} not found")
+            error_msg = f"Platform {platform_id} not found"
+            logger.error(f"[run_command_task] {error_msg}")
+            publish_task_message(task_id, "error", error_msg)
+            raise ValueError(error_msg)
+        
+        logger.info(f"[run_command_task] Found platform: {platform.name} ({platform.host})")
+        publish_task_message(task_id, "progress", f"Connecting to {platform.name} ({platform.host})...")
 
         # Decrypt credentials
         password = None
