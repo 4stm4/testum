@@ -474,6 +474,10 @@
         function openModal() {
             document.getElementById('platformModal').style.display = 'block';
             document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            
+            // Trigger auth method change to show correct fields
+            const authMethod = document.getElementById('auth_method');
+            authMethod.dispatchEvent(new Event('change'));
         }
 
         function closeModal() {
@@ -503,7 +507,6 @@
             document.getElementById('password_field').style.display = method === 'password' ? 'block' : 'none';
             document.getElementById('ssh_key_field').style.display = method === 'private_key' ? 'block' : 'none';
         });
-        document.getElementById('auth_method').dispatchEvent(new Event('change'));
 
         // Load SSH keys for dropdown
         async function loadSSHKeys() {
