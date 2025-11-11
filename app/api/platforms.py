@@ -431,6 +431,53 @@ async def get_platform_info(request: Request):
         db.close()
 
 
+async def revoke_task(request: Request):
+    """Revoke (stop) a running task."""
+    task_id = request.path_params["task_id"]
+    db: Session = next(get_db())
+    
+    try:
+        # Check if task exists in database
+        task = db.query(TaskRun).filter(TaskRun.celery_task_id == task_id).first()
+        if not task:
+            return JSONResponse({"error": "Task not found"}, status_code=404)
+        
+        # Check if task is still running
+        if task.status not in [TaskStatusEnum.pending, TaskStatusEnum.running]:
+            return JSONResponse(
+                {"error": f"Cannot stop task with status: {task.status}"}, 
+                status_code=400
+            )
+        
+        # Revoke the Celery task with terminate=True to kill the worker process
+        celery_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
+        
+        # Update task status in database
+        task.status = TaskStatusEnum.failed
+        task.error_message = "Task stopped by user"
+        db.commit()
+        
+        log_audit(
+            request,
+            action="revoke_task",
+            resource_type="task",
+            resource_id=str(task.id),
+            details={"celery_task_id": task_id},
+        )
+        
+        return JSONResponse({
+            "message": "Task revoked successfully",
+            "task_id": task_id,
+            "status": "revoked"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error revoking task {task_id}: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+    finally:
+        db.close()
+
+
 # Routes
 routes = [
     Route("/", list_platforms, methods=["GET"]),
@@ -448,6 +495,7 @@ platforms_router = Router(routes=routes)
 task_routes = [
     Route("/", list_tasks, methods=["GET"]),
     Route("/{task_id}", get_task_status, methods=["GET"]),
+    Route("/{task_id}/revoke", revoke_task, methods=["POST"]),
 ]
 
 tasks_router = Router(routes=task_routes)

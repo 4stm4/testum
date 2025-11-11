@@ -183,6 +183,9 @@
             <p><strong>Platform:</strong> <span id="platformName">—</span></p>
             <p id="commandInfo" style="display: none;"><strong>Command:</strong> <code id="command">—</code></p>
             <p id="timeoutInfo" style="display: none;"><strong>Timeout:</strong> <span id="timeout">—</span>s</p>
+            <button id="stopTaskBtn" onclick="stopTask()" style="background: #f38ba8; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; display: none;">
+                🛑 Stop Task
+            </button>
         </div>
 
         <h3>Live Output:</h3>
@@ -336,9 +339,38 @@
                             document.getElementById('timeout').textContent = task.task_metadata.timeout;
                         }
                     }
+                    
+                    // Show stop button for running/pending tasks
+                    const stopBtn = document.getElementById('stopTaskBtn');
+                    if (task.status === 'running' || task.status === 'pending') {
+                        stopBtn.style.display = 'inline-block';
+                    } else {
+                        stopBtn.style.display = 'none';
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load task status:', error);
+            }
+        }
+
+        async function stopTask() {
+            if (!confirm('Are you sure you want to stop this task?')) return;
+            
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/revoke`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    addLogLine('info', '🛑 Task stop signal sent. The task will be terminated.', Date.now());
+                    document.getElementById('stopTaskBtn').style.display = 'none';
+                } else {
+                    const data = await response.json();
+                    addLogLine('error', `Failed to stop task: ${data.error || 'Unknown error'}`, Date.now());
+                }
+            } catch (error) {
+                addLogLine('error', `Failed to stop task: ${error.message}`, Date.now());
             }
         }
 

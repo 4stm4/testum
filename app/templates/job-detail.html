@@ -146,8 +146,21 @@
             
             <!-- Metadata Card -->
             <div class="card" id="metadataCard" style="display: none;">
-                <h2>🔧 Metadata</h2>
-                <div class="metadata" id="metadataContent"></div>
+                <h2>🔧 Task Details</h2>
+                <div class="info-grid">
+                    <div class="info-item" id="commandItem" style="display: none;">
+                        <div class="info-label">Command</div>
+                        <div class="info-value"><code id="commandValue" style="display: block; white-space: pre-wrap;">—</code></div>
+                    </div>
+                    <div class="info-item" id="timeoutItem" style="display: none;">
+                        <div class="info-label">Timeout</div>
+                        <div class="info-value" id="timeoutValue">—</div>
+                    </div>
+                </div>
+                <details style="margin-top: 15px;">
+                    <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85em;">Show Raw Metadata</summary>
+                    <div class="metadata" id="metadataContent" style="margin-top: 10px;"></div>
+                </details>
             </div>
             
             <!-- Output Card -->
@@ -177,6 +190,9 @@
                 </a>
                 <button class="btn btn-secondary" onclick="location.reload()">
                     🔄 Refresh
+                </button>
+                <button class="btn" id="stopBtn" onclick="stopTask()" style="background: #f38ba8; display: none;">
+                    🛑 Stop Task
                 </button>
             </div>
         </div>
@@ -233,6 +249,23 @@
                 if (data.task_metadata && Object.keys(data.task_metadata).length > 0) {
                     document.getElementById('metadataCard').style.display = 'block';
                     document.getElementById('metadataContent').textContent = JSON.stringify(data.task_metadata, null, 2);
+                    
+                    // Show command if present
+                    if (data.task_metadata.command) {
+                        document.getElementById('commandItem').style.display = 'block';
+                        document.getElementById('commandValue').textContent = data.task_metadata.command;
+                    }
+                    
+                    // Show timeout if present
+                    if (data.task_metadata.timeout) {
+                        document.getElementById('timeoutItem').style.display = 'block';
+                        document.getElementById('timeoutValue').textContent = data.task_metadata.timeout + ' seconds';
+                    }
+                }
+                
+                // Show stop button for running tasks
+                if (data.status === 'running' || data.status === 'pending') {
+                    document.getElementById('stopBtn').style.display = 'inline-flex';
                 }
                 
                 // Show output if present
@@ -262,6 +295,27 @@
                 document.getElementById('statusBadge').textContent = 'ERROR';
                 document.getElementById('statusBadge').className = 'status-chip failed';
                 alert('Failed to load job details: ' + err.message);
+            }
+        }
+        
+        async function stopTask() {
+            if (!confirm('Are you sure you want to stop this task?')) return;
+            
+            try {
+                const resp = await fetch(`/api/tasks/${taskId}/revoke`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (resp.ok) {
+                    alert('Task stop signal sent. The task will be terminated.');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const data = await resp.json();
+                    alert('Failed to stop task: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Failed to stop task: ' + err.message);
             }
         }
         
