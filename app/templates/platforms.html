@@ -475,9 +475,8 @@
             document.getElementById('platformModal').style.display = 'block';
             document.body.style.overflow = 'hidden'; // Prevent background scrolling
             
-            // Trigger auth method change to show correct fields
-            const authMethod = document.getElementById('auth_method');
-            authMethod.dispatchEvent(new Event('change'));
+            // Show correct fields based on auth method
+            toggleAuthFields();
         }
 
         function closeModal() {
@@ -502,11 +501,13 @@
         });
 
         // Toggle auth fields
-        document.getElementById('auth_method').addEventListener('change', (e) => {
-            const method = e.target.value;
+        function toggleAuthFields() {
+            const method = document.getElementById('auth_method').value;
             document.getElementById('password_field').style.display = method === 'password' ? 'block' : 'none';
             document.getElementById('ssh_key_field').style.display = method === 'private_key' ? 'block' : 'none';
-        });
+        }
+        
+        document.getElementById('auth_method').addEventListener('change', toggleAuthFields);
 
         // Load SSH keys for dropdown
         async function loadSSHKeys() {
