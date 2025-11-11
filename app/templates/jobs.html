@@ -13,6 +13,8 @@
         .logo { font-size: 1.4em; font-weight: 600; color: var(--accent-primary); }
         .version { background: var(--bg-tertiary); padding: 4px 10px; border-radius: 8px; font-size: 0.75em; color: var(--text-secondary); }
         .header-right { display: flex; gap: 12px; align-items: center; }
+        .theme-toggle, .lang-toggle { background: var(--bg-tertiary); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 1.1em; transition: all 0.2s; }
+        .theme-toggle:hover, .lang-toggle:hover { background: var(--accent-primary); transform: translateY(-1px); }
         .logout-btn { background: var(--button-logout); color: var(--bg-primary); padding: 8px 14px; border-radius: 6px; font-size: 0.85em; font-weight: 600; display: flex; gap: 6px; align-items: center; }
         .logout-btn:hover { background: var(--button-logout-hover); }
         .main-layout { display: flex; min-height: calc(100vh - 60px); }
@@ -53,10 +55,12 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">🔐 Testum</div>
+        <div class="logo"><span data-i18n="welcomeTitle">🔐 Testum</span></div>
         <div class="header-right">
+            <button id="themeToggle" class="theme-toggle" title="Toggle Theme">🌙</button>
+            <button id="langToggle" class="lang-toggle" title="Toggle Language">RU</button>
             <span class="version">v0.1.0</span>
-            <a href="/api/auth/logout" class="logout-btn"><span>🚪</span> Logout</a>
+            <a href="/api/auth/logout" class="logout-btn"><span>🚪</span> <span data-i18n="logout">Logout</span></a>
         </div>
     </div>
     
@@ -64,18 +68,18 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-section">
-                <div class="sidebar-title">Resources</div>
+                <div class="sidebar-title" data-i18n="resources">Resources</div>
                 <a href="/" class="sidebar-link">
                     <span class="sidebar-icon">🏠</span>
-                    <span>Dashboard</span>
+                    <span data-i18n="dashboard">Dashboard</span>
                 </a>
                 <a href="/keys" class="sidebar-link">
                     <span class="sidebar-icon">🔑</span>
-                    <span>SSH Keys</span>
+                    <span data-i18n="sshKeys">SSH Keys</span>
                 </a>
                 <a href="/platforms" class="sidebar-link">
                     <span class="sidebar-icon">🖥️</span>
-                    <span>Platforms</span>
+                    <span data-i18n="platforms">Platforms</span>
                 </a>
                 <a href="/jobs" class="sidebar-link active">
                     <span class="sidebar-icon">📦</span>
@@ -84,18 +88,18 @@
             </div>
             
             <div class="sidebar-section">
-                <div class="sidebar-title">System</div>
+                <div class="sidebar-title" data-i18n="system">System</div>
                 <a href="/settings" class="sidebar-link">
                     <span class="sidebar-icon">⚙️</span>
-                    <span>Settings</span>
+                    <span data-i18n="settings">Settings</span>
                 </a>
                 <a href="/health" class="sidebar-link">
                     <span class="sidebar-icon">❤️</span>
-                    <span>Health Check</span>
+                    <span data-i18n="healthCheck">Health Check</span>
                 </a>
                 <a href="/docs" class="sidebar-link">
                     <span class="sidebar-icon">📚</span>
-                    <span>API Docs</span>
+                    <span data-i18n="apiDocs">API Docs</span>
                 </a>
             </div>
         </div>
@@ -207,5 +211,7 @@
 
         loadTasks();
     </script>
+    
+    <script src="/static/testum.js"></script>
 </body>
 </html>
