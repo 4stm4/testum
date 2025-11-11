@@ -284,6 +284,110 @@
             padding: 40px;
             color: #6c7086;
         }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: #181825;
+            margin: 50px auto;
+            padding: 0;
+            border: 1px solid #313244;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            animation: slideDown 0.3s;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        @keyframes slideDown {
+            from { 
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #313244;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: #cdd6f4;
+            font-size: 1.3em;
+        }
+        
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 28px;
+            color: #6c7086;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: #313244;
+            color: #f38ba8;
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .add-platform-btn {
+            background: #89b4fa;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        
+        .add-platform-btn:hover {
+            background: #7aa2f7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(137, 180, 250, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -338,45 +442,9 @@
 
             <div id="message"></div>
             
-            <div class="card">
-                <h2 data-i18n="addNewPlatform">Add New Platform</h2>
-                <form id="platformForm">
-                    <div class="form-group">
-                        <label for="name" data-i18n="platformName">Platform Name</label>
-                        <input type="text" id="name" name="name" required placeholder="e.g., production-server">
-                    </div>
-                    <div class="form-group">
-                        <label for="host" data-i18n="host">Host</label>
-                        <input type="text" id="host" name="host" required placeholder="192.168.1.100 or hostname.example.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="port" data-i18n="port">Port</label>
-                        <input type="number" id="port" name="port" value="22" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="username" data-i18n="username">Username</label>
-                        <input type="text" id="username" name="username" required placeholder="root or deploy user">
-                    </div>
-                    <div class="form-group">
-                        <label for="auth_method" data-i18n="authMethod">Authentication Method</label>
-                        <select id="auth_method" name="auth_method" required>
-                            <option value="password" data-i18n="password">Password</option>
-                            <option value="private_key" data-i18n="privateKey">Private Key</option>
-                        </select>
-                    </div>
-                    <div class="form-group conditional" id="password_field">
-                        <label for="password" data-i18n="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Enter password">
-                    </div>
-                    <div class="form-group conditional" id="ssh_key_field">
-                        <label for="ssh_key_id" data-i18n="sshKey">SSH Key</label>
-                        <select id="ssh_key_id" name="ssh_key_id">
-                            <option value="">Select SSH Key...</option>
-                        </select>
-                    </div>
-                    <button type="submit" data-i18n="addPlatform">+ Add Platform</button>
-                </form>
-            </div>
+            <button class="add-platform-btn" onclick="openModal()">
+                ➕ <span data-i18n="addNewPlatform">Add New Platform</span>
+            </button>
 
             <div class="card">
                 <h2 data-i18n="existingPlatforms">Existing Platforms</h2>
@@ -401,6 +469,33 @@
             msg.innerHTML = `<div class="${type}">${text}</div>`;
             setTimeout(() => msg.innerHTML = '', 5000);
         }
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('platformModal').style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeModal() {
+            document.getElementById('platformModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('platformForm').reset();
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('platformModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
 
         // Toggle auth fields
         document.getElementById('auth_method').addEventListener('change', (e) => {
@@ -680,6 +775,7 @@
                 if (response.ok) {
                     showMessage('✅ Platform added successfully! Connection test passed.');
                     e.target.reset();
+                    closeModal(); // Close modal on success
                     loadPlatforms();
                 } else {
                     // Show detailed error message
@@ -700,6 +796,55 @@
         loadSSHKeys();
         loadPlatforms();
     </script>
+    
+    <!-- Modal for Add Platform -->
+    <div id="platformModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="addNewPlatform">Add New Platform</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="platformForm">
+                    <div class="form-group">
+                        <label for="name" data-i18n="platformName">Platform Name</label>
+                        <input type="text" id="name" name="name" required placeholder="e.g., production-server">
+                    </div>
+                    <div class="form-group">
+                        <label for="host" data-i18n="host">Host</label>
+                        <input type="text" id="host" name="host" required placeholder="192.168.1.100 or hostname.example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="port" data-i18n="port">Port</label>
+                        <input type="number" id="port" name="port" value="22" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="username" data-i18n="username">Username</label>
+                        <input type="text" id="username" name="username" required placeholder="root or deploy user">
+                    </div>
+                    <div class="form-group">
+                        <label for="auth_method" data-i18n="authMethod">Authentication Method</label>
+                        <select id="auth_method" name="auth_method" required>
+                            <option value="password" data-i18n="password">Password</option>
+                            <option value="private_key" data-i18n="privateKey">Private Key</option>
+                        </select>
+                    </div>
+                    <div class="form-group conditional" id="password_field">
+                        <label for="password" data-i18n="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Enter password">
+                    </div>
+                    <div class="form-group conditional" id="ssh_key_field">
+                        <label for="ssh_key_id" data-i18n="sshKey">SSH Key</label>
+                        <select id="ssh_key_id" name="ssh_key_id">
+                            <option value="">Select SSH Key...</option>
+                        </select>
+                    </div>
+                    <button type="submit" data-i18n="addPlatform">+ Add Platform</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <script src="/static/testum.js"></script>
 </body>
 </html>
