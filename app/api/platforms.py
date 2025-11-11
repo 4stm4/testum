@@ -84,8 +84,10 @@ async def create_platform(request: Request):
                 ssh.connect_with_key(private_key_str)
             
             # Test command to verify connection
-            result = ssh.execute_command("echo 'Connection test successful'")
-            logger.info(f"Connection test result: {result}")
+            exit_code, stdout, stderr = ssh.execute_command("echo 'Connection test successful'")
+            if exit_code != 0:
+                raise Exception(f"Test command failed with exit code {exit_code}: {stderr}")
+            logger.info(f"Connection test successful: {stdout.strip()}")
             
         except Exception as conn_err:
             logger.error(f"Connection test failed: {conn_err}")
@@ -94,7 +96,7 @@ async def create_platform(request: Request):
                 "details": str(conn_err)
             }, status_code=400)
         finally:
-            ssh.disconnect()
+            ssh.close()
 
         # Encrypt password if provided
         encrypted_password = None

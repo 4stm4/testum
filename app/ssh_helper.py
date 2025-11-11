@@ -131,6 +131,36 @@ class SSHHelper:
             logger.error(error_msg)
             return False, error_msg
 
+    def connect_with_password(self, password: str) -> None:
+        """
+        Connect using password authentication.
+        
+        Args:
+            password: Password for authentication
+            
+        Raises:
+            Exception: If connection fails
+        """
+        self.password = password
+        success, error = self.connect()
+        if not success:
+            raise Exception(error or "Connection failed")
+    
+    def connect_with_key(self, private_key: str) -> None:
+        """
+        Connect using private key authentication.
+        
+        Args:
+            private_key: Private key string
+            
+        Raises:
+            Exception: If connection fails
+        """
+        self.private_key_str = private_key
+        success, error = self.connect()
+        if not success:
+            raise Exception(error or "Connection failed")
+
     def get_host_fingerprint(self) -> Optional[str]:
         """
         Get current host key fingerprint.
