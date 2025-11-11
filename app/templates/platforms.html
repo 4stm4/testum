@@ -267,6 +267,8 @@
             border-radius: 6px;
             margin-bottom: 20px;
             border-left: 4px solid;
+            white-space: pre-line;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
         .success {
             background: #1e2d28;
@@ -777,7 +779,23 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMessage('✅ Platform added successfully! Connection test passed.');
+                    // Show success message with system info
+                    let successMsg = '✅ Platform added successfully! Connection test passed.';
+                    
+                    if (result.system_info) {
+                        const info = result.system_info;
+                        successMsg += '\n\n📊 System Information:';
+                        if (info.os_release) {
+                            const osMatch = info.os_release.match(/PRETTY_NAME="([^"]+)"/);
+                            if (osMatch) successMsg += `\n• OS: ${osMatch[1]}`;
+                        }
+                        if (info.kernel) successMsg += `\n• Kernel: ${info.kernel}`;
+                        if (info.cpu) successMsg += `\n• CPU: ${info.cpu}`;
+                        if (info.memory) successMsg += `\n• Memory: ${info.memory}`;
+                        if (info.uptime) successMsg += `\n• Uptime: ${info.uptime}`;
+                    }
+                    
+                    showMessage(successMsg);
                     e.target.reset();
                     closeModal(); // Close modal on success
                     loadPlatforms();

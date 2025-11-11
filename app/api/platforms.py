@@ -67,6 +67,8 @@ async def create_platform(request: Request):
             username=platform_data.username
         )
         
+        system_info = {}
+        
         try:
             if platform_data.auth_method == "password":
                 ssh.connect_with_password(platform_data.password)
@@ -88,6 +90,33 @@ async def create_platform(request: Request):
             if exit_code != 0:
                 raise Exception(f"Test command failed with exit code {exit_code}: {stderr}")
             logger.info(f"Connection test successful: {stdout.strip()}")
+            
+            # Gather system information
+            try:
+                # OS info
+                _, os_release, _ = ssh.execute_command("cat /etc/os-release 2>/dev/null || echo 'N/A'")
+                system_info["os_release"] = os_release.strip()
+                
+                # Kernel
+                _, kernel, _ = ssh.execute_command("uname -r")
+                system_info["kernel"] = kernel.strip()
+                
+                # CPU
+                _, cpu_model, _ = ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
+                _, cpu_cores, _ = ssh.execute_command("nproc")
+                system_info["cpu"] = f"{cpu_model.strip()} ({cpu_cores.strip()} cores)"
+                
+                # Memory
+                _, memory, _ = ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used\"}'")
+                system_info["memory"] = memory.strip()
+                
+                # Uptime
+                _, uptime, _ = ssh.execute_command("uptime -p 2>/dev/null || uptime")
+                system_info["uptime"] = uptime.strip()
+                
+                logger.info(f"System info gathered: {system_info}")
+            except Exception as info_err:
+                logger.warning(f"Failed to gather some system info: {info_err}")
             
         except Exception as conn_err:
             logger.error(f"Connection test failed: {conn_err}")
@@ -132,6 +161,7 @@ async def create_platform(request: Request):
         response_data = PlatformResponse.model_validate(new_platform).model_dump(mode="json")
         response_data["has_password"] = new_platform.encrypted_password is not None
         response_data["has_private_key"] = new_platform.ssh_key_id is not None
+        response_data["system_info"] = system_info  # Add system info from connection test
 
         return JSONResponse(response_data, status_code=201)
     except Exception as e:
