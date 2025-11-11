@@ -13,9 +13,12 @@ services:
       - "8000:80"
     volumes:
       - ./nginx:/etc/nginx/templates:ro
-      - ./nginx/loading.html:/usr/share/nginx/html/index.html:ro
+      - ./nginx/loading.html:/docker-entrypoint.d/loading.html:ro
+      - ./nginx/entrypoint.sh:/custom-entrypoint.sh:ro
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
+    entrypoint: ["/custom-entrypoint.sh"]
+    command: ["nginx", "-g", "daemon off;"]
     networks:
       - testum_network
     depends_on:
