@@ -225,10 +225,10 @@
             fetch('/health')
                 .then(response => {
                     if (response.ok) {
-                        // App is ready, reload to main page
+                        // App is ready, redirect to login page
                         statusText.textContent = 'Application ready! Redirecting...';
                         setTimeout(() => {
-                            window.location.href = '/';
+                            window.location.href = '/login';
                         }, 1000);
                     } else {
                         // Still loading
