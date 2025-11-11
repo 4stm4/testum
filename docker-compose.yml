@@ -10,7 +10,7 @@ services:
     container_name: testum_nginx
     restart: unless-stopped
     ports:
-      - "8000:80"
+      - "8000:8000"
     entrypoint: ["/bin/sh","-c"]
     command: |
       cat >/usr/share/nginx/html/index.html <<'EOF'
@@ -71,7 +71,19 @@ services:
       </body>
       </html>
       EOF
-      nginx -g 'daemon off;'
+      nginx -g 'daemon off;' -c - <<'NGINX_CONF'
+      events {}
+      http {
+        server {
+          listen 8000;
+          server_name _;
+          location / {
+            root /usr/share/nginx/html;
+            index index.html;
+          }
+        }
+      }
+      NGINX_CONF
     networks:
       - testum_network
 

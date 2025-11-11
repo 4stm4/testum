@@ -242,11 +242,11 @@ async def deploy_keys(request: Request):
         # Create task run record
         task_run = TaskRun(
             id=uuid.uuid4(),
-            celery_task_id="pending",  # Will be updated
+            celery_task_id=None,  # Will be updated after Celery task starts
             type=TaskTypeEnum.DEPLOY,
             platform_id=platform_id,
             status=TaskStatusEnum.PENDING,
-            metadata={"key_ids": key_ids_str} if key_ids_str else {},
+            task_metadata={"key_ids": key_ids_str} if key_ids_str else {},
         )
         db.add(task_run)
         db.commit()
@@ -297,7 +297,7 @@ async def run_command(request: Request):
         # Create task run record
         task_run = TaskRun(
             id=uuid.uuid4(),
-            celery_task_id="pending",
+            celery_task_id=None,  # Will be updated after Celery task starts
             type=TaskTypeEnum.RUN_COMMAND,
             platform_id=platform_id,
             status=TaskStatusEnum.PENDING,
@@ -448,39 +448,41 @@ async def get_platform_info(request: Request):
         info = {}
         
         try:
-            ssh.connect()
+            success, error = ssh.connect()
+            if not success:
+                raise Exception(error or "Connection failed")
             
             # Get OS info
-            os_release = ssh.execute_command("cat /etc/os-release 2>/dev/null || cat /etc/redhat-release 2>/dev/null || echo 'Unknown'")
+            exit_code, os_release, stderr = ssh.execute_command("cat /etc/os-release 2>/dev/null || cat /etc/redhat-release 2>/dev/null || echo 'Unknown'")
             info["os_release"] = os_release.strip()
             
             # Get hostname
-            hostname = ssh.execute_command("hostname")
+            exit_code, hostname, stderr = ssh.execute_command("hostname")
             info["hostname"] = hostname.strip()
             
             # Get uptime
-            uptime = ssh.execute_command("uptime -p 2>/dev/null || uptime")
+            exit_code, uptime, stderr = ssh.execute_command("uptime -p 2>/dev/null || uptime")
             info["uptime"] = uptime.strip()
             
             # Get kernel
-            kernel = ssh.execute_command("uname -r")
+            exit_code, kernel, stderr = ssh.execute_command("uname -r")
             info["kernel"] = kernel.strip()
             
             # Get CPU info
-            cpu_info = ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
-            cpu_cores = ssh.execute_command("nproc")
+            exit_code, cpu_info, stderr = ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
+            exit_code, cpu_cores, stderr = ssh.execute_command("nproc")
             info["cpu"] = f"{cpu_info.strip()} ({cpu_cores.strip()} cores)"
             
             # Get memory
-            mem_info = ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used, \"$4\" free\"}'")
+            exit_code, mem_info, stderr = ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used, \"$4\" free\"}'")
             info["memory"] = mem_info.strip()
             
             # Get disk
-            disk_info = ssh.execute_command("df -h / | tail -1 | awk '{print $2\" total, \"$3\" used, \"$4\" free, \"$5\" used%\"}'")
+            exit_code, disk_info, stderr = ssh.execute_command("df -h / | tail -1 | awk '{print $2\" total, \"$3\" used, \"$4\" free, \"$5\" used%\"}'")
             info["disk"] = disk_info.strip()
             
             # Get load average
-            load_avg = ssh.execute_command("cat /proc/loadavg | awk '{print $1\" \"$2\" \"$3}'")
+            exit_code, load_avg, stderr = ssh.execute_command("cat /proc/loadavg | awk '{print $1\" \"$2\" \"$3}'")
             info["load_average"] = load_avg.strip()
             
             info["status"] = "online"
@@ -490,7 +492,7 @@ async def get_platform_info(request: Request):
             info["status"] = "offline"
             info["error"] = str(e)
         finally:
-            ssh.disconnect()
+            ssh.close()
         
         return JSONResponse(info)
         
@@ -527,12 +529,14 @@ async def revoke_task(request: Request):
         task.error_message = "Task stopped by user"
         db.commit()
         
+        # Audit log
         log_audit(
-            request,
+            db,
+            user=request.state.user if hasattr(request.state, "user") else "admin",
             action="revoke_task",
-            resource_type="task",
-            resource_id=str(task.id),
-            details={"celery_task_id": task_id},
+            object_type="task",
+            object_id=str(task.id),
+            meta={"celery_task_id": task_id},
         )
         
         return JSONResponse({

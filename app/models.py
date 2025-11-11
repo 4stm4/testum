@@ -80,7 +80,7 @@ class TaskRun(Base):
     __tablename__ = "task_runs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    celery_task_id = Column(String(255), nullable=False, unique=True, index=True)
+    celery_task_id = Column(String(255), nullable=True, unique=True, index=True)
     type = Column(Enum(TaskTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
     
     # Platform reference
