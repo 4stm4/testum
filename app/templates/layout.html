@@ -124,6 +124,7 @@
         .sidebar-link {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
             padding: 12px 20px;
             color: var(--text-primary);
@@ -142,10 +143,27 @@
             border-left: 3px solid var(--accent-primary);
         }
 
+        .sidebar-link-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .sidebar-icon {
             font-size: 1.2em;
             width: 24px;
             text-align: center;
+        }
+
+        .sidebar-count {
+            background: var(--bg-tertiary);
+            color: var(--text-tertiary);
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 999px;
+            min-width: 28px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
         }
 
         .content {
@@ -236,29 +254,40 @@
         <nav class="sidebar">
             <div class="sidebar-section">
                 <div class="sidebar-title" data-i18n="resources">Resources</div>
-                <a href="/" class="sidebar-link{% if active_page == 'dashboard' %} active{% endif %}">
-                    <span class="sidebar-icon">🏠</span>
-                    <span data-i18n="dashboard">Dashboard</span>
-                </a>
                 <a href="/keys" class="sidebar-link{% if active_page == 'keys' %} active{% endif %}">
-                    <span class="sidebar-icon">🔑</span>
-                    <span data-i18n="sshKeys">SSH Keys</span>
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon">🔑</span>
+                        <span data-i18n="sshKeys">SSH Keys</span>
+                    </span>
+                    <span class="sidebar-count">{{ sidebar_counts.keys }}</span>
                 </a>
                 <a href="/platforms" class="sidebar-link{% if active_page == 'platforms' %} active{% endif %}">
-                    <span class="sidebar-icon">🖥️</span>
-                    <span data-i18n="platforms">Platforms</span>
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon">🖥️</span>
+                        <span data-i18n="platforms">Platforms</span>
+                    </span>
+                    <span class="sidebar-count">{{ sidebar_counts.platforms }}</span>
                 </a>
                 <a href="/scripts" class="sidebar-link{% if active_page == 'scripts' %} active{% endif %}">
-                    <span class="sidebar-icon">📜</span>
-                    <span data-i18n="scripts">Scripts</span>
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon">📜</span>
+                        <span data-i18n="scripts">Scripts</span>
+                    </span>
+                    <span class="sidebar-count">{{ sidebar_counts.scripts }}</span>
                 </a>
                 <a href="/automations" class="sidebar-link{% if active_page == 'automations' %} active{% endif %}">
-                    <span class="sidebar-icon">⏱️</span>
-                    <span data-i18n="automations">Automations</span>
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon">⏱️</span>
+                        <span data-i18n="automations">Automations</span>
+                    </span>
+                    <span class="sidebar-count">{{ sidebar_counts.automations }}</span>
                 </a>
                 <a href="/jobs" class="sidebar-link{% if active_page == 'jobs' %} active{% endif %}">
-                    <span class="sidebar-icon">📦</span>
-                    <span>Jobs</span>
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon">📦</span>
+                        <span>Jobs</span>
+                    </span>
+                    <span class="sidebar-count">{{ sidebar_counts.jobs }}</span>
                 </a>
             </div>
 
