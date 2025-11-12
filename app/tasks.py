@@ -1,19 +1,21 @@
 """Celery tasks for SSH operations."""
+import asyncio
 import json
 import logging
 from datetime import datetime
 from typing import List, Optional
-from celery import Task
-import redis
+
 import boto3
+import redis
 from botocore.client import Config
+from celery import Task
 
 from app.celery_app import celery_app
 from app.config import config
 from app.db import SessionLocal
 from app.models import Platform, SSHKey, TaskRun, TaskStatusEnum
 from app.crypto import crypto
-from app.ssh_helper import SSHHelper
+from app.ssh_helper import AsyncSSHClient
 
 logger = logging.getLogger(__name__)
 
@@ -158,45 +160,44 @@ def deploy_keys_task(self, task_run_id: str, platform_id: str, key_ids: Optional
 
         publish_task_message(task_id, "progress", f"Found {len(keys)} key(s) to deploy")
 
-        # Connect via SSH
-        ssh = SSHHelper(
-            host=platform.host,
-            port=platform.port,
-            username=platform.username,
-            password=password,
-            private_key=private_key,
-            known_host_fingerprint=platform.known_host_fingerprint,
-        )
+        async def _deploy_keys() -> tuple[Optional[str], str, str]:
+            async with AsyncSSHClient(
+                host=platform.host,
+                port=platform.port,
+                username=platform.username,
+                password=password,
+                private_key=private_key,
+                known_host_fingerprint=platform.known_host_fingerprint,
+            ) as ssh:
+                publish_task_message(task_id, "progress", "Connected successfully. Deploying keys...")
 
-        success, error_msg = ssh.connect()
-        if not success:
-            raise Exception(f"SSH connection failed: {error_msg}")
+                fingerprint = ssh.get_host_fingerprint()
 
-        # Save host fingerprint if not set
-        if not platform.known_host_fingerprint:
-            fingerprint = ssh.get_host_fingerprint()
-            if fingerprint:
-                platform.known_host_fingerprint = fingerprint
-                db.commit()
-                publish_task_message(task_id, "progress", f"Saved host fingerprint: {fingerprint[:16]}...")
+                public_keys = [key.public_key for key in keys]
+                success, message = await ssh.deploy_authorized_keys(public_keys)
+                if not success:
+                    raise Exception(f"Key deployment failed: {message}")
 
-        publish_task_message(task_id, "progress", "Connected successfully. Deploying keys...")
+                publish_task_message(task_id, "progress", message)
 
-        # Deploy keys
-        public_keys = [key.public_key for key in keys]
-        success, message = ssh.deploy_authorized_keys(public_keys)
+                auth_keys_content = await ssh.read_file(
+                    f"/home/{platform.username}/.ssh/authorized_keys"
+                ) or ""
+                return fingerprint, auth_keys_content, message
 
-        if not success:
-            raise Exception(f"Key deployment failed: {message}")
+        fingerprint, auth_keys_content, message = asyncio.run(_deploy_keys())
 
-        publish_task_message(task_id, "progress", message)
+        if fingerprint and not platform.known_host_fingerprint:
+            platform.known_host_fingerprint = fingerprint
+            db.commit()
+            publish_task_message(
+                task_id,
+                "progress",
+                f"Saved host fingerprint: {fingerprint[:16]}...",
+            )
 
-        # Upload authorized_keys snapshot to S3
-        auth_keys_content = ssh.read_file(f"/home/{platform.username}/.ssh/authorized_keys") or ""
         s3_key = f"platforms/{platform_id}/authorized_keys_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.txt"
         upload_to_s3(s3_key, auth_keys_content)
-
-        ssh.close()
 
         # Update task status
         task_run.status = TaskStatusEnum.SUCCESS
@@ -285,26 +286,20 @@ def run_command_task(self, task_run_id: str, platform_id: str, command: str, tim
                 # Legacy: use encrypted_private_key directly
                 private_key = crypto.decrypt_string(platform.encrypted_private_key)
 
-        # Connect via SSH
-        ssh = SSHHelper(
-            host=platform.host,
-            port=platform.port,
-            username=platform.username,
-            password=password,
-            private_key=private_key,
-            known_host_fingerprint=platform.known_host_fingerprint,
-        )
+        async def _run_command() -> tuple[int, str, str]:
+            async with AsyncSSHClient(
+                host=platform.host,
+                port=platform.port,
+                username=platform.username,
+                password=password,
+                private_key=private_key,
+                known_host_fingerprint=platform.known_host_fingerprint,
+            ) as ssh:
+                publish_task_message(task_id, "progress", "Connected. Running command...")
+                return await ssh.execute_command(command, timeout)
 
-        success, error_msg = ssh.connect()
-        if not success:
-            raise Exception(f"SSH connection failed: {error_msg}")
+        exit_code, stdout, stderr = asyncio.run(_run_command())
 
-        publish_task_message(task_id, "progress", "Connected. Running command...")
-
-        # Execute command
-        exit_code, stdout, stderr = ssh.execute_command(command, timeout)
-
-        # Stream output
         if stdout:
             for line in stdout.split("\n"):
                 if line:
@@ -314,8 +309,6 @@ def run_command_task(self, task_run_id: str, platform_id: str, command: str, tim
             for line in stderr.split("\n"):
                 if line:
                     publish_task_message(task_id, "stderr", line)
-
-        ssh.close()
 
         # Save output (upload to S3 if large)
         result_location = None

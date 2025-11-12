@@ -46,6 +46,14 @@ class GUID(TypeDecorator):
         return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value))
 
 
+class UserRole(str, enum.Enum):
+    """Role-based access control roles."""
+
+    ADMIN = "admin"
+    OPERATOR = "operator"
+    VIEWER = "viewer"
+
+
 class AuthMethodEnum(str, enum.Enum):
     """Authentication method enum."""
     PASSWORD = "password"
@@ -79,6 +87,30 @@ class SSHKey(Base):
 
     def __repr__(self):
         return f"<SSHKey(id={self.id}, name={self.name})>"
+
+
+class User(Base):
+    """Application user with RBAC role."""
+
+    __tablename__ = "users"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    username = Column(String(150), nullable=False, unique=True, index=True)
+    email = Column(String(255), nullable=True, unique=True, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    role = Column(
+        Enum(UserRole, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=UserRole.OPERATOR,
+        index=True,
+    )
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_login = Column(DateTime, nullable=True)
+
+    def __repr__(self):
+        return f"<User(id={self.id}, username={self.username}, role={self.role})>"
 
 
 class Platform(Base):
