@@ -36,7 +36,10 @@ async def list_platforms(request: Request):
         for platform in platforms:
             p_dict = PlatformResponse.model_validate(platform).model_dump(mode="json")
             p_dict["has_password"] = platform.encrypted_password is not None
-            p_dict["has_private_key"] = platform.encrypted_private_key is not None
+            p_dict["has_private_key"] = (
+                platform.ssh_key_id is not None or platform.encrypted_private_key is not None
+            )
+            p_dict["system_info"] = platform.system_info
             result.append(p_dict)
         return JSONResponse(result)
     finally:
@@ -142,6 +145,7 @@ async def create_platform(request: Request):
             auth_method=platform_data.auth_method.lower(),
             encrypted_password=encrypted_password,
             ssh_key_id=platform_data.ssh_key_id,
+            system_info=system_info or None,
         )
 
         db.add(new_platform)
@@ -181,7 +185,10 @@ async def get_platform(request: Request):
 
         response_data = PlatformResponse.model_validate(platform).model_dump(mode="json")
         response_data["has_password"] = platform.encrypted_password is not None
-        response_data["has_private_key"] = platform.encrypted_private_key is not None
+        response_data["has_private_key"] = (
+            platform.ssh_key_id is not None or platform.encrypted_private_key is not None
+        )
+        response_data["system_info"] = platform.system_info
 
         return JSONResponse(response_data)
     finally:

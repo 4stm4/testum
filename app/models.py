@@ -64,6 +64,9 @@ class Platform(Base):
     
     # Host key fingerprint for verification
     known_host_fingerprint = Column(String(255), nullable=True)
+
+    # Cached system information collected during connection test
+    system_info = Column(JSON, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 

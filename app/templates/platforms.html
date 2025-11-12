@@ -74,17 +74,18 @@
         .platform-item {
             background: var(--bg-secondary);
             padding: 20px;
-            border-radius: 6px;
+            border-radius: 12px;
             margin-bottom: 15px;
             border: 1px solid var(--border-color);
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
             display: flex;
             align-items: flex-start;
-            gap: 15px;
+            gap: 16px;
         }
 
         .platform-item:hover {
             border-color: var(--accent-primary);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
         }
 
         .platform-checkbox {
@@ -95,27 +96,113 @@
             margin-top: 2px;
         }
 
-        .platform-info h3 {
+        .platform-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .platform-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .platform-title {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .platform-title h3 {
             color: var(--text-primary);
-            margin-bottom: 12px;
-            font-size: 1.1em;
+            margin: 0;
+            font-size: 1.15em;
         }
 
-        .platform-info p {
+        .platform-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.85em;
             color: var(--text-secondary);
-            font-size: 0.9em;
-            margin: 5px 0;
         }
 
-        .platform-info strong {
+        .platform-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-tertiary);
+            padding: 6px 10px;
+            border-radius: 999px;
+        }
+
+        .platform-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .platform-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(96, 165, 250, 0.2);
             color: var(--accent-primary);
+            font-size: 0.75em;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .platform-created {
+            font-size: 0.8em;
+            color: var(--text-tertiary);
+        }
+
+        .platform-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .platform-stats li {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 70px;
+        }
+
+        .platform-stats .label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            letter-spacing: 0.05em;
+        }
+
+        .platform-stats .value {
+            font-size: 0.95em;
+            color: var(--text-primary);
+            font-weight: 600;
+            line-height: 1.4;
         }
 
         .platform-actions {
-            margin-top: 15px;
+            margin-top: auto;
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .deploy-btn {
@@ -248,7 +335,7 @@
 {% block content %}
     <div class="page-header">
         <h1 class="page-title"><span data-i18n="platformsTitle">🖥️ Platforms</span></h1>
-        <p class="page-subtitle" data-i18n="platformsSubtitle">Manage target SSH platforms for key deployment and command execution</p>
+        <p class="page-subtitle" data-i18n="platformsSubtitle">Compact overview of SSH targets and quick actions</p>
     </div>
 
     <div id="message" class="message"></div>
@@ -321,6 +408,38 @@
 {% block scripts %}
     <script>
         const API_BASE = '/api/platforms';
+        const NOT_AVAILABLE_VALUE = '<span data-i18n="notAvailable">Not available</span>';
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+            })[char]);
+        }
+
+        function formatValue(value) {
+            if (!value) return '';
+            return escapeHtml(value).replace(/\n/g, '<br>');
+        }
+
+        function formatOSRelease(osReleaseRaw) {
+            if (!osReleaseRaw) return '';
+            const prettyMatch = osReleaseRaw.match(/PRETTY_NAME="([^"]+)"/);
+            if (prettyMatch) {
+                return prettyMatch[1];
+            }
+            const prettyLine = osReleaseRaw
+                .split('\n')
+                .find((line) => line.startsWith('PRETTY_NAME='));
+            if (prettyLine) {
+                return prettyLine.split('=')[1].replace(/"/g, '');
+            }
+            return osReleaseRaw;
+        }
 
         function showMessage(text, type = 'success') {
             const msg = document.getElementById('message');
@@ -392,25 +511,55 @@
 
                 document.getElementById('bulkActionsPanel').style.display = 'flex';
 
-                container.innerHTML = platforms.map(p => `
-                    <div class="platform-item">
-                        <input type="checkbox" class="platform-checkbox" data-platform-id="${p.id}" onchange="updateBulkActions()">
-                        <div class="platform-content">
-                            <div class="platform-info">
-                                <h3>${p.name}</h3>
-                                <p><strong data-i18n="host">Host:</strong> ${p.host}:${p.port}</p>
-                                <p><strong data-i18n="username">Username:</strong> ${p.username}</p>
-                                <p><strong>Auth:</strong> ${p.auth_method}</p>
-                                <p><strong data-i18n="created">Created:</strong> ${new Date(p.created_at).toLocaleString()}</p>
-                            </div>
-                            <div class="platform-actions">
-                                <button class="deploy-btn" onclick="deployKeys('${p.id}')" data-i18n="deployKeys">🚀 Deploy Keys</button>
-                                <button class="deploy-btn" onclick="runCommand('${p.id}')" data-i18n="runCommand">⚡ Run Command</button>
-                                <button class="delete-btn" onclick="deletePlatform('${p.id}')" data-i18n="delete">🗑️ Delete</button>
+                container.innerHTML = platforms.map((p) => {
+                    const info = p.system_info || {};
+                    const stats = [
+                        { key: 'platformOs', fallback: 'OS', value: formatOSRelease(info.os_release) },
+                        { key: 'platformKernel', fallback: 'Kernel', value: info.kernel },
+                        { key: 'platformCpu', fallback: 'CPU', value: info.cpu },
+                        { key: 'platformMemory', fallback: 'Memory', value: info.memory },
+                        { key: 'platformUptime', fallback: 'Uptime', value: info.uptime },
+                    ];
+                    const statsMarkup = stats.map(({ key, fallback, value }) => `
+                        <li>
+                            <span class="label" data-i18n="${key}">${fallback}</span>
+                            <span class="value">${value ? formatValue(value) : NOT_AVAILABLE_VALUE}</span>
+                        </li>
+                    `).join('');
+
+                    const authKey = p.auth_method === 'private_key' ? 'platformAuthKey' : 'platformAuthPassword';
+                    const authFallback = p.auth_method === 'private_key' ? 'SSH Key' : 'Password';
+                    const createdAt = escapeHtml(new Date(p.created_at).toLocaleString());
+
+                    return `
+                        <div class="platform-item">
+                            <input type="checkbox" class="platform-checkbox" data-platform-id="${escapeHtml(p.id)}" onchange="updateBulkActions()">
+                            <div class="platform-content">
+                                <div class="platform-header">
+                                    <div class="platform-title">
+                                        <h3>${escapeHtml(p.name)}</h3>
+                                        <div class="platform-meta">
+                                            <span>📡 ${escapeHtml(p.host)}:${p.port}</span>
+                                            <span>👤 ${escapeHtml(p.username)}</span>
+                                        </div>
+                                        <div class="platform-badges">
+                                            <span class="platform-badge" data-i18n="${authKey}">${authFallback}</span>
+                                        </div>
+                                    </div>
+                                    <div class="platform-created"><span data-i18n="created">Created</span> ${createdAt}</div>
+                                </div>
+                                <ul class="platform-stats">
+                                    ${statsMarkup}
+                                </ul>
+                                <div class="platform-actions">
+                                    <button class="deploy-btn" onclick="deployKeys('${p.id}')" data-i18n="deployKeys">🚀 Deploy Keys</button>
+                                    <button class="deploy-btn" onclick="runCommand('${p.id}')" data-i18n="runCommand">⚡ Run Command</button>
+                                    <button class="delete-btn" onclick="deletePlatform('${p.id}')" data-i18n="delete">🗑️ Delete</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
 
                 if (typeof applyTranslations === 'function') {
                     applyTranslations();
