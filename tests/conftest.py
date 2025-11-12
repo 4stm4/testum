@@ -1,9 +1,13 @@
 """Pytest configuration and fixtures."""
 import os
+import sys
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Set test environment variables
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
@@ -12,10 +16,13 @@ os.environ["REDIS_URL"] = "redis://localhost:6379/1"
 os.environ["APP_ENV"] = "testing"
 
 import app.db as app_db
+from app import models  # noqa: F401 - ensure models are imported for table creation
+from app.config import config
+from app.crypto import CryptoHelper
 from app.db import Base, get_db
 from app.main import app, create_jwt_token
-from app.crypto import CryptoHelper
-from app.config import config
+from app.models import User, UserRole
+from app.security import hash_password
 
 
 @pytest.fixture(scope="function")
@@ -37,7 +44,8 @@ def test_db():
     if hasattr(app, "dependency_overrides"):
         app.dependency_overrides[get_db] = override_get_db
 
-    yield TestingSessionLocal()
+    session = TestingSessionLocal()
+    yield session
 
     if hasattr(app, "dependency_overrides") and get_db in app.dependency_overrides:
         del app.dependency_overrides[get_db]
@@ -51,10 +59,22 @@ def test_db():
 @pytest.fixture(scope="function")
 def client(test_db):
     """Create test client."""
+    admin_user = User(
+        username=config.ADMIN_USERNAME,
+        hashed_password=hash_password(config.ADMIN_PASSWORD),
+        role=UserRole.ADMIN,
+        is_active=True,
+    )
+    test_db.add(admin_user)
+    test_db.commit()
+    test_db.refresh(admin_user)
+
     with TestClient(app) as c:
-        token = create_jwt_token(config.ADMIN_USERNAME)
+        token = create_jwt_token(str(admin_user.id), admin_user.username, admin_user.role)
         c.cookies.set("access_token", token)
         yield c
+
+    test_db.close()
 
 
 @pytest.fixture

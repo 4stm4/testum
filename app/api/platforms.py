@@ -1,38 +1,58 @@
 """Platforms API endpoints."""
-import uuid
 import logging
-# (Removed unused typing imports)
+import uuid
+from typing import List
+
+from celery.result import AsyncResult
+from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from starlette.routing import Router, Route
-from sqlalchemy.orm import Session
+from starlette.routing import Route, Router
 
+from app.audit import log_audit
+from app.celery_app import celery_app
 from app.config import config
+from app.crypto import crypto
 from app.db import get_db
-from app.models import Platform, TaskRun, TaskTypeEnum, TaskStatusEnum, SSHKey
+from app.models import (
+    Platform,
+    SSHKey,
+    TaskRun,
+    TaskStatusEnum,
+    TaskTypeEnum,
+    UserRole,
+)
+from app.pagination import get_pagination_params
+from app.rbac import ALL_ROLES, get_request_user, require_roles
 from app.schemas import (
+    DeployKeysRequest,
     PlatformCreate,
     PlatformResponse,
-    DeployKeysRequest,
     RunCommandRequest,
     TaskStatusResponse,
 )
-from app.crypto import crypto
-from app.audit import log_audit
 from app.tasks import deploy_keys_task, run_command_task
-from app.celery_app import celery_app
-from celery.result import AsyncResult
 
 logger = logging.getLogger(__name__)
 
 router = Router()
 
 
+@require_roles(*ALL_ROLES)
 async def list_platforms(request: Request):
     """List all platforms."""
     db: Session = next(get_db())
     try:
-        platforms = db.query(Platform).all()
+        try:
+            limit, offset = get_pagination_params(request, default_limit=25)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+        query = db.query(Platform)
+        total = query.count()
+        platforms: List[Platform] = (
+            query.order_by(Platform.created_at.desc()).offset(offset).limit(limit).all()
+        )
         result = []
         for platform in platforms:
             p_dict = PlatformResponse.model_validate(platform).model_dump(mode="json")
@@ -42,11 +62,17 @@ async def list_platforms(request: Request):
             )
             p_dict["system_info"] = platform.system_info
             result.append(p_dict)
-        return JSONResponse(result)
+
+        response = JSONResponse(result)
+        response.headers["X-Total-Count"] = str(total)
+        response.headers["X-Limit"] = str(limit)
+        response.headers["X-Offset"] = str(offset)
+        return response
     finally:
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def create_platform(request: Request):
     """Create new platform."""
     db: Session = next(get_db())
@@ -63,75 +89,64 @@ async def create_platform(request: Request):
             return JSONResponse({"error": "SSH Key required for private_key auth"}, status_code=400)
 
         system_info = None
+        user = get_request_user(request)
 
         if config.APP_ENV != "testing":
-            from app.ssh_helper import SSHHelper
+            from app.ssh_helper import AsyncSSHClient
 
-            ssh = SSHHelper(
-                host=platform_data.host,
-                port=platform_data.port,
-                username=platform_data.username
-            )
+            ssh_kwargs = {
+                "host": platform_data.host,
+                "port": platform_data.port,
+                "username": platform_data.username,
+            }
+
+            if platform_data.auth_method == "password":
+                ssh_kwargs["password"] = platform_data.password
+            else:
+                ssh_key = db.query(SSHKey).filter(SSHKey.id == platform_data.ssh_key_id).first()
+                if not ssh_key:
+                    return JSONResponse({"error": "SSH Key not found"}, status_code=400)
+
+                if not ssh_key.encrypted_private_key:
+                    return JSONResponse({"error": "SSH Key has no private key for authentication"}, status_code=400)
+
+                ssh_kwargs["private_key"] = crypto.decrypt_string(ssh_key.encrypted_private_key)
 
             system_info = {}
 
             try:
-                if platform_data.auth_method == "password":
-                    ssh.connect_with_password(platform_data.password)
-                else:
-                    # Get SSH key from database
-                    ssh_key = db.query(SSHKey).filter(SSHKey.id == platform_data.ssh_key_id).first()
-                    if not ssh_key:
-                        return JSONResponse({"error": "SSH Key not found"}, status_code=400)
+                async with AsyncSSHClient(**ssh_kwargs) as ssh:
+                    exit_code, stdout, stderr = await ssh.execute_command("echo 'Connection test successful'")
+                    if exit_code != 0:
+                        raise Exception(f"Test command failed with exit code {exit_code}: {stderr}")
+                    logger.info("Connection test successful: %s", stdout.strip())
 
-                    if not ssh_key.encrypted_private_key:
-                        return JSONResponse({"error": "SSH Key has no private key for authentication"}, status_code=400)
+                    try:
+                        _, os_release, _ = await ssh.execute_command("cat /etc/os-release 2>/dev/null || echo 'N/A'")
+                        system_info["os_release"] = os_release.strip()
 
-                    # Decrypt private key
-                    private_key_str = crypto.decrypt_string(ssh_key.encrypted_private_key)
-                    ssh.connect_with_key(private_key_str)
+                        _, kernel, _ = await ssh.execute_command("uname -r")
+                        system_info["kernel"] = kernel.strip()
 
-                # Test command to verify connection
-                exit_code, stdout, stderr = ssh.execute_command("echo 'Connection test successful'")
-                if exit_code != 0:
-                    raise Exception(f"Test command failed with exit code {exit_code}: {stderr}")
-                logger.info(f"Connection test successful: {stdout.strip()}")
+                        _, cpu_model, _ = await ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
+                        _, cpu_cores, _ = await ssh.execute_command("nproc")
+                        system_info["cpu"] = f"{cpu_model.strip()} ({cpu_cores.strip()} cores)"
 
-                # Gather system information
-                try:
-                    # OS info
-                    _, os_release, _ = ssh.execute_command("cat /etc/os-release 2>/dev/null || echo 'N/A'")
-                    system_info["os_release"] = os_release.strip()
+                        _, memory, _ = await ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used\"}'")
+                        system_info["memory"] = memory.strip()
 
-                    # Kernel
-                    _, kernel, _ = ssh.execute_command("uname -r")
-                    system_info["kernel"] = kernel.strip()
+                        _, uptime, _ = await ssh.execute_command("uptime -p 2>/dev/null || uptime")
+                        system_info["uptime"] = uptime.strip()
 
-                    # CPU
-                    _, cpu_model, _ = ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
-                    _, cpu_cores, _ = ssh.execute_command("nproc")
-                    system_info["cpu"] = f"{cpu_model.strip()} ({cpu_cores.strip()} cores)"
-
-                    # Memory
-                    _, memory, _ = ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used\"}'")
-                    system_info["memory"] = memory.strip()
-
-                    # Uptime
-                    _, uptime, _ = ssh.execute_command("uptime -p 2>/dev/null || uptime")
-                    system_info["uptime"] = uptime.strip()
-
-                    logger.info(f"System info gathered: {system_info}")
-                except Exception as info_err:
-                    logger.warning(f"Failed to gather some system info: {info_err}")
-
+                        logger.info("System info gathered: %s", system_info)
+                    except Exception as info_err:
+                        logger.warning("Failed to gather some system info: %s", info_err)
             except Exception as conn_err:
-                logger.error(f"Connection test failed: {conn_err}")
-                return JSONResponse({
-                    "error": "Connection test failed",
-                    "details": str(conn_err)
-                }, status_code=400)
-            finally:
-                ssh.close()
+                logger.error("Connection test failed: %s", conn_err)
+                return JSONResponse(
+                    {"error": "Connection test failed", "details": str(conn_err)},
+                    status_code=400,
+                )
 
         # Encrypt password if provided
         encrypted_password = None
@@ -158,7 +173,7 @@ async def create_platform(request: Request):
         # Audit log
         log_audit(
             db,
-            user=request.state.user if hasattr(request.state, "user") else "admin",
+            user=user.username if user else "system",
             action="create",
             object_type="platform",
             object_id=str(new_platform.id),
@@ -177,6 +192,7 @@ async def create_platform(request: Request):
         db.close()
 
 
+@require_roles(*ALL_ROLES)
 async def get_platform(request: Request):
     """Get platform details."""
     platform_id = request.path_params["platform_id"]
@@ -198,6 +214,7 @@ async def get_platform(request: Request):
         db.close()
 
 
+@require_roles(UserRole.ADMIN)
 async def delete_platform(request: Request):
     """Delete platform."""
     platform_id = request.path_params["platform_id"]
@@ -208,9 +225,10 @@ async def delete_platform(request: Request):
             return JSONResponse({"error": "Platform not found"}, status_code=404)
 
         # Audit log
+        user = get_request_user(request)
         log_audit(
             db,
-            user=request.state.user if hasattr(request.state, "user") else "admin",
+            user=user.username if user else "system",
             action="delete",
             object_type="platform",
             object_id=str(platform.id),
@@ -227,6 +245,7 @@ async def delete_platform(request: Request):
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def deploy_keys(request: Request):
     """Deploy SSH keys to platform."""
     platform_id = request.path_params["platform_id"]
@@ -270,9 +289,10 @@ async def deploy_keys(request: Request):
         db.commit()
 
         # Audit log
+        user = get_request_user(request)
         log_audit(
             db,
-            user=request.state.user if hasattr(request.state, "user") else "admin",
+            user=user.username if user else "system",
             action="deploy_keys",
             object_type="platform",
             object_id=str(platform.id),
@@ -290,6 +310,7 @@ async def deploy_keys(request: Request):
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def run_command(request: Request):
     """Run command on platform."""
     platform_id = request.path_params["platform_id"]
@@ -330,9 +351,10 @@ async def run_command(request: Request):
         db.commit()
 
         # Audit log
+        user = get_request_user(request)
         log_audit(
             db,
-            user=request.state.user if hasattr(request.state, "user") else "admin",
+            user=user.username if user else "system",
             action="run_command",
             object_type="platform",
             object_id=str(platform.id),
@@ -371,16 +393,15 @@ async def get_task_status(request: Request):
         db.close()
 
 
+@require_roles(*ALL_ROLES)
 async def list_tasks(request: Request):
     """List recent tasks with optional pagination."""
     db: Session = next(get_db())
     try:
-        # Pagination params
         try:
-            limit = int(request.query_params.get("limit", 50))
-            offset = int(request.query_params.get("offset", 0))
-        except ValueError:
-            return JSONResponse({"error": "Invalid pagination params"}, status_code=400)
+            limit, offset = get_pagination_params(request, default_limit=50, max_limit=200)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
 
         # Optional filter by status/type
         status_filter = request.query_params.get("status")
@@ -401,7 +422,7 @@ async def list_tasks(request: Request):
                 query = query.filter(TaskRun.type == type_enum)
             except Exception:
                 return JSONResponse({"error": "Invalid type value"}, status_code=400)
-
+        total = query.count()
         task_runs = (
             query.order_by(TaskRun.created_at.desc())
             .offset(offset)
@@ -412,15 +433,19 @@ async def list_tasks(request: Request):
         result = []
         for t in task_runs:
             item = TaskStatusResponse.model_validate(t).model_dump(mode="json")
-            # Enrich with platform info if available
             item["platform_name"] = t.platform.name if t.platform else None
             result.append(item)
 
-        return JSONResponse(result)
+        response = JSONResponse(result)
+        response.headers["X-Total-Count"] = str(total)
+        response.headers["X-Limit"] = str(limit)
+        response.headers["X-Offset"] = str(offset)
+        return response
     finally:
         db.close()
 
 
+@require_roles(*ALL_ROLES)
 async def get_platform_info(request: Request):
     """Get system information from platform."""
     platform_id = request.path_params["platform_id"]
@@ -445,66 +470,85 @@ async def get_platform_info(request: Request):
             elif platform.encrypted_private_key:
                 private_key = crypto.decrypt_string(platform.encrypted_private_key)
         
-        # Connect and gather info
-        from app.ssh_helper import SSHHelper
-        ssh = SSHHelper(
-            host=platform.host,
-            port=platform.port,
-            username=platform.username,
-            password=password,
-            private_key=private_key,
-        )
-        
+        from app.ssh_helper import AsyncSSHClient
+
+        ssh_kwargs = {
+            "host": platform.host,
+            "port": platform.port,
+            "username": platform.username,
+            "password": password,
+            "private_key": private_key,
+            "known_host_fingerprint": platform.known_host_fingerprint,
+        }
+
         info = {}
-        
+
         try:
-            success, error = ssh.connect()
-            if not success:
-                raise Exception(error or "Connection failed")
-            
-            # Get OS info
-            exit_code, os_release, stderr = ssh.execute_command("cat /etc/os-release 2>/dev/null || cat /etc/redhat-release 2>/dev/null || echo 'Unknown'")
-            info["os_release"] = os_release.strip()
-            
-            # Get hostname
-            exit_code, hostname, stderr = ssh.execute_command("hostname")
-            info["hostname"] = hostname.strip()
-            
-            # Get uptime
-            exit_code, uptime, stderr = ssh.execute_command("uptime -p 2>/dev/null || uptime")
-            info["uptime"] = uptime.strip()
-            
-            # Get kernel
-            exit_code, kernel, stderr = ssh.execute_command("uname -r")
-            info["kernel"] = kernel.strip()
-            
-            # Get CPU info
-            exit_code, cpu_info, stderr = ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
-            exit_code, cpu_cores, stderr = ssh.execute_command("nproc")
-            info["cpu"] = f"{cpu_info.strip()} ({cpu_cores.strip()} cores)"
-            
-            # Get memory
-            exit_code, mem_info, stderr = ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used, \"$4\" free\"}'")
-            info["memory"] = mem_info.strip()
-            
-            # Get disk
-            exit_code, disk_info, stderr = ssh.execute_command("df -h / | tail -1 | awk '{print $2\" total, \"$3\" used, \"$4\" free, \"$5\" used%\"}'")
-            info["disk"] = disk_info.strip()
-            
-            # Get load average
-            exit_code, load_avg, stderr = ssh.execute_command("cat /proc/loadavg | awk '{print $1\" \"$2\" \"$3}'")
-            info["load_average"] = load_avg.strip()
-            
-            info["status"] = "online"
-            
-        except Exception as e:
-            logger.error(f"Failed to gather info from {platform.host}: {e}")
-            info["status"] = "offline"
-            info["error"] = str(e)
-        finally:
-            ssh.close()
-        
-        return JSONResponse(info)
+            async with AsyncSSHClient(**ssh_kwargs) as ssh:
+                _, os_release, _ = await ssh.execute_command(
+                    "cat /etc/os-release 2>/dev/null || cat /etc/redhat-release 2>/dev/null || echo 'Unknown'"
+                )
+                info["os_release"] = os_release.strip()
+
+                _, hostname, _ = await ssh.execute_command("hostname")
+                info["hostname"] = hostname.strip()
+
+                _, uptime, _ = await ssh.execute_command("uptime -p 2>/dev/null || uptime")
+                info["uptime"] = uptime.strip()
+
+                _, kernel, _ = await ssh.execute_command("uname -r")
+                info["kernel"] = kernel.strip()
+
+                _, cpu_info, _ = await ssh.execute_command(
+                    "lscpu | grep 'Model name' | cut -d':' -f2 | xargs"
+                )
+                _, cpu_cores, _ = await ssh.execute_command("nproc")
+                info["cpu"] = f"{cpu_info.strip()} ({cpu_cores.strip()} cores)"
+
+                _, mem_info, _ = await ssh.execute_command(
+                    "free -h | grep Mem | awk '{print $2\" total, \"$3\" used, \"$4\" free\"}'"
+                )
+                info["memory"] = mem_info.strip()
+
+                _, disk_info, _ = await ssh.execute_command(
+                    "df -h / | tail -1 | awk '{print $2\" total, \"$3\" used, \"$4\" free, \"$5\" used%\"}'"
+                )
+                info["disk"] = disk_info.strip()
+
+                _, load_avg, _ = await ssh.execute_command(
+                    "cat /proc/loadavg | awk '{print $1\" \"$2\" \"$3}'"
+                )
+                info["load_average"] = load_avg.strip()
+
+                fingerprint = ssh.get_host_fingerprint()
+                if fingerprint:
+                    info["host_fingerprint"] = fingerprint
+                    if not platform.known_host_fingerprint:
+                        platform.known_host_fingerprint = fingerprint
+                        db.commit()
+
+                authorized_content = await ssh.read_file(
+                    f"/home/{platform.username}/.ssh/authorized_keys"
+                )
+                if authorized_content:
+                    keys = [line.strip() for line in authorized_content.splitlines() if line.strip()]
+                    info["authorized_keys"] = len(keys)
+                else:
+                    info["authorized_keys"] = 0
+
+                _, services, _ = await ssh.execute_command(
+                    "systemctl list-units --type=service --state=running | head -n 5"
+                )
+                info["services"] = services.strip()
+
+        except Exception as exc:
+            logger.error("Failed to gather info from %s: %s", platform.host, exc)
+            return JSONResponse(
+                {"error": "Unable to fetch platform info", "details": str(exc)},
+                status_code=400,
+            )
+
+        return JSONResponse({"system_info": info})
         
     except Exception as e:
         logger.error(f"Error getting platform info: {e}")
@@ -513,6 +557,7 @@ async def get_platform_info(request: Request):
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def revoke_task(request: Request):
     """Revoke (stop) a running task."""
     task_id = request.path_params["task_id"]
@@ -540,9 +585,10 @@ async def revoke_task(request: Request):
         db.commit()
         
         # Audit log
+        user = get_request_user(request)
         log_audit(
             db,
-            user=request.state.user if hasattr(request.state, "user") else "admin",
+            user=user.username if user else "system",
             action="revoke_task",
             object_type="task",
             object_id=str(task.id),

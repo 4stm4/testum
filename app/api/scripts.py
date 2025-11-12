@@ -4,13 +4,20 @@ from datetime import datetime
 from typing import List
 
 from sqlalchemy.orm import Session
+import uuid
+from datetime import datetime
+from typing import List
+
+from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Router
 
 from app.audit import log_audit
 from app.db import get_db
-from app.models import Script
+from app.models import Script, UserRole
+from app.pagination import get_pagination_params
+from app.rbac import ALL_ROLES, get_request_user, require_roles
 from app.schemas import (
     MessageResponse,
     ScriptCreate,
@@ -26,23 +33,42 @@ def _get_db_session() -> Session:
     return next(get_db())
 
 
+@require_roles(*ALL_ROLES)
 async def list_scripts(request: Request) -> JSONResponse:
     """Return all stored scripts ordered by name."""
     db: Session = _get_db_session()
     try:
-        scripts: List[Script] = db.query(Script).order_by(Script.name.asc()).all()
-        payload = [ScriptResponse.model_validate(script).model_dump(mode="json") for script in scripts]
-        return JSONResponse(payload)
+        try:
+            limit, offset = get_pagination_params(request, default_limit=25)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+        query = db.query(Script)
+        total = query.count()
+        scripts: List[Script] = (
+            query.order_by(Script.name.asc()).offset(offset).limit(limit).all()
+        )
+        items = [
+            ScriptResponse.model_validate(script).model_dump(mode="json")
+            for script in scripts
+        ]
+        response = JSONResponse(items)
+        response.headers["X-Total-Count"] = str(total)
+        response.headers["X-Limit"] = str(limit)
+        response.headers["X-Offset"] = str(offset)
+        return response
     finally:
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def create_script(request: Request) -> JSONResponse:
     """Create a new reusable script."""
     db: Session = _get_db_session()
     try:
         data = await request.json()
         script_data = ScriptCreate(**data)
+        user = get_request_user(request)
 
         new_script = Script(
             id=uuid.uuid4(),
@@ -50,7 +76,7 @@ async def create_script(request: Request) -> JSONResponse:
             language=script_data.language.strip(),
             description=script_data.description.strip() if script_data.description else None,
             content=script_data.content,
-            created_by=getattr(request.state, "user", "admin"),
+            created_by=user.username if user else "system",
         )
         db.add(new_script)
         db.commit()
@@ -58,7 +84,7 @@ async def create_script(request: Request) -> JSONResponse:
 
         log_audit(
             db,
-            user=getattr(request.state, "user", "admin"),
+            user=user.username if user else "system",
             action="create",
             object_type="script",
             object_id=str(new_script.id),
@@ -76,6 +102,7 @@ async def create_script(request: Request) -> JSONResponse:
         db.close()
 
 
+@require_roles(*ALL_ROLES)
 async def get_script(request: Request) -> JSONResponse:
     """Fetch a single script by identifier."""
     script_id = request.path_params["script_id"]
@@ -89,11 +116,13 @@ async def get_script(request: Request) -> JSONResponse:
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def update_script(request: Request) -> JSONResponse:
     """Update script fields."""
     script_id = request.path_params["script_id"]
     db: Session = _get_db_session()
     try:
+        user = get_request_user(request)
         payload = await request.json()
         update_data = ScriptUpdate(**payload)
 
@@ -114,7 +143,7 @@ async def update_script(request: Request) -> JSONResponse:
 
         log_audit(
             db,
-            user=getattr(request.state, "user", "admin"),
+            user=user.username if user else "system",
             action="update",
             object_type="script",
             object_id=str(script.id),
@@ -129,6 +158,7 @@ async def update_script(request: Request) -> JSONResponse:
         db.close()
 
 
+@require_roles(UserRole.ADMIN)
 async def delete_script(request: Request) -> JSONResponse:
     """Delete a script by identifier."""
     script_id = request.path_params["script_id"]
@@ -138,9 +168,10 @@ async def delete_script(request: Request) -> JSONResponse:
         if not script:
             return JSONResponse({"error": "Script not found"}, status_code=404)
 
+        user = get_request_user(request)
         log_audit(
             db,
-            user=getattr(request.state, "user", "admin"),
+            user=user.username if user else "system",
             action="delete",
             object_type="script",
             object_id=str(script.id),
