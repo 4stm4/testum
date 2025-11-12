@@ -13,7 +13,7 @@ help:
 	@echo "  make clean          - Clean up containers and volumes"
 
 build:
-	docker-compose build
+	docker-compose pull
 
 up:
 	docker-compose up -d
