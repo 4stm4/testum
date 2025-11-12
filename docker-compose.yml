@@ -139,11 +139,10 @@ services:
       retries: 3
 
   app:
-    build:
-      context: .
-    image: testum_app:latest
+    image: python:3.12-slim
     container_name: testum_app
     restart: unless-stopped
+    working_dir: /app
     environment:
       APP_ENV: production
       SECRET_KEY: test-secret-key-change-me-in-production
@@ -160,8 +159,14 @@ services:
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
       SSH_HOST_KEY_POLICY: auto_add
+      USE_RUNTIME_INSTALL: "1"
+      RUNTIME_CACHE_DIR: /runtime-cache
     ports:
       - "8001:8000"
+    volumes:
+      - ./:/app
+      - app_runtime_cache:/runtime-cache
+    entrypoint: ["/app/entrypoint.sh"]
     networks:
       - testum_network
     depends_on:
@@ -185,9 +190,10 @@ services:
       "
 
   celery_worker:
-    image: testum_app:latest
+    image: python:3.12-slim
     container_name: testum_celery
     restart: unless-stopped
+    working_dir: /app
     environment:
       APP_ENV: production
       FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
@@ -201,6 +207,13 @@ services:
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
       SSH_HOST_KEY_POLICY: auto_add
+      RUN_MIGRATIONS: "0"
+      USE_RUNTIME_INSTALL: "1"
+      RUNTIME_CACHE_DIR: /runtime-cache
+    volumes:
+      - ./:/app
+      - app_runtime_cache:/runtime-cache
+    entrypoint: ["/app/entrypoint.sh"]
     networks:
       - testum_network
     depends_on:
@@ -208,7 +221,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
+      minio:
+        condition: service_healthy
+    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
 
 networks:
   testum_network:
@@ -217,3 +232,4 @@ networks:
 volumes:
   postgres_data:
   minio_data:
+  app_runtime_cache:

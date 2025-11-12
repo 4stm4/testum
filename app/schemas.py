@@ -5,6 +5,50 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.models import UserRole
+
+
+# User Schemas
+class UserCreate(BaseModel):
+    """Schema for creating a user."""
+
+    username: str = Field(..., min_length=3, max_length=150)
+    password: str = Field(..., min_length=8, max_length=255)
+    role: str = Field(default=UserRole.OPERATOR.value, pattern="^(admin|operator|viewer)$")
+    email: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_email(cls, values: "UserCreate"):
+        if values.email and "@" not in values.email:
+            raise ValueError("Invalid email address")
+        return values
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating a user."""
+
+    username: Optional[str] = Field(default=None, min_length=3, max_length=150)
+    password: Optional[str] = Field(default=None, min_length=8, max_length=255)
+    role: Optional[str] = Field(default=None, pattern="^(admin|operator|viewer)$")
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class UserResponse(BaseModel):
+    """Schema representing user details."""
+
+    id: UUID
+    username: str
+    email: Optional[str]
+    role: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    last_login: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
 
 # SSH Key Schemas
 class SSHKeyCreate(BaseModel):

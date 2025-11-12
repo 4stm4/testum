@@ -1,12 +1,16 @@
 """Authentication middleware and utilities."""
 import logging
 from typing import Optional
+
+import jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response, RedirectResponse
-import jwt
+from starlette.responses import RedirectResponse, Response
 
 from app.config import config
+from app import db as app_db
+from app.models import User, UserRole
+from app.rbac import UserContext
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +83,33 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 response.delete_cookie("access_token")
                 return response
         
-        # Add user info to request state
-        request.state.user = payload.get("sub")
-        
+        user_id = payload.get("sub")
+        if not user_id:
+            return Response(
+                content='{"error": "Invalid token payload"}',
+                status_code=401,
+                media_type="application/json",
+            )
+
+        with app_db.SessionLocal() as db:
+            user = db.query(User).filter(User.id == user_id).first()
+
+            if not user or not user.is_active:
+                if path.startswith("/api/"):
+                    return Response(
+                        content='{"error": "User inactive or not found"}',
+                        status_code=403,
+                        media_type="application/json",
+                    )
+                response = RedirectResponse(url="/login", status_code=302)
+                response.delete_cookie("access_token")
+                return response
+
+            request.state.user = UserContext(
+                id=str(user.id),
+                username=user.username,
+                role=user.role if isinstance(user.role, UserRole) else UserRole(user.role),
+            )
+
         # Continue processing request
         return await call_next(request)

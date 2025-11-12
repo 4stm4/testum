@@ -1,23 +1,32 @@
 """Main Starlette application."""
 import logging
+import uuid
+from datetime import datetime, timedelta
+
+import jwt
 from starlette.applications import Starlette
-from starlette.routing import Route, Mount, WebSocketRoute
-from starlette.responses import JSONResponse, RedirectResponse
-from starlette.staticfiles import StaticFiles
-from starlette.templating import Jinja2Templates
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-import jwt
-from datetime import datetime, timedelta
+from starlette.responses import JSONResponse, RedirectResponse
+from starlette.routing import Mount, Route, WebSocketRoute
+from starlette.staticfiles import StaticFiles
+from starlette.templating import Jinja2Templates
 
-from app.config import config
 from app.api.automations import automations_router
 from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
 from app.api.scripts import scripts_router
-from app.ws import task_stream_websocket
+from app.api.users import users_router
 from app.auth import AuthMiddleware
+from app.config import config
+from app import db as app_db
+from app.models import User, UserRole
+from app.rate_limiter import RateLimiterMiddleware
+from app.rbac import get_request_user
+from app.security import hash_password, verify_password
+from app.updater import UpdateError, get_update_info, perform_update
+from app.ws import task_stream_websocket
 from app.updater import get_update_info, perform_update, UpdateError
 from app.db import SessionLocal
 from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
@@ -42,15 +51,59 @@ middleware = [
         allow_methods=["*"],
         allow_headers=["*"],
     ),
+    Middleware(RateLimiterMiddleware),
     Middleware(AuthMiddleware),
 ]
 
 
+# Bootstrap helpers
+def ensure_default_admin_user() -> None:
+    """Ensure there is at least one administrator user."""
+
+    with app_db.SessionLocal() as db:
+        admin = db.query(User).filter(User.username == config.ADMIN_USERNAME).first()
+
+        if not admin:
+            admin = User(
+                id=uuid.uuid4(),
+                username=config.ADMIN_USERNAME,
+                hashed_password=hash_password(config.ADMIN_PASSWORD),
+                role=UserRole.ADMIN,
+                is_active=True,
+            )
+            db.add(admin)
+            db.commit()
+            logger.info("Created default admin user '%s'", admin.username)
+            return
+
+        updated = False
+
+        if admin.role != UserRole.ADMIN:
+            admin.role = UserRole.ADMIN
+            updated = True
+
+        if config.ADMIN_PASSWORD and not verify_password(config.ADMIN_PASSWORD, admin.hashed_password):
+            admin.hashed_password = hash_password(config.ADMIN_PASSWORD)
+            updated = True
+
+        if not admin.is_active:
+            admin.is_active = True
+            updated = True
+
+        if updated:
+            admin.updated_at = datetime.utcnow()
+            db.commit()
+            logger.info("Synchronized default admin credentials for '%s'", admin.username)
+
+
 # Auth helpers
-def create_jwt_token(username: str) -> str:
-    """Create JWT token."""
+def create_jwt_token(user_id: str, username: str, role: UserRole) -> str:
+    """Create JWT token for the given user."""
+
     payload = {
-        "sub": username,
+        "sub": user_id,
+        "username": username,
+        "role": role.value if isinstance(role, UserRole) else str(role),
         "exp": datetime.utcnow() + timedelta(hours=24),
         "iat": datetime.utcnow(),
     }
@@ -170,18 +223,43 @@ async def login_page(request: Request):
 async def login_endpoint(request: Request):
     """Simple login endpoint."""
     data = await request.json()
-    username = data.get("username")
-    password = data.get("password")
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
 
-    # Simple auth check (for MVP)
-    if username == config.ADMIN_USERNAME and password == config.ADMIN_PASSWORD:
-        token = create_jwt_token(username)
-        return JSONResponse({
-            "access_token": token,
-            "token_type": "bearer",
-        })
-    else:
-        return JSONResponse({"error": "Invalid credentials"}, status_code=401)
+    if not username or not password:
+        return JSONResponse({"error": "Username and password are required"}, status_code=400)
+
+    with app_db.SessionLocal() as db:
+        user = db.query(User).filter(User.username == username).first()
+
+        if not user or not user.is_active or not verify_password(password, user.hashed_password):
+            return JSONResponse({"error": "Invalid credentials"}, status_code=401)
+
+        user.last_login = datetime.utcnow()
+        db.commit()
+
+        token = create_jwt_token(str(user.id), user.username, user.role)
+        response = JSONResponse(
+            {
+                "access_token": token,
+                "token_type": "bearer",
+                "user": {
+                    "id": str(user.id),
+                    "username": user.username,
+                    "role": user.role.value if isinstance(user.role, UserRole) else str(user.role),
+                },
+            }
+        )
+        response.set_cookie(
+            "access_token",
+            token,
+            max_age=86400,
+            httponly=True,
+            secure=config.APP_ENV == "production",
+            samesite="lax",
+            path="/",
+        )
+        return response
 
 
 async def logout_endpoint(request: Request):
@@ -196,26 +274,47 @@ async def change_username_endpoint(request: Request):
     data = await request.json()
     current_password = data.get("current_password")
     new_username = data.get("new_username")
-    
+
     if not current_password or not new_username:
         return JSONResponse({"error": "Missing required fields"}, status_code=400)
-    
-    # Verify current password
-    if current_password != config.ADMIN_PASSWORD:
-        return JSONResponse({"error": "Invalid current password"}, status_code=401)
-    
-    # Validate new username
+
+    new_username = new_username.strip()
     if len(new_username) < 3:
         return JSONResponse({"error": "Username must be at least 3 characters"}, status_code=400)
-    
-    # Update username in environment (this is temporary - ideally update in config file or DB)
-    # For MVP, we need to update the docker-compose.yml or restart with new env vars
-    # For now, just return success - user needs to update ADMIN_USERNAME in deployment
-    
-    return JSONResponse({
-        "message": "Username change requested",
-        "note": "Please update ADMIN_USERNAME environment variable in your deployment configuration"
-    })
+
+    user_context = get_request_user(request)
+    if not user_context:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    with app_db.SessionLocal() as db:
+        user = db.query(User).filter(User.id == user_context.id).first()
+        if not user:
+            return JSONResponse({"error": "User not found"}, status_code=404)
+
+        if not verify_password(current_password, user.hashed_password):
+            return JSONResponse({"error": "Invalid current password"}, status_code=401)
+
+        # Ensure username unique
+        existing = db.query(User).filter(User.username == new_username, User.id != user.id).first()
+        if existing:
+            return JSONResponse({"error": "Username already in use"}, status_code=409)
+
+        user.username = new_username
+        user.updated_at = datetime.utcnow()
+        db.commit()
+
+        token = create_jwt_token(str(user.id), user.username, user.role)
+        response = JSONResponse({"message": "Username updated", "access_token": token})
+        response.set_cookie(
+            "access_token",
+            token,
+            max_age=86400,
+            httponly=True,
+            secure=config.APP_ENV == "production",
+            samesite="lax",
+            path="/",
+        )
+        return response
 
 
 async def change_password_endpoint(request: Request):
@@ -223,26 +322,30 @@ async def change_password_endpoint(request: Request):
     data = await request.json()
     current_password = data.get("current_password")
     new_password = data.get("new_password")
-    
+
     if not current_password or not new_password:
         return JSONResponse({"error": "Missing required fields"}, status_code=400)
-    
-    # Verify current password
-    if current_password != config.ADMIN_PASSWORD:
-        return JSONResponse({"error": "Invalid current password"}, status_code=401)
-    
-    # Validate new password
+
     if len(new_password) < 8:
         return JSONResponse({"error": "Password must be at least 8 characters"}, status_code=400)
-    
-    # Update password in environment (this is temporary - ideally update in config file or DB)
-    # For MVP, we need to update the docker-compose.yml or restart with new env vars
-    # For now, just return success - user needs to update ADMIN_PASSWORD in deployment
-    
-    return JSONResponse({
-        "message": "Password change requested",
-        "note": "Please update ADMIN_PASSWORD environment variable in your deployment configuration"
-    })
+
+    user_context = get_request_user(request)
+    if not user_context:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    with app_db.SessionLocal() as db:
+        user = db.query(User).filter(User.id == user_context.id).first()
+        if not user:
+            return JSONResponse({"error": "User not found"}, status_code=404)
+
+        if not verify_password(current_password, user.hashed_password):
+            return JSONResponse({"error": "Invalid current password"}, status_code=401)
+
+        user.hashed_password = hash_password(new_password)
+        user.updated_at = datetime.utcnow()
+        db.commit()
+
+        return JSONResponse({"message": "Password updated"})
 
 
 async def get_settings_endpoint(request: Request):
@@ -259,9 +362,17 @@ async def get_settings_endpoint(request: Request):
                     return f"{protocol_user[0]}://{user}:••••••@{parts[1]}"
         return url
     
+    user = get_request_user(request)
+
     return JSONResponse({
         "app_env": config.APP_ENV,
-        "admin_username": config.ADMIN_USERNAME,
+        "current_user": {
+            "username": user.username,
+            "role": user.role.value,
+        }
+        if user
+        else None,
+        "default_admin_username": config.ADMIN_USERNAME,
         "database_url": mask_connection_string(config.DATABASE_URL),
         "redis_url": mask_connection_string(config.REDIS_URL),
         "celery_broker_url": mask_connection_string(config.CELERY_BROKER_URL),
@@ -337,6 +448,7 @@ routes = [
     Mount("/api/keys", keys_router),
     Mount("/api/platforms", platforms_router),
     Mount("/api/scripts", scripts_router),
+    Mount("/api/users", users_router),
     Mount("/api/automations", automations_router),
     Mount("/api/tasks", tasks_router),
     Mount("/static", StaticFiles(directory="app/templates"), name="static"),
@@ -348,5 +460,13 @@ app = Starlette(
     routes=routes,
     middleware=middleware,
 )
+
+
+@app.on_event("startup")
+async def startup_event() -> None:
+    """Initialize application services."""
+
+    ensure_default_admin_user()
+
 
 logger.info(f"Application started in {config.APP_ENV} mode")

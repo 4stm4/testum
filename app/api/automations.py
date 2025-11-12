@@ -15,6 +15,7 @@ from app.models import (
     AutomationJobPlatform,
     AutomationTriggerEnum,
     Platform,
+    UserRole,
 )
 from app.schemas import (
     AutomationJobCreate,
@@ -23,6 +24,7 @@ from app.schemas import (
     AutomationJobUpdate,
     MessageResponse,
 )
+from app.rbac import ALL_ROLES, get_request_user, require_roles
 
 router = Router()
 
@@ -97,6 +99,7 @@ def _clean_tags(tags: Optional[List[str]]) -> Optional[List[str]]:
     return cleaned or None
 
 
+@require_roles(*ALL_ROLES)
 async def list_jobs(request: Request) -> JSONResponse:
     """Return all automation jobs sorted by creation date."""
 
@@ -113,6 +116,7 @@ async def list_jobs(request: Request) -> JSONResponse:
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def create_job(request: Request) -> JSONResponse:
     """Create a new automation job definition."""
 
@@ -134,6 +138,8 @@ async def create_job(request: Request) -> JSONResponse:
                 return JSONResponse({"error": "One or more platform IDs are invalid"}, status_code=400)
         else:
             platforms = []
+
+        user = get_request_user(request)
 
         job = AutomationJob(
             id=uuid.uuid4(),
@@ -159,7 +165,7 @@ async def create_job(request: Request) -> JSONResponse:
             run_on_all_platforms=payload.run_on_all_platforms,
             notes=payload.notes.strip() if payload.notes else None,
             is_enabled=payload.is_enabled,
-            created_by=getattr(request.state, "user", "admin"),
+            created_by=user.username if user else "system",
         )
 
         db.add(job)
@@ -180,7 +186,7 @@ async def create_job(request: Request) -> JSONResponse:
 
         log_audit(
             db,
-            user=getattr(request.state, "user", "admin"),
+            user=user.username if user else "system",
             action="create",
             object_type="automation_job",
             object_id=str(job.id),
@@ -195,6 +201,7 @@ async def create_job(request: Request) -> JSONResponse:
         db.close()
 
 
+@require_roles(*ALL_ROLES)
 async def get_job(request: Request) -> JSONResponse:
     """Return a single automation job."""
 
@@ -209,6 +216,7 @@ async def get_job(request: Request) -> JSONResponse:
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def update_job(request: Request) -> JSONResponse:
     """Update an existing automation job."""
 
@@ -221,6 +229,8 @@ async def update_job(request: Request) -> JSONResponse:
         job = db.query(AutomationJob).filter(AutomationJob.id == job_id).first()
         if not job:
             return JSONResponse({"error": "Automation job not found"}, status_code=404)
+
+        user = get_request_user(request)
 
         data = update_data.model_dump(exclude_unset=True)
 
@@ -326,7 +336,7 @@ async def update_job(request: Request) -> JSONResponse:
 
         log_audit(
             db,
-            user=getattr(request.state, "user", "admin"),
+            user=user.username if user else "system",
             action="update",
             object_type="automation_job",
             object_id=str(job.id),
@@ -341,6 +351,7 @@ async def update_job(request: Request) -> JSONResponse:
         db.close()
 
 
+@require_roles(UserRole.ADMIN)
 async def delete_job(request: Request) -> JSONResponse:
     """Delete an automation job."""
 
@@ -351,9 +362,11 @@ async def delete_job(request: Request) -> JSONResponse:
         if not job:
             return JSONResponse({"error": "Automation job not found"}, status_code=404)
 
+        user = get_request_user(request)
+
         log_audit(
             db,
-            user=getattr(request.state, "user", "admin"),
+            user=user.username if user else "system",
             action="delete",
             object_type="automation_job",
             object_id=str(job.id),
