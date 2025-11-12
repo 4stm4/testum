@@ -5,17 +5,6 @@
 
 {% block extra_styles %}
     <style>
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .card-icon {
-            font-size: 2.5em;
-            margin-bottom: 12px;
-        }
-
         .stats {
             display: flex;
             gap: 15px;
@@ -72,48 +61,6 @@
     <div class="page-header">
         <h1 class="page-title" data-i18n="dashboard">Dashboard</h1>
         <p class="page-subtitle" data-i18n="welcomeDescription">Execute commands and code on remote hosts via SSH</p>
-    </div>
-
-    <div class="cards-grid">
-        <a href="/keys">
-            <div class="card">
-                <div class="card-icon">🔑</div>
-                <div class="card-title" data-i18n="sshKeysCard">SSH Keys</div>
-                <div class="card-description" data-i18n="sshKeysDescription">
-                    Manage SSH public keys for secure authentication
-                </div>
-            </div>
-        </a>
-
-        <a href="/platforms">
-            <div class="card">
-                <div class="card-icon">🖥️</div>
-                <div class="card-title" data-i18n="platformsCard">Platforms</div>
-                <div class="card-description" data-i18n="platformsDescription">
-                    Configure and manage remote platforms (hosts)
-                </div>
-            </div>
-        </a>
-
-        <a href="/health">
-            <div class="card">
-                <div class="card-icon">⚡</div>
-                <div class="card-title" data-i18n="healthCheckCard">System Status</div>
-                <div class="card-description" data-i18n="healthCheckDescription">
-                    Monitor system health and performance
-                </div>
-            </div>
-        </a>
-
-        <a href="/jobs">
-            <div class="card">
-                <div class="card-icon">📦</div>
-                <div class="card-title">Jobs</div>
-                <div class="card-description">
-                    История задач и мониторинг выполнения (Task Monitor)
-                </div>
-            </div>
-        </a>
     </div>
 
     <div class="stats">
