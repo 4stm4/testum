@@ -27,6 +27,9 @@ from app.rbac import get_request_user
 from app.security import hash_password, verify_password
 from app.updater import UpdateError, get_update_info, perform_update
 from app.ws import task_stream_websocket
+from app.updater import get_update_info, perform_update, UpdateError
+from app.db import SessionLocal
+from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
 
 # Configure logging
 logging.basicConfig(
@@ -107,52 +110,109 @@ def create_jwt_token(user_id: str, username: str, role: UserRole) -> str:
     return jwt.encode(payload, config.SECRET_KEY, algorithm="HS256")
 
 
+def verify_jwt_token(token: str) -> dict:
+    """Verify JWT token."""
+    try:
+        payload = jwt.decode(token, config.SECRET_KEY, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise ValueError("Token expired")
+    except jwt.InvalidTokenError:
+        raise ValueError("Invalid token")
+
+
+# Helper utilities
+def get_sidebar_counts() -> dict:
+    """Collect counts for sidebar resources."""
+
+    session = SessionLocal()
+    try:
+        return {
+            "keys": session.query(SSHKey).count(),
+            "platforms": session.query(Platform).count(),
+            "scripts": session.query(Script).count(),
+            "automations": session.query(AutomationJob).count(),
+            "jobs": session.query(TaskRun).count(),
+        }
+    finally:
+        session.close()
+
+
+def build_template_context(request: Request, active_page: str, **extra) -> dict:
+    """Build base context for layout-aware templates."""
+
+    context = {"request": request, "active_page": active_page}
+    context.update(extra)
+    context["sidebar_counts"] = get_sidebar_counts()
+    return context
+
+
 # Routes
 async def homepage(request: Request):
     """Homepage with links to keys and platforms."""
-    return templates.TemplateResponse("index.html", {"request": request, "active_page": "dashboard"})
+    return templates.TemplateResponse(
+        "index.html", build_template_context(request, "")
+    )
 
 
 async def keys_page(request: Request):
     """SSH Keys page."""
-    return templates.TemplateResponse("keys.html", {"request": request, "active_page": "keys"})
+    return templates.TemplateResponse(
+        "keys.html", build_template_context(request, "keys")
+    )
 
 
 async def platforms_page(request: Request):
     """Platforms page."""
-    return templates.TemplateResponse("platforms.html", {"request": request, "active_page": "platforms"})
+    return templates.TemplateResponse(
+        "platforms.html", build_template_context(request, "platforms")
+    )
 
 
 async def scripts_page(request: Request):
     """Scripts library page."""
-    return templates.TemplateResponse("scripts.html", {"request": request, "active_page": "scripts"})
+    return templates.TemplateResponse(
+        "scripts.html", build_template_context(request, "scripts")
+    )
 
 
 async def automations_page(request: Request):
     """Automation jobs page."""
-    return templates.TemplateResponse("automations.html", {"request": request, "active_page": "automations"})
+    return templates.TemplateResponse(
+        "automations.html", build_template_context(request, "automations")
+    )
 
 
 async def settings_page(request: Request):
     """Settings page."""
-    return templates.TemplateResponse("settings.html", {"request": request, "active_page": "settings"})
+    return templates.TemplateResponse(
+        "settings.html", build_template_context(request, "settings")
+    )
 
 
 async def jobs_page(request: Request):
     """Jobs page listing recent tasks."""
-    return templates.TemplateResponse("jobs.html", {"request": request, "active_page": "jobs"})
+    return templates.TemplateResponse(
+        "jobs.html", build_template_context(request, "jobs")
+    )
 
 
 async def job_detail_page(request: Request):
     """Job detail page for a specific task."""
     task_id = request.path_params.get("task_id")
-    return templates.TemplateResponse("job-detail.html", {"request": request, "task_id": task_id, "active_page": "jobs"})
+    return templates.TemplateResponse(
+        "job-detail.html",
+        build_template_context(request, "jobs", task_id=task_id),
+    )
 
 
 async def task_page(request: Request):
     """Task monitoring page."""
     task_id = request.path_params.get("task_id")
-    return templates.TemplateResponse("task.html", {"request": request, "task_id": task_id, "active_page": "jobs"})
+    return templates.TemplateResponse(
+        "task.html",
+        build_template_context(request, "jobs", task_id=task_id),
+    )
 
 
 async def login_page(request: Request):
