@@ -1,8 +1,6 @@
 version: '3.8'
 
 # Testum Docker Compose Configuration
-# Ready for Portainer deployment with pre-configured environment variables
-# For production: change ADMIN_PASSWORD and optionally regenerate FERNET_KEY
 
 services:
   nginx:
