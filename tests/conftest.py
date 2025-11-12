@@ -1,9 +1,21 @@
 """Pytest configuration and fixtures."""
+from __future__ import annotations
+
 import os
+import sys
+from pathlib import Path
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
+
+# Ensure the repository root (which contains the ``app`` package) is importable when
+# the tests are executed in isolated environments such as Portainer or CI runners
+# that do not automatically add it to ``PYTHONPATH``.
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 # Set test environment variables
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
