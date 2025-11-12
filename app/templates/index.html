@@ -1,388 +1,148 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Testum - Remote SSH Execution Platform</title>
-    <link rel="stylesheet" href="/static/theme.css">
+{% extends "layout.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block title %}Dashboard - Testum{% endblock %}
+
+{% block extra_styles %}
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        
-        /* Header */
-        .header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 30px;
-            height: auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1.5em;
-            font-weight: 600;
-            color: var(--accent-primary);
-        }
-        
-        .logo-icon {
-            font-size: 1.6em;
-        }
-        
-        .version {
-            background: var(--bg-tertiary);
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            color: var(--text-secondary);
-        }
-        
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .theme-toggle, .lang-toggle {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 1.1em;
-            transition: all 0.2s;
-        }
-
-        .theme-toggle:hover, .lang-toggle:hover {
-            background: var(--accent-primary);
-            transform: translateY(-1px);
-        }
-        
-        .logout-btn {
-            background: var(--button-logout);
-            color: var(--bg-primary);
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9em;
-            font-weight: 600;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .logout-btn:hover {
-            background: var(--button-logout-hover);
-            transform: translateY(-1px);
-        }
-        
-        /* Main Layout */
-        .main-layout {
-            display: flex;
-            min-height: calc(100vh - 60px);
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            width: 240px;
-            background: #181825;
-            border-right: 1px solid #313244;
-            padding: 20px 0;
-        }
-        
-        .sidebar-section {
-            margin-bottom: 20px;
-        }
-        
-        .sidebar-title {
-            color: #6c7086;
-            font-size: 0.75em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 0 20px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-        
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            color: #cdd6f4;
-            text-decoration: none;
-            transition: all 0.2s;
-            font-size: 0.95em;
-        }
-        
-        .sidebar-link:hover {
-            background: #313244;
-            color: #89b4fa;
-        }
-        
-        .sidebar-link.active {
-            background: #313244;
-            color: #89b4fa;
-            border-left: 3px solid #89b4fa;
-        }
-        
-        .sidebar-icon {
-            font-size: 1.2em;
-            width: 24px;
-            text-align: center;
-        }
-        
-        /* Content */
-        .content {
-            flex: 1;
-            padding: 30px;
-        }
-        
-        .page-header {
-            margin-bottom: 30px;
-        }
-        
-        .page-title {
-            font-size: 2em;
-            color: #cdd6f4;
-            margin-bottom: 8px;
-        }
-        
-        .page-subtitle {
-            color: #6c7086;
-            font-size: 1.05em;
-        }
-        
-        /* Cards Grid */
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
-        
-        .card {
-            background: #181825;
-            border: 1px solid #313244;
-            border-radius: 8px;
-            padding: 24px;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        
-        .card:hover {
-            border-color: #89b4fa;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-        }
-        
+
         .card-icon {
             font-size: 2.5em;
             margin-bottom: 12px;
         }
-        
-        .card-title {
-            font-size: 1.3em;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        
-        .card-description {
-            color: var(--text-tertiary);
-            font-size: 0.95em;
-            line-height: 1.5;
-        }
-        
-        /* Stats */
+
         .stats {
             display: flex;
             gap: 15px;
             margin-top: 30px;
+            flex-wrap: wrap;
         }
-        
+
         .stat-card {
             flex: 1;
+            min-width: 200px;
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 20px;
             text-align: center;
         }
-        
+
         .stat-value {
             font-size: 2em;
             color: var(--accent-primary);
             font-weight: 600;
             margin-bottom: 5px;
         }
-        
+
         .stat-label {
             color: var(--text-tertiary);
             font-size: 0.9em;
         }
-        
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-tertiary);
-            font-size: 0.85em;
+
+        .platforms-section {
+            margin-top: 40px;
+        }
+
+        .platforms-header {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .platforms-link {
+            font-size: 0.9em;
+            color: var(--accent-primary);
+        }
+
+        .platforms-list {
+            display: grid;
+            gap: 15px;
         }
     </style>
-</head>
-<body>
-    <!-- Header -->
-        <div class="header">
-        <div class="logo">
-            <span data-i18n="welcomeTitle">🔐 Testum</span>
-        </div>
-        <div class="header-right">
-            <button id="themeToggle" class="theme-toggle" title="Toggle Theme">🌙</button>
-            <button id="langToggle" class="lang-toggle" title="Toggle Language">RU</button>
-            <span class="version">v0.1.0</span>
-            <a href="/api/auth/logout" class="logout-btn">
-                <span>🚪</span> <span data-i18n="logout">Logout</span>
-            </a>
-        </div>
-    </div>
-    
-    <!-- Main Layout -->
-    <div class="main-layout">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-title" data-i18n="resources">Resources</div>
-                <a href="/" class="sidebar-link active">
-                    <span class="sidebar-icon">🏠</span>
-                    <span data-i18n="dashboard">Dashboard</span>
-                </a>
-                <a href="/keys" class="sidebar-link">
-                    <span class="sidebar-icon">🔑</span>
-                    <span data-i18n="sshKeys">SSH Keys</span>
-                </a>
-                <a href="/platforms" class="sidebar-link">
-                    <span class="sidebar-icon">🖥️</span>
-                    <span data-i18n="platforms">Platforms</span>
-                </a>
-                <a href="/jobs" class="sidebar-link">
-                    <span class="sidebar-icon">📦</span>
-                    <span>Jobs</span>
-                </a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-title" data-i18n="system">System</div>
-                <a href="/settings" class="sidebar-link">
-                    <span class="sidebar-icon">⚙️</span>
-                    <span data-i18n="settings">Settings</span>
-                </a>
-                <a href="/health" class="sidebar-link">
-                    <span class="sidebar-icon">❤️</span>
-                    <span data-i18n="healthCheck">Health Check</span>
-                </a>
-                <a href="/docs" class="sidebar-link">
-                    <span class="sidebar-icon">📚</span>
-                    <span data-i18n="apiDocs">API Docs</span>
-                </a>
-            </div>
-        </div>
-        
-        <!-- Content -->
-        <div class="content">
-            <div class="page-header">
-                <h1 class="page-title" data-i18n="dashboard">Dashboard</h1>
-                <p class="page-subtitle" data-i18n="welcomeDescription">Execute commands and code on remote hosts via SSH</p>
-            </div>
-            
-            <div class="cards-grid">
-                <a href="/keys" style="text-decoration: none;">
-                    <div class="card">
-                        <div class="card-icon">🔑</div>
-                        <div class="card-title" data-i18n="sshKeysCard">SSH Keys</div>
-                        <div class="card-description" data-i18n="sshKeysDescription">
-                            Manage SSH public keys for secure authentication
-                        </div>
-                    </div>
-                </a>
-                
-                <a href="/platforms" style="text-decoration: none;">
-                    <div class="card">
-                        <div class="card-icon">🖥️</div>
-                        <div class="card-title" data-i18n="platformsCard">Platforms</div>
-                        <div class="card-description" data-i18n="platformsDescription">
-                            Configure and manage remote platforms (hosts)
-                        </div>
-                    </div>
-                </a>
-                
-                <a href="/health" style="text-decoration: none;">
-                    <div class="card">
-                        <div class="card-icon">⚡</div>
-                        <div class="card-title" data-i18n="healthCheckCard">System Status</div>
-                        <div class="card-description" data-i18n="healthCheckDescription">
-                            Monitor system health and performance
-                        </div>
-                    </div>
-                </a>
+{% endblock %}
 
-                <a href="/jobs" style="text-decoration: none;">
-                    <div class="card">
-                        <div class="card-icon">📦</div>
-                        <div class="card-title">Jobs</div>
-                        <div class="card-description">
-                            История задач и мониторинг выполнения (Task Monitor)
-                        </div>
-                    </div>
-                </a>
-            </div>
-            
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-value">—</div>
-                    <div class="stat-label" data-i18n="totalKeys">SSH Keys</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">—</div>
-                    <div class="stat-label" data-i18n="totalPlatforms">Platforms</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">—</div>
-                    <div class="stat-label" data-i18n="activeTasks">Active Tasks</div>
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title" data-i18n="dashboard">Dashboard</h1>
+        <p class="page-subtitle" data-i18n="welcomeDescription">Execute commands and code on remote hosts via SSH</p>
+    </div>
+
+    <div class="cards-grid">
+        <a href="/keys">
+            <div class="card">
+                <div class="card-icon">🔑</div>
+                <div class="card-title" data-i18n="sshKeysCard">SSH Keys</div>
+                <div class="card-description" data-i18n="sshKeysDescription">
+                    Manage SSH public keys for secure authentication
                 </div>
             </div>
-            
-            <!-- Platforms List -->
-            <div style="margin-top: 40px;">
-                <h2 style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
-                    <span data-i18n="connectedPlatforms">Connected Platforms</span>
-                    <a href="/platforms" style="font-size: 14px; color: var(--accent-primary); text-decoration: none;">
-                        <span data-i18n="viewAll">View All</span> →
-                    </a>
-                </h2>
-                <div id="platformsList" style="display: grid; gap: 15px;"></div>
+        </a>
+
+        <a href="/platforms">
+            <div class="card">
+                <div class="card-icon">🖥️</div>
+                <div class="card-title" data-i18n="platformsCard">Platforms</div>
+                <div class="card-description" data-i18n="platformsDescription">
+                    Configure and manage remote platforms (hosts)
+                </div>
             </div>
-            
-            <div class="footer">
-                Built with Starlette & Celery | Remote SSH Execution Platform
+        </a>
+
+        <a href="/health">
+            <div class="card">
+                <div class="card-icon">⚡</div>
+                <div class="card-title" data-i18n="healthCheckCard">System Status</div>
+                <div class="card-description" data-i18n="healthCheckDescription">
+                    Monitor system health and performance
+                </div>
             </div>
+        </a>
+
+        <a href="/jobs">
+            <div class="card">
+                <div class="card-icon">📦</div>
+                <div class="card-title">Jobs</div>
+                <div class="card-description">
+                    История задач и мониторинг выполнения (Task Monitor)
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-value">—</div>
+            <div class="stat-label" data-i18n="totalKeys">SSH Keys</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">—</div>
+            <div class="stat-label" data-i18n="totalPlatforms">Platforms</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">—</div>
+            <div class="stat-label" data-i18n="activeTasks">Active Tasks</div>
         </div>
     </div>
-    
+
+    <div class="platforms-section">
+        <h2 class="platforms-header">
+            <span data-i18n="connectedPlatforms">Connected Platforms</span>
+            <a class="platforms-link" href="/platforms">
+                <span data-i18n="viewAll">View All</span> →
+            </a>
+        </h2>
+        <div id="platformsList" class="platforms-list"></div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
     <script>
         // Load dashboard statistics
         async function loadStats() {
@@ -394,14 +154,14 @@
                     document.querySelectorAll('.stat-card')[1].querySelector('.stat-value').textContent = platforms.length;
                     renderPlatforms(platforms);
                 }
-                
+
                 // Load SSH keys count
                 const keysResponse = await fetch('/api/keys/');
                 if (keysResponse.ok) {
                     const keys = await keysResponse.json();
                     document.querySelectorAll('.stat-card')[0].querySelector('.stat-value').textContent = keys.length;
                 }
-                
+
                 // Active tasks - count running from recent list
                 try {
                     const tasksResp = await fetch('/api/tasks/?limit=100');
@@ -413,16 +173,16 @@
                 } catch (_) {
                     document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = '—';
                 }
-                
+
             } catch (error) {
                 console.error('Failed to load stats:', error);
             }
         }
-        
+
         // Render platforms list
         async function renderPlatforms(platforms) {
             const container = document.getElementById('platformsList');
-            
+
             if (platforms.length === 0) {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
@@ -435,7 +195,7 @@
                 `;
                 return;
             }
-            
+
             // Show platforms first, then load info asynchronously
             container.innerHTML = platforms.slice(0, 5).map(p => `
                 <div id="platform-${p.id}" style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -463,7 +223,7 @@
                     </div>
                 </div>
             `).join('');
-            
+
             // Load system info for each platform
             platforms.slice(0, 5).forEach(async (p) => {
                 try {
@@ -472,21 +232,21 @@
                         const info = await response.json();
                         updatePlatformInfo(p.id, info);
                     } else {
-                        document.getElementById(`status-${p.id}`).innerHTML = '<span style="color: var(--error-color);">● Offline</span>';
+                        document.getElementById(`status-${p.id}`).innerHTML = '<span style="color: var(--error-text);">● Offline</span>';
                     }
                 } catch (error) {
-                    document.getElementById(`status-${p.id}`).innerHTML = '<span style="color: var(--error-color);">● Error</span>';
+                    document.getElementById(`status-${p.id}`).innerHTML = '<span style="color: var(--error-text);">● Error</span>';
                 }
             });
         }
-        
+
         function updatePlatformInfo(platformId, info) {
             const statusEl = document.getElementById(`status-${platformId}`);
             const infoEl = document.getElementById(`info-${platformId}`);
-            
+
             if (info.status === 'online') {
-                statusEl.innerHTML = '<span style="color: var(--success-color); font-weight: 500;">● Online</span>';
-                
+                statusEl.innerHTML = '<span style="color: var(--success-text); font-weight: 500;">● Online</span>';
+
                 // Parse OS info
                 let osName = 'Unknown OS';
                 if (info.os_release) {
@@ -494,7 +254,7 @@
                     if (match) osName = match[1];
                     else osName = info.os_release.split('\n')[0];
                 }
-                
+
                 infoEl.style.display = 'grid';
                 infoEl.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
                 infoEl.style.gap = '10px';
@@ -519,20 +279,13 @@
                         <div style="color: var(--text-secondary); margin-bottom: 3px;">Disk</div>
                         <div style="font-weight: 500;">${info.disk || 'N/A'}</div>
                     </div>
-                    <div>
-                        <div style="color: var(--text-secondary); margin-bottom: 3px;">Uptime</div>
-                        <div style="font-weight: 500;">${info.uptime || 'N/A'}</div>
-                    </div>
                 `;
             } else {
-                statusEl.innerHTML = '<span style="color: var(--error-color);">● Offline</span>';
+                statusEl.innerHTML = '<span style="color: var(--warning-text); font-weight: 500;">● Offline</span>';
+                infoEl.style.display = 'none';
             }
         }
-        
-        // Load stats on page load
-        document.addEventListener('DOMContentLoaded', loadStats);
+
+        loadStats();
     </script>
-    
-    <script src="/static/testum.js"></script>
-</body>
-</html>
+{% endblock %}

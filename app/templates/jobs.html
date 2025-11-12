@@ -1,157 +1,197 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Jobs - Task Runs</title>
-    <link rel="stylesheet" href="/static/theme.css" />
+{% extends "layout.html" %}
+{% set active_page = 'jobs' %}
+
+{% block title %}Jobs - Task Runs{% endblock %}
+
+{% block extra_styles %}
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
-        a { text-decoration: none; }
-        .header { background: var(--bg-secondary); padding: 15px 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
-        .logo { font-size: 1.4em; font-weight: 600; color: var(--accent-primary); }
-        .version { background: var(--bg-tertiary); padding: 4px 10px; border-radius: 8px; font-size: 0.75em; color: var(--text-secondary); }
-        .header-right { display: flex; gap: 12px; align-items: center; }
-        .theme-toggle, .lang-toggle { background: var(--bg-tertiary); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 1.1em; transition: all 0.2s; }
-        .theme-toggle:hover, .lang-toggle:hover { background: var(--accent-primary); transform: translateY(-1px); }
-        .logout-btn { background: var(--button-logout); color: var(--bg-primary); padding: 8px 14px; border-radius: 6px; font-size: 0.85em; font-weight: 600; display: flex; gap: 6px; align-items: center; }
-        .logout-btn:hover { background: var(--button-logout-hover); }
-        .main-layout { display: flex; min-height: calc(100vh - 60px); }
-        .sidebar { width: 240px; background: #181825; border-right: 1px solid #313244; padding: 20px 0; }
-        .sidebar-section { margin-bottom: 20px; }
-        .sidebar-title { color: #6c7086; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; padding: 0 20px; margin-bottom: 10px; font-weight: 600; }
-        .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #cdd6f4; text-decoration: none; transition: all 0.2s; font-size: 0.95em; }
-        .sidebar-link:hover { background: #313244; color: #89b4fa; }
-        .sidebar-link.active { background: #313244; color: #89b4fa; border-left: 3px solid #89b4fa; }
-        .sidebar-icon { font-size: 1.2em; width: 24px; text-align: center; }
-        .content { flex: 1; padding: 30px; }
-        h1 { margin-bottom: 10px; }
-        .subtitle { color: var(--text-secondary); margin-bottom: 25px; }
-        .toolbar { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; flex-wrap: wrap; }
-        .toolbar input, .toolbar select { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 6px 10px; border-radius: 6px; font-size: 0.85em; }
-        .toolbar button { background: var(--accent-primary); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600; }
-        .toolbar button:hover { opacity: 0.9; }
-        table { width: 100%; border-collapse: collapse; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
-        thead { background: var(--bg-tertiary); }
-        th, td { padding: 10px 12px; font-size: 0.8em; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px; }
-        tbody tr { transition: background 0.2s; }
-        tbody tr:hover { background: var(--bg-tertiary); }
-        .status-chip { padding: 4px 10px; border-radius: 12px; font-size: 0.7em; font-weight: 600; display: inline-block; }
-        .pending { background: #2d2616; color: #fab387; }
-        .running { background: #162d3b; color: #89b4fa; }
-        .success { background: #1e2d28; color: #a6e3a1; }
-        .failed { background: #2d1e22; color: #f38ba8; }
-        .empty { text-align: center; padding: 50px 20px; color: var(--text-secondary); }
-        .pagination { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
-        .pagination button { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; font-size: 0.75em; }
-        .pagination button:hover { background: var(--accent-primary); color: #fff; }
-        .platform-link { color: var(--accent-primary); }
-        .task-link { color: var(--accent-primary); font-weight: 600; }
-        .filters-inline { display: flex; gap: 10px; }
-        .footer { margin-top: 40px; font-size: 0.7em; color: var(--text-tertiary); text-align: center; }
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar select,
+        .toolbar input {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+
+        .toolbar button {
+            background: var(--accent-primary);
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .toolbar button:hover {
+            opacity: 0.9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: var(--bg-tertiary);
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            font-size: 0.85em;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .status-chip {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-chip.pending {
+            background: #2d2616;
+            color: #fab387;
+        }
+
+        .status-chip.running {
+            background: #162d3b;
+            color: #89b4fa;
+        }
+
+        .status-chip.success {
+            background: #1e2d28;
+            color: #a6e3a1;
+        }
+
+        .status-chip.failed {
+            background: #2d1e22;
+            color: #f38ba8;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+        }
+
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .pagination button {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            cursor: pointer;
+        }
+
+        .pagination button:hover {
+            background: var(--accent-primary);
+            color: #fff;
+        }
+
+        .platform-link,
+        .task-link {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .task-link {
+            margin: 0 4px;
+        }
     </style>
-</head>
-<body>
-    <div class="header">
-        <div class="logo"><span data-i18n="welcomeTitle">🔐 Testum</span></div>
-        <div class="header-right">
-            <button id="themeToggle" class="theme-toggle" title="Toggle Theme">🌙</button>
-            <button id="langToggle" class="lang-toggle" title="Toggle Language">RU</button>
-            <span class="version">v0.1.0</span>
-            <a href="/api/auth/logout" class="logout-btn"><span>🚪</span> <span data-i18n="logout">Logout</span></a>
-        </div>
-    </div>
-    
-    <div class="main-layout">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-title" data-i18n="resources">Resources</div>
-                <a href="/" class="sidebar-link">
-                    <span class="sidebar-icon">🏠</span>
-                    <span data-i18n="dashboard">Dashboard</span>
-                </a>
-                <a href="/keys" class="sidebar-link">
-                    <span class="sidebar-icon">🔑</span>
-                    <span data-i18n="sshKeys">SSH Keys</span>
-                </a>
-                <a href="/platforms" class="sidebar-link">
-                    <span class="sidebar-icon">🖥️</span>
-                    <span data-i18n="platforms">Platforms</span>
-                </a>
-                <a href="/jobs" class="sidebar-link active">
-                    <span class="sidebar-icon">📦</span>
-                    <span>Jobs</span>
-                </a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-title" data-i18n="system">System</div>
-                <a href="/settings" class="sidebar-link">
-                    <span class="sidebar-icon">⚙️</span>
-                    <span data-i18n="settings">Settings</span>
-                </a>
-                <a href="/health" class="sidebar-link">
-                    <span class="sidebar-icon">❤️</span>
-                    <span data-i18n="healthCheck">Health Check</span>
-                </a>
-                <a href="/docs" class="sidebar-link">
-                    <span class="sidebar-icon">📚</span>
-                    <span data-i18n="apiDocs">API Docs</span>
-                </a>
-            </div>
-        </div>
-        
-        <!-- Content -->
-        <div class="content">
-            <h1>📦 Jobs</h1>
-            <div class="subtitle">История и состояние задач (Task Runs)</div>
-            <div class="toolbar">
-                <div class="filters-inline">
-                    <select id="filterStatus">
-                        <option value="">Status: All</option>
-                        <option value="pending">Pending</option>
-                        <option value="running">Running</option>
-                        <option value="success">Success</option>
-                        <option value="failed">Failed</option>
-                    </select>
-                    <select id="filterType">
-                        <option value="">Type: All</option>
-                        <option value="deploy">Deploy</option>
-                        <option value="run_command">Run Command</option>
-                    </select>
-                </div>
-                <button id="refreshBtn">🔄 Refresh</button>
-            </div>
-            <div style="overflow-x:auto;">
-                <table id="tasksTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Celery ID</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Platform</th>
-                            <th>Started</th>
-                            <th>Finished</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tasksBody">
-                        <tr><td colspan="8" class="empty">Loading tasks...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="pagination">
-                <button id="prevPage" disabled>Prev</button>
-                <button id="nextPage" disabled>Next</button>
-            </div>
-            <div class="footer">Built with Starlette & Celery | Remote SSH Execution Platform</div>
-        </div>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">📦 Jobs</h1>
+        <p class="page-subtitle">История и состояние задач (Task Runs)</p>
     </div>
 
+    <div class="toolbar">
+        <div class="filters-inline">
+            <select id="filterStatus">
+                <option value="">Status: All</option>
+                <option value="pending">Pending</option>
+                <option value="running">Running</option>
+                <option value="success">Success</option>
+                <option value="failed">Failed</option>
+            </select>
+            <select id="filterType">
+                <option value="">Type: All</option>
+                <option value="deploy">Deploy</option>
+                <option value="run_command">Run Command</option>
+            </select>
+        </div>
+        <button id="refreshBtn">🔄 Refresh</button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table id="tasksTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Celery ID</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Platform</th>
+                    <th>Started</th>
+                    <th>Finished</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tasksBody">
+                <tr><td colspan="8" class="empty">Loading tasks...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <button id="prevPage" disabled>Prev</button>
+        <button id="nextPage" disabled>Next</button>
+    </div>
+{% endblock %}
+
+{% block scripts %}
     <script>
         let offset = 0;
         const limit = 50;
@@ -176,7 +216,6 @@
                 } else {
                     bodyEl.innerHTML = data.map(t => renderRow(t)).join('');
                 }
-                // Pagination buttons
                 document.getElementById('prevPage').disabled = offset === 0;
                 document.getElementById('nextPage').disabled = data.length < limit;
             } catch (e) {
@@ -189,7 +228,7 @@
             const finished = t.finished_at ? new Date(t.finished_at).toLocaleString() : '—';
             const shortId = t.id.substring(0, 8);
             return `<tr>
-                <td><a href="/jobs/${t.celery_task_id}" style="color: var(--accent-primary); font-weight: 600;" title="${t.id}">${shortId}...</a></td>
+                <td><a href="/jobs/${t.celery_task_id}" class="task-link" title="${t.id}">${shortId}...</a></td>
                 <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis;" title="${t.celery_task_id}"><code>${t.celery_task_id}</code></td>
                 <td>${t.type}</td>
                 <td><span class="status-chip ${t.status}">${t.status.toUpperCase()}</span></td>
@@ -197,7 +236,7 @@
                 <td>${started}</td>
                 <td>${finished}</td>
                 <td>
-                    <a class="task-link" href="/jobs/${t.celery_task_id}" title="View Details">📋 Details</a> | 
+                    <a class="task-link" href="/jobs/${t.celery_task_id}" title="View Details">📋 Details</a> |
                     <a class="task-link" href="/tasks/${t.celery_task_id}" target="_blank" title="Live Monitor">🔍 Monitor</a>
                 </td>
             </tr>`;
@@ -211,7 +250,4 @@
 
         loadTasks();
     </script>
-    
-    <script src="/static/testum.js"></script>
-</body>
-</html>
+{% endblock %}
