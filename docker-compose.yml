@@ -82,8 +82,8 @@ services:
         }
       }
       NGINX_CONF
-      # Start nginx in foreground so container stays running
-      nginx -g 'daemon off;'
+      # Use exec to replace shell with nginx process so container stays running
+      exec nginx -g 'daemon off;'
     networks:
       - testum_network
 
