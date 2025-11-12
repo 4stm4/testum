@@ -177,10 +177,15 @@ services:
       apt-get install -y -qq --no-install-recommends gcc libpq-dev postgresql-client git && 
       rm -rf /var/lib/apt/lists/* &&
       echo 'Cloning repository (forcing fresh clone)...' &&
-      rm -rf /app &&
-      git clone --depth 1 --branch main https://github.com/4stm4/testum.git /app &&
-      cd /app &&
+      cd /tmp &&
+      rm -rf testum &&
+      git clone --depth 1 --branch main https://github.com/4stm4/testum.git testum &&
+      cd testum &&
       git log -1 --oneline &&
+      rm -rf /app/* &&
+      mv * /app/ 2>/dev/null || true &&
+      mv .* /app/ 2>/dev/null || true &&
+      cd /app &&
       echo 'Installing Python packages...' &&
       pip install --no-cache-dir --upgrade pip setuptools wheel &&
       pip install --no-cache-dir -r /app/requirements.txt && 
@@ -229,10 +234,15 @@ services:
       apt-get install -y -qq --no-install-recommends gcc libpq-dev postgresql-client git && 
       rm -rf /var/lib/apt/lists/* &&
       echo 'Cloning repository (forcing fresh clone)...' &&
-      rm -rf /app &&
-      git clone --depth 1 --branch main https://github.com/4stm4/testum.git /app &&
-      cd /app &&
+      cd /tmp &&
+      rm -rf testum &&
+      git clone --depth 1 --branch main https://github.com/4stm4/testum.git testum &&
+      cd testum &&
       git log -1 --oneline &&
+      rm -rf /app/* &&
+      mv * /app/ 2>/dev/null || true &&
+      mv .* /app/ 2>/dev/null || true &&
+      cd /app &&
       echo 'Installing Python packages...' &&
       pip install --no-cache-dir --upgrade pip setuptools wheel &&
       pip install --no-cache-dir -r /app/requirements.txt && 
