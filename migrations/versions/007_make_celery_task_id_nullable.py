@@ -1,7 +1,7 @@
 """make celery_task_id nullable
 
 Revision ID: 007_make_celery_task_id_nullable
-Revises: 006_fix_task_enum_values
+Revises: 006
 Create Date: 2025-11-11
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '007_make_celery_task_id_nullable'
-down_revision = '006_fix_task_enum_values'
+down_revision = '006'
 branch_labels = None
 depends_on = None
 
