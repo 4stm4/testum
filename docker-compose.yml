@@ -171,6 +171,18 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    command: >
+      bash -c "
+      echo 'Waiting for database...' &&
+      until pg_isready -h db -p 5432 -U postgres; do
+        echo 'Database unavailable - sleeping' &&
+        sleep 2;
+      done &&
+      echo 'Running migrations...' &&
+      alembic upgrade head &&
+      echo 'Starting application...' &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
 
   celery_worker:
     image: testum_app:latest
@@ -189,7 +201,6 @@ services:
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
       SSH_HOST_KEY_POLICY: auto_add
-      RUN_MIGRATIONS: "0"
     networks:
       - testum_network
     depends_on:
@@ -197,7 +208,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
 
 networks:
   testum_network:

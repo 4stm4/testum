@@ -33,8 +33,5 @@ RUN chmod +x entrypoint.sh \
 
 USER appuser
 
-# Entrypoint to run migrations before starting app
-ENTRYPOINT ["/app/entrypoint.sh"]
-
 # Default command (can be overridden in docker-compose)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
