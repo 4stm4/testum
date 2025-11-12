@@ -67,39 +67,39 @@ def verify_jwt_token(token: str) -> dict:
 # Routes
 async def homepage(request: Request):
     """Homepage with links to keys and platforms."""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request, "active_page": "dashboard"})
 
 
 async def keys_page(request: Request):
     """SSH Keys page."""
-    return templates.TemplateResponse("keys.html", {"request": request})
+    return templates.TemplateResponse("keys.html", {"request": request, "active_page": "keys"})
 
 
 async def platforms_page(request: Request):
     """Platforms page."""
-    return templates.TemplateResponse("platforms.html", {"request": request})
+    return templates.TemplateResponse("platforms.html", {"request": request, "active_page": "platforms"})
 
 
 async def settings_page(request: Request):
     """Settings page."""
-    return templates.TemplateResponse("settings.html", {"request": request})
+    return templates.TemplateResponse("settings.html", {"request": request, "active_page": "settings"})
 
 
 async def jobs_page(request: Request):
     """Jobs page listing recent tasks."""
-    return templates.TemplateResponse("jobs.html", {"request": request})
+    return templates.TemplateResponse("jobs.html", {"request": request, "active_page": "jobs"})
 
 
 async def job_detail_page(request: Request):
     """Job detail page for a specific task."""
     task_id = request.path_params.get("task_id")
-    return templates.TemplateResponse("job-detail.html", {"request": request, "task_id": task_id})
+    return templates.TemplateResponse("job-detail.html", {"request": request, "task_id": task_id, "active_page": "jobs"})
 
 
 async def task_page(request: Request):
     """Task monitoring page."""
     task_id = request.path_params.get("task_id")
-    return templates.TemplateResponse("task.html", {"request": request, "task_id": task_id})
+    return templates.TemplateResponse("task.html", {"request": request, "task_id": task_id, "active_page": "jobs"})
 
 
 async def login_page(request: Request):

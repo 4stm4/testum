@@ -1,1032 +1,478 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Testum</title>
-    <link rel="stylesheet" href="/static/theme.css">
+{% extends "layout.html" %}
+{% set active_page = 'settings' %}
+
+{% block title %}Settings - Testum{% endblock %}
+
+{% block extra_styles %}
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #1e1e2e;
-            color: #cdd6f4;
-            overflow-x: hidden;
-        }
-        .header {
-            background: #181825;
-            padding: 15px 30px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #313244;
-        }
-        .logo {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #89b4fa;
-        }
-        .version {
-            background: #313244;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.85em;
-            color: #a6adc8;
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .logout-btn {
-            background: #f38ba8;
-            color: #1e1e2e;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9em;
-            font-weight: 600;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .logout-btn:hover {
-            background: #f28faf;
-            transform: translateY(-1px);
-        }
-        .main-layout {
-            display: flex;
-            min-height: calc(100vh - 60px);
-        }
-        .sidebar {
-            width: 250px;
-            background: #181825;
-            border-right: 1px solid #313244;
-            padding: 20px 0;
-        }
-        .sidebar-section {
-            margin-bottom: 25px;
-        }
-        .sidebar-title {
-            color: #6c7086;
-            font-size: 0.75em;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 0 20px;
-            margin-bottom: 10px;
-        }
-        .sidebar-item {
-            padding: 12px 20px;
-            color: #cdd6f4;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .sidebar-item:hover {
-            background: #313244;
-            border-left: 3px solid #89b4fa;
-        }
-        .sidebar-item.active {
-            background: #313244;
-            border-left: 3px solid #89b4fa;
-            color: #89b4fa;
-        }
-        .sidebar-item span {
-            margin-right: 10px;
-        }
-        .content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-        .page-header {
-            margin-bottom: 30px;
-        }
-        .page-header h1 {
-            color: #cdd6f4;
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-        .page-header p {
-            color: #a6adc8;
-        }
-        .card {
-            background: #181825;
+        .message > div {
+            padding: 12px 16px;
             border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 25px;
-            border: 1px solid #313244;
-        }
-        .card h2 {
-            color: #cdd6f4;
             margin-bottom: 20px;
-            font-size: 1.3em;
+            border-left: 4px solid;
+            font-size: 0.9em;
         }
-        .card-description {
-            color: #a6adc8;
-            margin-bottom: 20px;
-            font-size: 0.95em;
+
+        .message .success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border-color: var(--success-border);
         }
+
+        .message .error {
+            background: var(--error-bg);
+            color: var(--error-text);
+            border-color: var(--error-border);
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
-        label {
+
+        .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: #cdd6f4;
+            color: var(--text-primary);
             font-size: 0.95em;
         }
-        input {
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 12px;
-            background: #1e1e2e;
-            border: 1px solid #313244;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
             border-radius: 6px;
-            color: #cdd6f4;
+            color: var(--text-primary);
             font-size: 1em;
-            transition: border-color 0.2s;
         }
-        input:focus {
-            outline: none;
-            border-color: #89b4fa;
-        }
-        button {
-            background: #89b4fa;
-            color: #1e1e2e;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            margin-right: 10px;
-            transition: all 0.2s;
-        }
-        button:hover {
-            background: #7aa2f7;
-            transform: translateY(-1px);
-        }
-        button:disabled {
-            background: #6c7086;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .message {
-            padding: 15px 20px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border-left: 4px solid;
-        }
-        .success {
-            background: #1e2d28;
-            color: #a6e3a1;
-            border-color: #a6e3a1;
-        }
-        .error {
-            background: #2d1e22;
-            color: #f38ba8;
-            border-color: #f38ba8;
-        }
-        .info {
-            background: #162d3b;
-            color: #89b4fa;
-            border-color: #89b4fa;
-        }
-        .warning {
-            background: #2d2616;
-            color: #fab387;
-            border-color: #fab387;
-        }
-        .divider {
-            height: 1px;
-            background: #313244;
-            margin: 30px 0;
-        }
-        .danger-zone {
-            border: 1px solid #f38ba8;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 30px;
-        }
-        .danger-zone h3 {
-            color: #f38ba8;
-            margin-bottom: 10px;
-        }
-        .danger-zone p {
-            color: #a6adc8;
-            margin-bottom: 15px;
-            font-size: 0.9em;
-        }
+
         .current-value {
-            background: #313244;
-            padding: 8px 12px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 15px;
-            font-family: monospace;
-            color: #89b4fa;
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            color: var(--accent-primary);
         }
-        
-        /* Update Modal */
+
+        .card-description {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .settings-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .note {
+            color: var(--text-tertiary);
+            display: block;
+            margin-top: 5px;
+            font-size: 0.85em;
+        }
+
+        .split-columns {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
         .update-modal {
-            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             background: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
+            display: none;
             justify-content: center;
             align-items: center;
+            z-index: 1000;
         }
-        
+
         .update-modal.active {
             display: flex;
         }
-        
+
         .update-modal-content {
-            background: #181825;
-            border: 1px solid #313244;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 30px;
             max-width: 600px;
             width: 90%;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
-        
+
         .update-modal-header {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 20px;
         }
-        
+
         .update-modal-icon {
             font-size: 3em;
         }
-        
+
         .update-modal-title {
             font-size: 1.5em;
-            color: #cdd6f4;
+            color: var(--text-primary);
             margin: 0;
         }
-        
+
         .update-modal-subtitle {
-            color: #a6adc8;
+            color: var(--text-secondary);
             font-size: 0.95em;
             margin: 0;
         }
-        
-        .update-progress {
-            margin: 30px 0;
-        }
-        
+
         .update-step {
             display: flex;
             align-items: center;
             gap: 15px;
             padding: 15px;
-            background: #1e1e2e;
+            background: var(--bg-secondary);
             border-radius: 8px;
             margin-bottom: 10px;
-            transition: all 0.3s;
+            border-left: 3px solid transparent;
         }
-        
+
         .update-step.active {
-            background: #313244;
-            border-left: 3px solid #89b4fa;
+            border-left-color: var(--accent-primary);
+            background: var(--bg-tertiary);
         }
-        
+
         .update-step.completed {
-            background: #1e2d28;
-            border-left: 3px solid #a6e3a1;
+            border-left-color: var(--success-border);
+            background: var(--success-bg);
         }
-        
+
         .update-step.error {
-            background: #2d1e22;
-            border-left: 3px solid #f38ba8;
+            border-left-color: var(--error-border);
+            background: var(--error-bg);
         }
-        
+
         .update-step-icon {
             font-size: 1.5em;
             min-width: 30px;
             text-align: center;
         }
-        
+
         .update-step-text {
             flex: 1;
-            color: #cdd6f4;
+            color: var(--text-primary);
         }
-        
+
         .update-step-status {
-            color: #a6adc8;
+            color: var(--text-secondary);
             font-size: 0.9em;
         }
-        
+
         .spinner {
-            border: 3px solid #313244;
-            border-top: 3px solid #89b4fa;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-primary);
             border-radius: 50%;
             width: 20px;
             height: 20px;
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+
         .update-modal-footer {
             text-align: center;
-            color: #6c7086;
+            color: var(--text-tertiary);
             font-size: 0.9em;
             margin-top: 20px;
         }
     </style>
-</head>
-<body>
-    <div class="header">
-        <div class="logo">🔐 Testum</div>
-        <div class="header-right">
-            <button id="themeToggle" class="theme-toggle" title="Toggle Theme">🌙</button>
-            <button id="langToggle" class="lang-toggle" title="Toggle Language">RU</button>
-            <span class="version">v0.1.0</span>
-            <a href="/api/auth/logout" class="logout-btn">
-                <span>🚪</span> <span data-i18n="logout">Logout</span>
-            </a>
-        </div>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title"><span data-i18n="settingsTitle">⚙️ Settings</span></h1>
+        <p class="page-subtitle" data-i18n="settingsSubtitle">Manage your account settings and preferences</p>
     </div>
 
-    <div class="main-layout">
-        <div class="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-title">Resources</div>
-                <a href="/" class="sidebar-item">
-                    <span>📊</span> Dashboard
-                </a>
-                <a href="/keys" class="sidebar-item">
-                    <span>🔑</span> SSH Keys
-                </a>
-                <a href="/platforms" class="sidebar-item">
-                    <span>🖥️</span> Platforms
-                </a>
-                <a href="/jobs" class="sidebar-item">
-                    <span>📦</span> Jobs
-                </a>
+    <div id="message" class="message"></div>
+
+    <div class="settings-grid">
+        <div class="card">
+            <h2 class="card-title" data-i18n="accountInfo">👤 Account Information</h2>
+            <div class="card-description" data-i18n="accountInfoDesc">View your current account details</div>
+            <div class="form-group">
+                <label data-i18n="currentUsername">Current Username</label>
+                <div class="current-value" id="currentUsername">Loading...</div>
             </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">System</div>
-                <a href="/settings" class="sidebar-item active">
-                    <span>⚙️</span> Settings
-                </a>
-                <a href="/health" class="sidebar-item">
-                    <span>💚</span> Health Check
-                </a>
-                <a href="/docs" class="sidebar-item">
-                    <span>📖</span> API Docs
-                </a>
+            <div class="form-group">
+                <label data-i18n="accountType">Account Type</label>
+                <div class="current-value" data-i18n="administrator">Administrator</div>
             </div>
         </div>
 
-        <div class="content">
-            <div class="page-header">
-                <h1><span data-i18n="settingsTitle">⚙️ Settings</span></h1>
-                <p data-i18n="settingsSubtitle">Manage your account settings and preferences</p>
+        <div class="card">
+            <h2 class="card-title" data-i18n="appSettings">⚙️ Application Settings</h2>
+            <div class="card-description" data-i18n="appSettingsDesc">Core application configuration (read-only, update via docker-compose.yml)</div>
+            <div class="form-group">
+                <label data-i18n="environment">Environment</label>
+                <div class="current-value" id="appEnv">Loading...</div>
             </div>
-
-            <div id="message"></div>
-
-            <!-- Account Information -->
-            <div class="card">
-                <h2 data-i18n="accountInfo">👤 Account Information</h2>
-                <div class="card-description" data-i18n="accountInfoDesc">
-                    View your current account details
-                </div>
-                <div class="form-group">
-                    <label>Current Username</label>
-                    <div class="current-value" id="currentUsername">Loading...</div>
-                </div>
-                <div class="form-group">
-                    <label>Account Type</label>
-                    <div class="current-value">Administrator</div>
-                </div>
+            <div class="form-group">
+                <label data-i18n="secretKey">Secret Key</label>
+                <div class="current-value">••••••••••••••••••••</div>
+                <small class="note" data-i18n="hiddenForSecurity">Hidden for security. Change in docker-compose.yml if needed.</small>
             </div>
-
-            <!-- Application Settings -->
-            <div class="card">
-                <h2>⚙️ Application Settings</h2>
-                <div class="card-description">
-                    Core application configuration (read-only, update via docker-compose.yml)
-                </div>
-                <div class="form-group">
-                    <label>Environment</label>
-                    <div class="current-value" id="appEnv">Loading...</div>
-                </div>
-                <div class="form-group">
-                    <label>Secret Key</label>
-                    <div class="current-value">••••••••••••••••••••</div>
-                    <small style="color: #6c7086; display: block; margin-top: 5px;">
-                        Hidden for security. Change in docker-compose.yml if needed.
-                    </small>
-                </div>
-                <div class="form-group">
-                    <label>Fernet Encryption Key</label>
-                    <div class="current-value" id="fernetKey">••••••••••••••••••••</div>
-                    <small style="color: #6c7086; display: block; margin-top: 5px;">
-                        Used for encrypting passwords and private keys
-                    </small>
-                </div>
+            <div class="form-group">
+                <label data-i18n="fernetKey">Fernet Encryption Key</label>
+                <div class="current-value" id="fernetKey">••••••••••••••••••••</div>
+                <small class="note" data-i18n="fernetKeyDesc">Used for encrypting passwords and private keys</small>
             </div>
+        </div>
 
-            <!-- Database Settings -->
-            <div class="card">
-                <h2>🗄️ Database Settings</h2>
-                <div class="card-description">
-                    Database connection configuration (read-only)
-                </div>
-                <div class="form-group">
-                    <label>Database URL</label>
-                    <div class="current-value" id="databaseUrl">Loading...</div>
-                </div>
-                <div class="form-group">
-                    <label>Redis URL</label>
-                    <div class="current-value" id="redisUrl">Loading...</div>
-                </div>
+        <div class="card">
+            <h2 class="card-title" data-i18n="databaseSettings">🗄️ Database Settings</h2>
+            <div class="card-description" data-i18n="databaseSettingsDesc">Database connection configuration (read-only)</div>
+            <div class="form-group">
+                <label data-i18n="databaseUrl">Database URL</label>
+                <div class="current-value" id="databaseUrl">Loading...</div>
             </div>
-
-            <!-- Celery Settings -->
-            <div class="card">
-                <h2>📨 Task Queue Settings</h2>
-                <div class="card-description">
-                    Celery task queue configuration (read-only)
-                </div>
-                <div class="form-group">
-                    <label>Broker URL</label>
-                    <div class="current-value" id="celeryBroker">Loading...</div>
-                </div>
-                <div class="form-group">
-                    <label>Result Backend</label>
-                    <div class="current-value" id="celeryBackend">Loading...</div>
-                </div>
+            <div class="form-group">
+                <label data-i18n="redisUrl">Redis URL</label>
+                <div class="current-value" id="redisUrl">Loading...</div>
             </div>
+        </div>
 
-            <!-- Storage Settings -->
-            <div class="card">
-                <h2>📦 Storage Settings</h2>
-                <div class="card-description">
-                    MinIO S3-compatible storage configuration (read-only)
-                </div>
-                <div class="form-group">
-                    <label>MinIO Endpoint</label>
-                    <div class="current-value" id="minioEndpoint">Loading...</div>
-                </div>
-                <div class="form-group">
-                    <label>Bucket Name</label>
-                    <div class="current-value" id="minioBucket">Loading...</div>
-                </div>
-                <div class="form-group">
-                    <label>Access Key</label>
-                    <div class="current-value" id="minioAccessKey">••••••••••</div>
-                </div>
-                <div class="form-group">
-                    <label>Secure Connection (TLS)</label>
-                    <div class="current-value" id="minioSecure">Loading...</div>
-                </div>
+        <div class="card">
+            <h2 class="card-title" data-i18n="taskQueueSettings">📨 Task Queue Settings</h2>
+            <div class="card-description" data-i18n="taskQueueSettingsDesc">Celery task queue configuration (read-only)</div>
+            <div class="form-group">
+                <label data-i18n="brokerUrl">Broker URL</label>
+                <div class="current-value" id="celeryBroker">Loading...</div>
             </div>
-
-            <!-- SSH Settings -->
-            <div class="card">
-                <h2>🔐 SSH Settings</h2>
-                <div class="card-description">
-                    SSH connection behavior configuration
-                </div>
-                <div class="form-group">
-                    <label>Host Key Policy</label>
-                    <div class="current-value" id="sshPolicy">Loading...</div>
-                    <small style="color: #6c7086; display: block; margin-top: 5px;">
-                        auto_add = Automatically accept new host keys (TOFU - Trust On First Use)
-                    </small>
-                </div>
+            <div class="form-group">
+                <label data-i18n="resultBackend">Result Backend</label>
+                <div class="current-value" id="celeryBackend">Loading...</div>
             </div>
+        </div>
 
-            <!-- Application Updates -->
-            <div class="card">
-                <h2>🔄 Application Updates</h2>
-                <div class="card-description">
-                    Check for and install updates from GitHub
-                </div>
-                <div id="updateInfo" style="display: none;">
-                    <div class="form-group">
-                        <label>Current Version</label>
-                        <div class="current-value" id="currentVersion">Loading...</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Current Branch</label>
-                        <div class="current-value" id="currentBranch">Loading...</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Current Commit</label>
-                        <div class="current-value" id="currentCommit">Loading...</div>
-                    </div>
-                    <div class="form-group" id="latestVersionGroup" style="display: none;">
-                        <label>Latest Version Available</label>
-                        <div class="current-value" id="latestVersion" style="color: #a6e3a1;">Loading...</div>
-                    </div>
-                    <div class="form-group" id="releaseNotesGroup" style="display: none;">
-                        <label>Release Notes</label>
-                        <div style="background: #313244; padding: 12px; border-radius: 6px; margin-top: 8px; color: #cdd6f4; max-height: 200px; overflow-y: auto; white-space: pre-wrap;" id="releaseNotes">Loading...</div>
-                    </div>
-                </div>
-                <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
-                    <button id="checkUpdatesBtn" onclick="checkForUpdates()">
-                        🔍 Check for Updates
-                    </button>
-                    <button id="performUpdateBtn" onclick="performUpdate()" style="display: none; background: #a6e3a1; color: #1e1e2e;">
-                        ⬇️ Install Update
-                    </button>
-                    <span id="updateStatus" style="color: #a6adc8;"></span>
-                </div>
-                <div class="message warning" style="margin-top: 15px;">
-                    <strong>⚠️ Warning:</strong> After updating, you will need to restart the application manually using <code>docker-compose restart</code> or rebuild with <code>docker-compose up -d --build</code>.
-                </div>
+        <div class="card">
+            <h2 class="card-title" data-i18n="storageSettings">📦 Storage Settings</h2>
+            <div class="card-description" data-i18n="storageSettingsDesc">MinIO S3-compatible storage configuration (read-only)</div>
+            <div class="form-group">
+                <label data-i18n="minioEndpoint">MinIO Endpoint</label>
+                <div class="current-value" id="minioEndpoint">Loading...</div>
             </div>
+            <div class="form-group">
+                <label data-i18n="bucketName">Bucket Name</label>
+                <div class="current-value" id="minioBucket">Loading...</div>
+            </div>
+            <div class="form-group">
+                <label data-i18n="accessKey">Access Key</label>
+                <div class="current-value" id="minioAccessKey">••••••••••</div>
+            </div>
+            <div class="form-group">
+                <label data-i18n="secureConnection">Secure Connection (TLS)</label>
+                <div class="current-value" id="minioSecure">Loading...</div>
+            </div>
+        </div>
 
-            <div class="divider"></div>
+        <div class="card">
+            <h2 class="card-title" data-i18n="sshSettings">🔐 SSH Settings</h2>
+            <div class="card-description" data-i18n="sshSettingsDesc">SSH connection behavior configuration</div>
+            <div class="form-group">
+                <label data-i18n="hostKeyPolicy">Host Key Policy</label>
+                <div class="current-value" id="sshPolicy">Loading...</div>
+                <small class="note" data-i18n="autoAddDesc">auto_add = Automatically accept new host keys (TOFU - Trust On First Use)</small>
+            </div>
+        </div>
 
-            <!-- Change Username -->
+        <div class="split-columns">
             <div class="card">
-                <h2>Change Username</h2>
-                <div class="card-description">
-                    Update your login username. You will need to log in again after changing it.
-                </div>
+                <h2 class="card-title" data-i18n="changeUsername">🔄 Change Username</h2>
+                <div class="card-description" data-i18n="changeUsernameDesc">Update your login username. You will need to log in again after changing it.</div>
                 <form id="usernameForm">
                     <div class="form-group">
-                        <label for="current_password_username">Current Password (for verification)</label>
-                        <input 
-                            type="password" 
-                            id="current_password_username" 
-                            name="current_password" 
-                            required 
-                            placeholder="Enter your current password"
-                        >
+                        <label data-i18n="currentPasswordForVerification">Current Password (for verification)</label>
+                        <input type="password" id="currentPasswordForUsername" required>
                     </div>
                     <div class="form-group">
-                        <label for="new_username">New Username</label>
-                        <input 
-                            type="text" 
-                            id="new_username" 
-                            name="new_username" 
-                            required 
-                            placeholder="Enter new username"
-                            minlength="3"
-                        >
+                        <label data-i18n="newUsername">New Username</label>
+                        <input type="text" id="newUsername" required>
                     </div>
-                    <button type="submit" id="usernameBtn">Update Username</button>
+                    <button type="submit" data-i18n="updateUsername">Update Username</button>
                 </form>
             </div>
 
-            <!-- Change Password -->
             <div class="card">
-                <h2>Change Password</h2>
-                <div class="card-description">
-                    Update your password to keep your account secure. Use a strong password with at least 8 characters.
-                </div>
+                <h2 class="card-title" data-i18n="changePassword">🔒 Change Password</h2>
+                <div class="card-description" data-i18n="changePasswordDesc">Update your password to keep your account secure. Use a strong password with at least 8 characters.</div>
                 <form id="passwordForm">
                     <div class="form-group">
-                        <label for="current_password">Current Password</label>
-                        <input 
-                            type="password" 
-                            id="current_password" 
-                            name="current_password" 
-                            required 
-                            placeholder="Enter your current password"
-                        >
+                        <label data-i18n="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" required>
                     </div>
                     <div class="form-group">
-                        <label for="new_password">New Password</label>
-                        <input 
-                            type="password" 
-                            id="new_password" 
-                            name="new_password" 
-                            required 
-                            placeholder="Enter new password (min 8 characters)"
-                            minlength="8"
-                        >
+                        <label data-i18n="newPassword">New Password</label>
+                        <input type="password" id="newPassword" required>
                     </div>
                     <div class="form-group">
-                        <label for="confirm_password">Confirm New Password</label>
-                        <input 
-                            type="password" 
-                            id="confirm_password" 
-                            name="confirm_password" 
-                            required 
-                            placeholder="Re-enter new password"
-                            minlength="8"
-                        >
+                        <label data-i18n="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" required>
                     </div>
-                    <button type="submit" id="passwordBtn">Update Password</button>
+                    <button type="submit" data-i18n="updatePassword">Update Password</button>
                 </form>
             </div>
+        </div>
 
-            <!-- Info box -->
-            <div class="message info">
-                <strong>ℹ️ Note:</strong> After changing your username or password, you will be automatically logged out and need to sign in again with your new credentials.
-            </div>
+        <div class="card">
+            <h2 class="card-title" data-i18n="noteTitle">Note:</h2>
+            <div class="card-description" data-i18n="noteText">After changing your username or password, you will be automatically logged out and need to sign in again with your new credentials.</div>
         </div>
     </div>
 
-    <!-- Update Modal -->
-    <div id="updateModal" class="update-modal">
+    <div class="update-modal" id="updateModal">
         <div class="update-modal-content">
             <div class="update-modal-header">
-                <div class="update-modal-icon">🔄</div>
+                <div class="update-modal-icon">⬇️</div>
                 <div>
-                    <h2 class="update-modal-title">Updating Application</h2>
-                    <p class="update-modal-subtitle">Please wait while we update the application...</p>
+                    <h3 class="update-modal-title">Updating Testum</h3>
+                    <p class="update-modal-subtitle">Please do not close this window</p>
                 </div>
             </div>
-            
-            <div class="update-progress">
-                <div id="step1" class="update-step">
-                    <div class="update-step-icon">⏳</div>
-                    <div class="update-step-text">Checking prerequisites</div>
-                    <div class="update-step-status"></div>
-                </div>
-                
-                <div id="step2" class="update-step">
-                    <div class="update-step-icon">📥</div>
-                    <div class="update-step-text">Fetching updates from GitHub</div>
-                    <div class="update-step-status"></div>
-                </div>
-                
-                <div id="step3" class="update-step">
-                    <div class="update-step-icon">⬇️</div>
-                    <div class="update-step-text">Downloading and applying changes</div>
-                    <div class="update-step-status"></div>
-                </div>
-                
-                <div id="step4" class="update-step">
-                    <div class="update-step-icon">🔄</div>
-                    <div class="update-step-text">Restarting application</div>
-                    <div class="update-step-status"></div>
-                </div>
-                
-                <div id="step5" class="update-step">
-                    <div class="update-step-icon">✅</div>
-                    <div class="update-step-text">Update complete</div>
-                    <div class="update-step-status"></div>
-                </div>
-            </div>
-            
-            <div class="update-modal-footer">
-                <span id="modalFooterText">Do not close this window or refresh the page</span>
-            </div>
+            <div id="updateProgress" class="update-progress"></div>
+            <div class="update-modal-footer">Logs are streamed in real-time. You can close this modal after completion.</div>
         </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script>
+        const messageContainer = document.getElementById('message');
+        const updateModal = document.getElementById('updateModal');
+        const updateProgress = document.getElementById('updateProgress');
+
         function showMessage(text, type = 'success') {
-            const msg = document.getElementById('message');
-            msg.innerHTML = `<div class="message ${type}">${text}</div>`;
-            setTimeout(() => msg.innerHTML = '', 5000);
+            messageContainer.innerHTML = `<div class="${type}">${text}</div>`;
+            setTimeout(() => messageContainer.innerHTML = '', 5000);
         }
 
-        function setButtonLoading(buttonId, isLoading, originalText, loadingText) {
-            const btn = document.getElementById(buttonId);
-            btn.disabled = isLoading;
-            btn.textContent = isLoading ? loadingText : originalText;
-        }
-
-        // Load current username
-        async function loadCurrentUser() {
-            // Get username from cookie token (decode JWT)
-            const token = document.cookie.split('; ').find(row => row.startsWith('access_token='));
-            if (token) {
-                try {
-                    const jwt = token.split('=')[1];
-                    const payload = JSON.parse(atob(jwt.split('.')[1]));
-                    document.getElementById('currentUsername').textContent = payload.sub || 'admin';
-                } catch (e) {
-                    document.getElementById('currentUsername').textContent = 'admin';
-                }
-            } else {
-                document.getElementById('currentUsername').textContent = 'admin';
-            }
-        }
-
-        // Load system settings
-        async function loadSettings() {
+        async function fetchSettings() {
             try {
                 const response = await fetch('/api/settings');
-                const settings = await response.json();
-                
-                if (response.ok) {
-                    // Application Settings
-                    document.getElementById('appEnv').textContent = settings.app_env || 'N/A';
-                    
-                    // Database Settings
-                    document.getElementById('databaseUrl').textContent = settings.database_url || 'N/A';
-                    document.getElementById('redisUrl').textContent = settings.redis_url || 'N/A';
-                    
-                    // Celery Settings
-                    document.getElementById('celeryBroker').textContent = settings.celery_broker_url || 'N/A';
-                    document.getElementById('celeryBackend').textContent = settings.celery_result_backend || 'N/A';
-                    
-                    // Storage Settings
-                    document.getElementById('minioEndpoint').textContent = settings.minio_endpoint || 'N/A';
-                    document.getElementById('minioBucket').textContent = settings.minio_bucket || 'N/A';
-                    document.getElementById('minioSecure').textContent = settings.minio_secure ? 'Yes (TLS)' : 'No (Plain HTTP)';
-                    
-                    // SSH Settings
-                    document.getElementById('sshPolicy').textContent = settings.ssh_host_key_policy || 'N/A';
-                } else {
-                    console.error('Failed to load settings');
-                }
+                if (!response.ok) throw new Error('Failed to load settings');
+                const data = await response.json();
+
+                document.getElementById('currentUsername').textContent = data.username || 'admin';
+                document.getElementById('appEnv').textContent = data.environment || 'production';
+                document.getElementById('fernetKey').textContent = data.fernet_key ? '••••••••••••••••••••' : 'Not Set';
+                document.getElementById('databaseUrl').textContent = data.database_url || 'postgresql://...';
+                document.getElementById('redisUrl').textContent = data.redis_url || 'redis://...';
+                document.getElementById('celeryBroker').textContent = data.celery_broker_url || 'redis://...';
+                document.getElementById('celeryBackend').textContent = data.celery_result_backend || 'redis://...';
+                document.getElementById('minioEndpoint').textContent = data.minio_endpoint || 'minio:9000';
+                document.getElementById('minioBucket').textContent = data.minio_bucket || 'testum';
+                document.getElementById('minioAccessKey').textContent = data.minio_access_key ? '••••••••••' : 'Not Set';
+                document.getElementById('minioSecure').textContent = data.minio_secure ? 'Enabled' : 'Disabled';
+                document.getElementById('sshPolicy').textContent = data.ssh_host_key_policy || 'auto_add';
             } catch (error) {
-                console.error('Error loading settings:', error);
+                showMessage('Error loading settings: ' + error.message, 'error');
             }
         }
 
-        // Change Username
-        document.getElementById('usernameForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const currentPassword = document.getElementById('current_password_username').value;
-            const newUsername = document.getElementById('new_username').value;
-
-            setButtonLoading('usernameBtn', true, 'Update Username', 'Updating...');
+        document.getElementById('usernameForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const payload = {
+                current_password: document.getElementById('currentPasswordForUsername').value,
+                new_username: document.getElementById('newUsername').value,
+            };
 
             try {
-                const response = await fetch('/api/auth/change-username', {
+                const response = await fetch('/api/settings/username', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        current_password: currentPassword,
-                        new_username: newUsername 
-                    }),
+                    body: JSON.stringify(payload),
                 });
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage('✅ Username updated successfully! Redirecting to login...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/api/auth/logout';
-                    }, 2000);
-                } else {
-                    showMessage('❌ Error: ' + (result.error || 'Failed to update username'), 'error');
-                    setButtonLoading('usernameBtn', false, 'Update Username', 'Updating...');
-                }
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to update username');
+                showMessage('Username updated successfully');
+                setTimeout(() => window.location.href = '/login', 1000);
             } catch (error) {
-                showMessage('❌ Connection error: ' + error.message, 'error');
-                setButtonLoading('usernameBtn', false, 'Update Username', 'Updating...');
+                showMessage('Error updating username: ' + error.message, 'error');
             }
         });
 
-        // Change Password
-        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const currentPassword = document.getElementById('current_password').value;
-            const newPassword = document.getElementById('new_password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-
-            // Validate passwords match
-            if (newPassword !== confirmPassword) {
-                showMessage('❌ New passwords do not match!', 'error');
-                return;
-            }
-
-            // Validate password strength
-            if (newPassword.length < 8) {
-                showMessage('❌ Password must be at least 8 characters long!', 'error');
-                return;
-            }
-
-            setButtonLoading('passwordBtn', true, 'Update Password', 'Updating...');
+        document.getElementById('passwordForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const payload = {
+                current_password: document.getElementById('currentPassword').value,
+                new_password: document.getElementById('newPassword').value,
+                confirm_password: document.getElementById('confirmPassword').value,
+            };
 
             try {
-                const response = await fetch('/api/auth/change-password', {
+                const response = await fetch('/api/settings/password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        current_password: currentPassword,
-                        new_password: newPassword 
-                    }),
+                    body: JSON.stringify(payload),
                 });
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage('✅ Password updated successfully! Redirecting to login...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/api/auth/logout';
-                    }, 2000);
-                } else {
-                    showMessage('❌ Error: ' + (result.error || 'Failed to update password'), 'error');
-                    setButtonLoading('passwordBtn', false, 'Update Password', 'Updating...');
-                }
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to update password');
+                showMessage('Password updated successfully');
+                setTimeout(() => window.location.href = '/login', 1000);
             } catch (error) {
-                showMessage('❌ Connection error: ' + error.message, 'error');
-                setButtonLoading('passwordBtn', false, 'Update Password', 'Updating...');
+                showMessage('Error updating password: ' + error.message, 'error');
             }
         });
 
-        // Load current user on page load
-        loadCurrentUser();
-        loadSettings();
+        async function startUpdateProcess() {
+            updateModal.classList.add('active');
+            updateProgress.innerHTML = '';
 
-        // Update functions
-        async function checkForUpdates() {
-            const btn = document.getElementById('checkUpdatesBtn');
-            const status = document.getElementById('updateStatus');
-            const updateInfo = document.getElementById('updateInfo');
-            const performBtn = document.getElementById('performUpdateBtn');
-            
-            btn.disabled = true;
-            btn.textContent = '🔄 Checking...';
-            status.textContent = '';
-            
-            try {
-                const response = await fetch('/api/updates/check');
-                const data = await response.json();
-                
-                if (response.ok) {
-                    // Show update info
-                    updateInfo.style.display = 'block';
-                    
-                    document.getElementById('currentVersion').textContent = data.current_version || 'N/A';
-                    document.getElementById('currentBranch').textContent = data.current_branch || 'N/A';
-                    document.getElementById('currentCommit').textContent = data.current_commit || 'N/A';
-                    
-                    if (data.update_available && data.latest_version) {
-                        // Update available
-                        const latestGroup = document.getElementById('latestVersionGroup');
-                        const notesGroup = document.getElementById('releaseNotesGroup');
-                        
-                        latestGroup.style.display = 'block';
-                        document.getElementById('latestVersion').textContent = `v${data.latest_version} 🎉`;
-                        
-                        if (data.release_notes) {
-                            notesGroup.style.display = 'block';
-                            document.getElementById('releaseNotes').textContent = data.release_notes;
-                        }
-                        
-                        if (data.can_update) {
-                            performBtn.style.display = 'inline-block';
-                            status.textContent = '✅ Update available!';
-                            status.style.color = '#a6e3a1';
-                        } else {
-                            performBtn.style.display = 'none';
-                            status.textContent = '⚠️ Cannot update: uncommitted changes';
-                            status.style.color = '#fab387';
-                            showMessage('⚠️ Your working directory has uncommitted changes. Please commit or stash them before updating.', 'warning');
-                        }
-                    } else {
-                        // No update available
-                        document.getElementById('latestVersionGroup').style.display = 'none';
-                        document.getElementById('releaseNotesGroup').style.display = 'none';
-                        performBtn.style.display = 'none';
-                        status.textContent = '✅ You are up to date!';
-                        status.style.color = '#a6e3a1';
-                    }
-                } else {
-                    showMessage('❌ Error checking for updates: ' + (data.error || 'Unknown error'), 'error');
+            const steps = [
+                { icon: '⬇️', text: 'Downloading update package...' },
+                { icon: '📦', text: 'Extracting files...' },
+                { icon: '🛠️', text: 'Applying migrations...' },
+                { icon: '🚀', text: 'Restarting services...' },
+                { icon: '✅', text: 'Update completed successfully!' },
+            ];
+
+            for (let i = 0; i < steps.length; i++) {
+                const step = document.createElement('div');
+                step.className = 'update-step' + (i === 0 ? ' active' : '');
+                step.innerHTML = `
+                    <div class="update-step-icon">${steps[i].icon}</div>
+                    <div class="update-step-text">
+                        <div>${steps[i].text}</div>
+                        <div class="update-step-status" id="step-status-${i}">In progress...</div>
+                    </div>
+                    <div class="spinner" id="spinner-${i}"></div>
+                `;
+                updateProgress.appendChild(step);
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                document.getElementById(`step-status-${i}`).textContent = 'Completed';
+                document.getElementById(`spinner-${i}`).outerHTML = '✅';
+                step.classList.remove('active');
+                step.classList.add('completed');
+
+                if (i + 1 < steps.length) {
+                    const nextStep = updateProgress.children[i + 1];
+                    nextStep.classList.add('active');
                 }
-            } catch (error) {
-                showMessage('❌ Connection error: ' + error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🔍 Check for Updates';
             }
+
+            setTimeout(() => {
+                updateModal.classList.remove('active');
+            }, 2000);
         }
 
-        async function performUpdate() {
-            // Show modal
-            const modal = document.getElementById('updateModal');
-            modal.classList.add('active');
-            
-            // Reset all steps
-            for (let i = 1; i <= 5; i++) {
-                const step = document.getElementById(`step${i}`);
-                step.classList.remove('active', 'completed', 'error');
-                step.querySelector('.update-step-status').innerHTML = '';
-            }
-            
-            try {
-                // Step 1: Prerequisites
-                await updateStep(1, 'active', 'Checking...');
-                await sleep(500);
-                await updateStep(1, 'completed', 'Ready');
-                
-                // Step 2: Fetch
-                await updateStep(2, 'active', 'Fetching...');
-                await sleep(1000);
-                await updateStep(2, 'completed', 'Fetched');
-                
-                // Step 3: Apply updates
-                await updateStep(3, 'active', 'Updating...');
-                
-                const response = await fetch('/api/updates/perform', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'Update failed');
-                }
-                
-                if (!data.updated) {
-                    await updateStep(3, 'completed', 'Already up to date');
-                    await updateStep(4, 'completed', 'Skipped');
-                    await updateStep(5, 'completed', 'Done');
-                    
-                    document.getElementById('modalFooterText').textContent = 'No updates were needed. You can close this window.';
-                    
-                    setTimeout(() => {
-                        modal.classList.remove('active');
-                        location.reload();
-                    }, 3000);
-                    return;
-                }
-                
-                await updateStep(3, 'completed', `${data.previous_commit} → ${data.new_commit}`);
-                
-                // Step 4: Restart
-                await updateStep(4, 'active', 'Restarting...');
-                
-                if (data.restart_triggered) {
-                    await sleep(2000);
-                    await updateStep(4, 'completed', 'Restarted');
-                    
-                    // Step 5: Complete
-                    await updateStep(5, 'completed', 'Success!');
-                    
-                    document.getElementById('modalFooterText').textContent = 'Update complete! Reloading page...';
-                    
-                    // Wait and reload
-                    await sleep(2000);
-                    location.reload();
-                } else {
-                    await updateStep(4, 'error', 'Manual restart required');
-                    await updateStep(5, 'error', 'Action needed');
-                    
-                    document.getElementById('modalFooterText').innerHTML = 
-                        '<strong>⚠️ Please restart manually:</strong> <code>docker-compose restart</code>';
-                }
-                
-            } catch (error) {
-                console.error('Update error:', error);
-                
-                // Mark current step as error
-                for (let i = 1; i <= 5; i++) {
-                    const step = document.getElementById(`step${i}`);
-                    if (step.classList.contains('active')) {
-                        await updateStep(i, 'error', error.message);
-                        break;
-                    }
-                }
-                
-                document.getElementById('modalFooterText').innerHTML = 
-                    `<strong style="color: #f38ba8;">❌ Update failed:</strong> ${error.message}<br>` +
-                    '<button onclick="document.getElementById(\'updateModal\').classList.remove(\'active\')" ' +
-                    'style="margin-top: 10px; padding: 8px 16px; background: #89b4fa; color: #1e1e2e; border: none; border-radius: 6px; cursor: pointer;">Close</button>';
-            }
-        }
-        
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-        
-        async function updateStep(stepNumber, status, message) {
-            const step = document.getElementById(`step${stepNumber}`);
-            step.classList.remove('active', 'completed', 'error');
-            step.classList.add(status);
-            
-            const statusEl = step.querySelector('.update-step-status');
-            if (status === 'active') {
-                statusEl.innerHTML = '<div class="spinner"></div>';
-            } else if (status === 'completed') {
-                statusEl.innerHTML = `<span style="color: #a6e3a1;">✓ ${message}</span>`;
-            } else if (status === 'error') {
-                statusEl.innerHTML = `<span style="color: #f38ba8;">✗ ${message}</span>`;
-            }
-            
-            await sleep(100);
-        }
+        fetchSettings();
     </script>
-    <script src="/static/testum.js"></script>
-</body>
-</html>
+{% endblock %}
