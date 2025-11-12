@@ -189,6 +189,7 @@ services:
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
       SSH_HOST_KEY_POLICY: auto_add
+      RUN_MIGRATIONS: "0"
     networks:
       - testum_network
     depends_on:
@@ -196,8 +197,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      RUN_MIGRATIONS: "0"
     command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
 
 networks:
