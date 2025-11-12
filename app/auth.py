@@ -99,11 +99,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
             else:
                 user_id_uuid = user_id
         except (ValueError, AttributeError):
-            return Response(
-                content='{"error": "Invalid user ID in token"}',
-                status_code=401,
-                media_type="application/json",
-            )
+            # Invalid user ID in token
+            if path.startswith("/api/"):
+                return Response(
+                    content='{"error": "Invalid user ID in token"}',
+                    status_code=401,
+                    media_type="application/json",
+                )
+            else:
+                # Clear invalid cookie and redirect to login
+                response = RedirectResponse(url="/login", status_code=302)
+                response.delete_cookie("access_token")
+                return response
 
         with app_db.SessionLocal() as db:
             user = db.query(User).filter(User.id == user_id_uuid).first()
