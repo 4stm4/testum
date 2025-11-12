@@ -90,9 +90,23 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 status_code=401,
                 media_type="application/json",
             )
+        
+        # Convert user_id to UUID if it's a string
+        try:
+            if isinstance(user_id, str):
+                import uuid as uuid_module
+                user_id_uuid = uuid_module.UUID(user_id)
+            else:
+                user_id_uuid = user_id
+        except (ValueError, AttributeError):
+            return Response(
+                content='{"error": "Invalid user ID in token"}',
+                status_code=401,
+                media_type="application/json",
+            )
 
         with app_db.SessionLocal() as db:
-            user = db.query(User).filter(User.id == user_id).first()
+            user = db.query(User).filter(User.id == user_id_uuid).first()
 
             if not user or not user.is_active:
                 if path.startswith("/api/"):

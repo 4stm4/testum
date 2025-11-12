@@ -38,7 +38,19 @@ class GUID(TypeDecorator):
             return value
         if isinstance(value, uuid.UUID):
             return value if dialect.name == "postgresql" else str(value)
-        return str(uuid.UUID(str(value)))
+        # Handle empty dict, empty string, or other invalid types
+        if not value or (isinstance(value, dict) and not value):
+            return None
+        try:
+            # Try to convert to UUID
+            if isinstance(value, str):
+                uuid_obj = uuid.UUID(value)
+            else:
+                uuid_obj = uuid.UUID(str(value))
+            return uuid_obj if dialect.name == "postgresql" else str(uuid_obj)
+        except (ValueError, AttributeError, TypeError):
+            # If conversion fails, return None or raise based on requirements
+            return None
 
     def process_result_value(self, value, dialect):
         if value is None:
