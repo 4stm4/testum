@@ -71,19 +71,19 @@ services:
       </body>
       </html>
       EOF
-      nginx -g 'daemon off;' -c - <<'NGINX_CONF'
-      events {}
-      http {
-        server {
-          listen 8000;
-          server_name _;
-          location / {
-            root /usr/share/nginx/html;
-            index index.html;
-          }
+      # Write a simple nginx site config to the conf.d directory (avoid reading config from stdin)
+      cat >/etc/nginx/conf.d/testum.conf <<'NGINX_CONF'
+      server {
+        listen 8000;
+        server_name _;
+        location / {
+          root /usr/share/nginx/html;
+          index index.html;
         }
       }
       NGINX_CONF
+      # Start nginx in foreground so container stays running
+      nginx -g 'daemon off;'
     networks:
       - testum_network
 
