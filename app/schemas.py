@@ -67,6 +67,45 @@ class PlatformResponse(BaseModel):
         from_attributes = True
 
 
+# Script Schemas
+class ScriptBase(BaseModel):
+    """Shared fields for script payloads."""
+
+    name: str = Field(..., min_length=1, max_length=255)
+    language: str = Field(default="bash", min_length=1, max_length=50)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    content: str = Field(..., min_length=1)
+
+
+class ScriptCreate(ScriptBase):
+    """Schema for creating a script."""
+
+
+class ScriptUpdate(BaseModel):
+    """Schema for updating a script."""
+
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    language: Optional[str] = Field(default=None, min_length=1, max_length=50)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    content: Optional[str] = Field(default=None, min_length=1)
+
+
+class ScriptResponse(BaseModel):
+    """Schema for script responses."""
+
+    id: UUID
+    name: str
+    language: str
+    description: Optional[str]
+    content: str
+    created_by: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # Task Schemas
 class DeployKeysRequest(BaseModel):
     """Schema for deploy keys request."""

@@ -2,11 +2,36 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, Text, LargeBinary, DateTime, Enum, ForeignKey, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.types import CHAR, TypeDecorator
 from sqlalchemy.orm import relationship
 import enum
 
 from app.db import Base
+
+
+class GUID(TypeDecorator):
+    """Platform-independent GUID type."""
+
+    impl = PG_UUID
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(PG_UUID(as_uuid=True))
+        return dialect.type_descriptor(CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        if isinstance(value, uuid.UUID):
+            return value if dialect.name == "postgresql" else str(value)
+        return str(uuid.UUID(str(value)))
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value))
 
 
 class AuthMethodEnum(str, enum.Enum):
@@ -33,7 +58,7 @@ class SSHKey(Base):
     """SSH key pair model."""
     __tablename__ = "ssh_keys"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False, index=True)
     public_key = Column(Text, nullable=False)
     encrypted_private_key = Column(LargeBinary, nullable=True)  # Encrypted private key for authentication
@@ -48,7 +73,7 @@ class Platform(Base):
     """Platform (host) model."""
     __tablename__ = "platforms"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False, unique=True, index=True)
     host = Column(String(255), nullable=False)
     port = Column(Integer, default=22, nullable=False)
@@ -60,7 +85,7 @@ class Platform(Base):
     encrypted_private_key = Column(LargeBinary, nullable=True)  # Legacy, use ssh_key_id instead
     
     # SSH Key reference (for private_key auth method)
-    ssh_key_id = Column(UUID(as_uuid=True), ForeignKey("ssh_keys.id"), nullable=True)
+    ssh_key_id = Column(GUID(), ForeignKey("ssh_keys.id"), nullable=True)
     
     # Host key fingerprint for verification
     known_host_fingerprint = Column(String(255), nullable=True)
@@ -82,12 +107,12 @@ class TaskRun(Base):
     """Task execution record."""
     __tablename__ = "task_runs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     celery_task_id = Column(String(255), nullable=True, unique=True, index=True)
     type = Column(Enum(TaskTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
-    
+
     # Platform reference
-    platform_id = Column(UUID(as_uuid=True), ForeignKey("platforms.id"), nullable=True)
+    platform_id = Column(GUID(), ForeignKey("platforms.id"), nullable=True)
     platform = relationship("Platform", back_populates="task_runs")
     
     # Status
@@ -111,11 +136,29 @@ class TaskRun(Base):
         return f"<TaskRun(id={self.id}, type={self.type}, status={self.status})>"
 
 
+class Script(Base):
+    """Reusable automation script."""
+
+    __tablename__ = "scripts"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False, unique=True, index=True)
+    language = Column(String(50), nullable=False, default="bash")
+    description = Column(Text, nullable=True)
+    content = Column(Text, nullable=False)
+    created_by = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<Script(id={self.id}, name={self.name}, language={self.language})>"
+
+
 class AuditLog(Base):
     """Audit log for tracking actions."""
     __tablename__ = "audit_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     user = Column(String(255), nullable=False, index=True)
     action = Column(String(255), nullable=False, index=True)
     object_type = Column(String(100), nullable=False, index=True)
