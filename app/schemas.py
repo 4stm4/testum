@@ -1,6 +1,6 @@
 """Pydantic schemas for request and response validation."""
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -60,6 +60,7 @@ class PlatformResponse(BaseModel):
     has_password: bool = Field(default=False)
     has_private_key: bool = Field(default=False)
     known_host_fingerprint: Optional[str]
+    system_info: Optional[Dict[str, str]] = None
     created_at: datetime
 
     class Config:

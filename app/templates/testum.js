@@ -92,7 +92,7 @@ const translations = {
         
         // Platforms Page
         platformsTitle: 'Platforms',
-        platformsSubtitle: 'Manage target SSH platforms for key deployment and command execution',
+        platformsSubtitle: 'Compact overview of SSH targets and quick actions',
         addNewPlatform: 'Add New Platform',
         platformName: 'Platform Name',
         host: 'Host',
@@ -107,7 +107,15 @@ const translations = {
         noPlatformsFound: 'No platforms found. Add your first platform above.',
         deployKeys: 'Deploy Keys',
         runCommand: 'Run Command',
-        
+        platformOs: 'OS',
+        platformKernel: 'Kernel',
+        platformCpu: 'CPU',
+        platformMemory: 'Memory',
+        platformUptime: 'Uptime',
+        notAvailable: 'Not available',
+        platformAuthPassword: 'Password',
+        platformAuthKey: 'SSH Key',
+
         // Settings Page
         settingsTitle: 'Settings',
         settingsSubtitle: 'Manage your account settings and preferences',
@@ -233,7 +241,7 @@ const translations = {
         
         // Platforms Page
         platformsTitle: 'Платформы',
-        platformsSubtitle: 'Управление целевыми SSH платформами для развертывания ключей и выполнения команд',
+        platformsSubtitle: 'Компактный обзор SSH-платформ и быстрых действий',
         addNewPlatform: 'Добавить новую платформу',
         platformName: 'Название платформы',
         host: 'Хост',
@@ -248,6 +256,14 @@ const translations = {
         noPlatformsFound: 'Платформы не найдены. Добавьте первую платформу выше.',
         deployKeys: 'Развернуть ключи',
         runCommand: 'Выполнить команду',
+        platformOs: 'ОС',
+        platformKernel: 'Ядро',
+        platformCpu: 'Процессор',
+        platformMemory: 'Память',
+        platformUptime: 'Время работы',
+        notAvailable: 'Нет данных',
+        platformAuthPassword: 'Пароль',
+        platformAuthKey: 'SSH-ключ',
         
         // Settings Page
         settingsTitle: 'Настройки',
