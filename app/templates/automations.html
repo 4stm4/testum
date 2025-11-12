@@ -1,0 +1,652 @@
+{% extends "layout.html" %}
+{% set active_page = 'automations' %}
+
+{% block title %}Automation Hub - Testum{% endblock %}
+
+{% block extra_styles %}
+    <style>
+        .page-grid {
+            display: grid;
+            grid-template-columns: minmax(320px, 420px) 1fr;
+            gap: 24px;
+        }
+
+        .page-grid-single {
+            grid-template-columns: 1fr;
+        }
+
+        .form-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .form-card h2 {
+            font-size: 1.4em;
+            margin-bottom: 6px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-field label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 0.9em;
+        }
+
+        .form-field textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .form-helper {
+            font-size: 0.75em;
+            color: var(--text-tertiary);
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .switch-row span {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .actions button {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .actions .primary {
+            background: var(--accent-primary);
+            color: #fff;
+        }
+
+        .actions .ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .jobs-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .job-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 22px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+
+        .job-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.75em;
+            color: var(--text-tertiary);
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.75em;
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .feature-highlights {
+            display: grid;
+            gap: 12px;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 1em;
+            margin-bottom: 6px;
+        }
+
+        .feature-card p {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+            color: var(--text-secondary);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+        }
+
+        .target-list {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .target-list span {
+            font-size: 0.8em;
+            background: var(--bg-tertiary);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 1200px) {
+            .page-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">⚙️ Automation Hub</h1>
+        <p class="page-subtitle">Планируйте выполнение команд и скриптов по расписанию или по событиям</p>
+    </div>
+
+    <div id="automationsLayout" class="page-grid">
+        <section class="form-card">
+            <div>
+                <h2>Новая задача</h2>
+                <p class="form-helper">Опишите runbook: выберите команду или скрипт, укажите триггеры и платформы-мишени.</p>
+            </div>
+
+            <div class="form-field">
+                <label for="jobName">Название</label>
+                <input id="jobName" placeholder="Nightly security baseline" />
+            </div>
+
+            <div class="form-field">
+                <label for="jobDescription">Описание</label>
+                <textarea id="jobDescription" placeholder="Что делает эта автоматизация? Какие ожидаемые результаты?" ></textarea>
+            </div>
+
+            <div class="form-field">
+                <label>Тип выполнения</label>
+                <div class="switch-row">
+                    <span>Команда (shell)</span>
+                    <input type="radio" name="executionType" value="command" checked />
+                </div>
+                <div class="switch-row">
+                    <span>Скрипт из библиотеки</span>
+                    <input type="radio" name="executionType" value="script" />
+                </div>
+            </div>
+
+            <div id="commandField" class="form-field">
+                <label for="jobCommand">Команда / entrypoint</label>
+                <textarea id="jobCommand" placeholder="#!/bin/bash
+apt update && apt upgrade -y"></textarea>
+                <p class="form-helper">Команда будет выполнена на выбранных хостах через SSH.</p>
+            </div>
+
+            <div id="scriptField" class="form-field" style="display:none;">
+                <label for="jobScript">Выберите скрипт</label>
+                <select id="jobScript"></select>
+                <p class="form-helper">Скрипты берутся из раздела <strong>Scripts</strong>.</p>
+            </div>
+
+            <div class="form-field">
+                <label for="jobTrigger">Триггер</label>
+                <select id="jobTrigger">
+                    <option value="manual">Manual run</option>
+                    <option value="cron">Cron расписание</option>
+                    <option value="github_push">GitHub push</option>
+                    <option value="webhook">Входящий вебхук</option>
+                </select>
+            </div>
+
+            <div id="cronField" class="form-field" style="display:none;">
+                <label for="jobCron">Cron выражение</label>
+                <input id="jobCron" placeholder="0 3 * * *" />
+                <p class="form-helper">Используйте стандартный формат cron. Пример: <code>0 3 * * 1-5</code> — будни, 03:00.</p>
+            </div>
+
+            <div id="githubFields" style="display:none;" class="form-field">
+                <label for="jobRepo">GitHub репозиторий</label>
+                <input id="jobRepo" placeholder="https://github.com/org/repo" />
+                <label for="jobBranch">Ветка / ref</label>
+                <input id="jobBranch" placeholder="main" />
+                <p class="form-helper">Поддерживается фильтрация по ветке. Можно добавить параметр <code>path:deploy/</code> в тегах.</p>
+            </div>
+
+            <div id="webhookField" style="display:none;" class="form-field">
+                <label for="jobSecret">Секрет вебхука</label>
+                <div style="display:flex; gap:8px;">
+                    <input id="jobSecret" placeholder="auto-generated" />
+                    <button id="generateSecret" type="button" class="actions ghost" style="padding: 0 14px;">Генерировать</button>
+                </div>
+                <p class="form-helper">Токен используется для подписи запросов. Поддерживается HMAC SHA-256.</p>
+            </div>
+
+            <div class="switch-row">
+                <span>Запускать на всех платформах</span>
+                <input type="checkbox" id="jobRunAll" />
+            </div>
+
+            <div id="platformField" class="form-field">
+                <label for="jobPlatforms">Целевые платформы</label>
+                <select id="jobPlatforms" multiple size="5"></select>
+                <p class="form-helper">Выберите один или несколько хостов. Поддерживаются до 50 хостов за запуск.</p>
+            </div>
+
+            <div class="form-field">
+                <label for="jobEnv">Переменные окружения (KEY=VALUE)</label>
+                <textarea id="jobEnv" placeholder="IMAGE=registry.example.com/app:latest
+DEPLOY_ENV=staging"></textarea>
+            </div>
+
+            <div class="form-field">
+                <label for="jobNotifications">Уведомления</label>
+                <input id="jobNotifications" placeholder="devops@example.com, incident@example.com" />
+                <p class="form-helper">Почтовые адреса через запятую. Slack/webhook можно добавить позже.</p>
+            </div>
+
+            <div class="form-field">
+                <label for="jobTags">Теги</label>
+                <input id="jobTags" placeholder="security, nightly" />
+            </div>
+
+            <div class="switch-row">
+                <span>Требуется ручное подтверждение перед запуском</span>
+                <input type="checkbox" id="jobApproval" />
+            </div>
+
+            <div class="form-field">
+                <label for="jobTimeout">Таймаут (секунды)</label>
+                <input id="jobTimeout" type="number" min="60" max="86400" value="900" />
+            </div>
+
+            <div class="form-field">
+                <label for="jobRetries">Повторы при ошибке</label>
+                <input id="jobRetries" type="number" min="0" max="10" value="1" />
+            </div>
+
+            <div class="form-field">
+                <label for="jobRetryDelay">Пауза между повторами (секунды)</label>
+                <input id="jobRetryDelay" type="number" min="0" max="3600" value="120" />
+            </div>
+
+            <div class="form-field">
+                <label for="jobConcurrency">Лимит параллельных запусков</label>
+                <input id="jobConcurrency" type="number" min="1" max="50" placeholder="Например: 3" />
+            </div>
+
+            <div class="form-field">
+                <label for="jobNotes">Примечания</label>
+                <textarea id="jobNotes" placeholder="Например: запускать после синхронизации базы, чекайте dashboards"></textarea>
+            </div>
+
+            <div class="actions">
+                <button id="createJob" class="primary">Сохранить задачу</button>
+                <button id="resetForm" class="ghost" type="button">Очистить форму</button>
+            </div>
+        </section>
+
+        <section class="jobs-list" id="jobsList">
+            <div class="feature-card">
+                <h3>Как делают конкуренты</h3>
+                <p>Мы подсмотрели лучшие практики у GitHub Actions, Jenkins, GitLab CI и Ansible AWX и собрали must-have идеи:</p>
+                <ul style="margin-top: 10px; color: var(--text-secondary); font-size: 0.85em; display: grid; gap: 6px;">
+                    <li>✅ Approval gates перед критичными деплоями и запуском в проде.</li>
+                    <li>✅ Smart notifications: e-mail, Slack, webhook + отчёты в Confluence.</li>
+                    <li>✅ Drift detection и post-run проверки, чтобы знать, что хост остался в целевом состоянии.</li>
+                    <li>✅ Source control awareness — возможность запускать на конкретных ветках, тегах, PR.</li>
+                    <li>✅ Policy-as-code: теги, владельцы, SLO, SLA и ограничения по регионам.</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const jobsListEl = document.getElementById('jobsList');
+        const runAllCheckbox = document.getElementById('jobRunAll');
+        const platformsSelect = document.getElementById('jobPlatforms');
+        const triggerSelect = document.getElementById('jobTrigger');
+        const executionRadios = document.querySelectorAll('input[name="executionType"]');
+        const commandField = document.getElementById('commandField');
+        const scriptField = document.getElementById('scriptField');
+        const cronField = document.getElementById('cronField');
+        const githubFields = document.getElementById('githubFields');
+        const webhookField = document.getElementById('webhookField');
+
+        async function loadPlatforms() {
+            const response = await fetch('/api/platforms/');
+            if (!response.ok) return;
+            const platforms = await response.json();
+            platformsSelect.innerHTML = platforms.map(p => `<option value="${p.id}">${p.name} (${p.host})</option>`).join('');
+        }
+
+        async function loadScripts() {
+            const response = await fetch('/api/scripts/');
+            if (!response.ok) return;
+            const scripts = await response.json();
+            if (scripts.length === 0) {
+                document.getElementById('jobScript').innerHTML = '<option value="">Скриптов нет</option>';
+                return;
+            }
+            document.getElementById('jobScript').innerHTML = scripts.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        }
+
+        async function loadJobs() {
+            try {
+                const response = await fetch('/api/automations/');
+                if (!response.ok) {
+                    jobsListEl.innerHTML = `<div class="empty-state">Не удалось загрузить задачи</div>`;
+                    return;
+                }
+                const jobs = await response.json();
+                if (jobs.length === 0) {
+                    jobsListEl.innerHTML = `<div class="empty-state">Задачи пока не созданы. Добавьте первую — и Testum запомнит расписание.</div>`;
+                    return;
+                }
+                jobsListEl.innerHTML = jobs.map(renderJobCard).join('');
+            } catch (err) {
+                console.error(err);
+                jobsListEl.innerHTML = `<div class="empty-state">Ошибка загрузки: ${err.message}</div>`;
+            }
+        }
+
+        function renderJobCard(job) {
+            const triggerCopy = {
+                manual: 'Manual trigger',
+                cron: `Cron: ${job.cron_expression}`,
+                github_push: 'GitHub push',
+                webhook: 'Incoming webhook'
+            };
+            const targets = job.run_on_all_platforms ? '<span>Все платформы</span>' : job.targets.map(t => `<span>${t.platform_name || t.platform_id}</span>`).join('');
+            const tags = job.tags && job.tags.length ? job.tags.map(tag => `<span class="chip">#${tag}</span>`).join('') : '<span class="form-helper">Без тегов</span>';
+            const commandPreview = job.execution_type === 'command' ? `<pre style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; white-space: pre-wrap;">${(job.command || '').slice(0, 400)}</pre>` : `<div class="form-helper">Используется скрипт: ${job.script_id}</div>`;
+            const statusChip = job.is_enabled ? '<span class="chip" style="background: rgba(166,227,161,0.1); color: #a6e3a1;">ENABLED</span>' : '<span class="chip" style="background: rgba(243,139,168,0.1); color: #f38ba8;">PAUSED</span>';
+
+            return `
+                <article class="job-card" data-id="${job.id}">
+                    <div class="job-header">
+                        <div>
+                            <h2 style="font-size: 1.2em;">${job.name}</h2>
+                            <p style="color: var(--text-secondary); font-size: 0.9em;">${job.description || 'Описание не заполнено'}</p>
+                        </div>
+                        <div class="job-meta">
+                            ${statusChip}
+                            <span class="chip">${job.execution_type === 'command' ? 'CLI' : 'Script'}</span>
+                            <span class="chip">${triggerCopy[job.trigger_type] || job.trigger_type}</span>
+                        </div>
+                    </div>
+                    <div>${commandPreview}</div>
+                    <div>
+                        <strong style="font-size: 0.85em;">Цели:</strong>
+                        <div class="target-list">${targets || '<span>Нет платформ</span>'}</div>
+                    </div>
+                    <div>
+                        <strong style="font-size: 0.85em;">Теги:</strong>
+                        <div class="tags">${tags}</div>
+                    </div>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <button class="ghost" data-action="toggle">${job.is_enabled ? '⏸️ Пауза' : '▶️ Включить'}</button>
+                        <button class="ghost" data-action="delete" style="color:#f38ba8; border-color:#f38ba8;">🗑️ Удалить</button>
+                        <span style="font-size:0.75em; color:var(--text-tertiary);">Последний запуск: ${job.last_run_at ? new Date(job.last_run_at).toLocaleString() : '—'} | Следующий: ${job.next_run_at ? new Date(job.next_run_at).toLocaleString() : 'Расписание TBD'}</span>
+                    </div>
+                </article>
+            `;
+        }
+
+        jobsListEl.addEventListener('click', async (event) => {
+            const action = event.target.dataset.action;
+            if (!action) return;
+            const card = event.target.closest('.job-card');
+            const jobId = card?.dataset.id;
+            if (!jobId) return;
+
+            if (action === 'delete') {
+                if (!confirm('Удалить эту автоматизацию?')) return;
+                const response = await fetch(`/api/automations/${jobId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadJobs();
+                } else {
+                    alert('Не удалось удалить задачу');
+                }
+                return;
+            }
+
+            if (action === 'toggle') {
+                const isEnabled = event.target.textContent.includes('Пауза');
+                const payload = { is_enabled: !isEnabled };
+                const response = await fetch(`/api/automations/${jobId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    loadJobs();
+                } else {
+                    alert('Не удалось обновить задачу');
+                }
+            }
+        });
+
+        function parseEnv(input) {
+            const lines = input.split('\n');
+            const result = {};
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) continue;
+                const [key, ...rest] = trimmed.split('=');
+                if (!key || rest.length === 0) continue;
+                result[key.trim()] = rest.join('=').trim();
+            }
+            return result;
+        }
+
+        function parseList(input) {
+            if (!input) return [];
+            return input.split(',').map(item => item.trim()).filter(Boolean);
+        }
+
+        function resetForm() {
+            document.getElementById('jobName').value = '';
+            document.getElementById('jobDescription').value = '';
+            document.getElementById('jobCommand').value = '';
+            document.getElementById('jobScript').selectedIndex = 0;
+            triggerSelect.value = 'manual';
+            document.getElementById('jobCron').value = '';
+            document.getElementById('jobRepo').value = '';
+            document.getElementById('jobBranch').value = '';
+            document.getElementById('jobSecret').value = '';
+            runAllCheckbox.checked = false;
+            Array.from(platformsSelect.options).forEach(opt => opt.selected = false);
+            document.getElementById('jobEnv').value = '';
+            document.getElementById('jobNotifications').value = '';
+            document.getElementById('jobTags').value = '';
+            document.getElementById('jobApproval').checked = false;
+            document.getElementById('jobTimeout').value = 900;
+            document.getElementById('jobRetries').value = 1;
+            document.getElementById('jobRetryDelay').value = 120;
+            document.getElementById('jobConcurrency').value = '';
+            document.getElementById('jobNotes').value = '';
+            document.querySelector('input[name="executionType"][value="command"]').checked = true;
+            updateExecutionFields();
+            updateTriggerFields();
+        }
+
+        function updateExecutionFields() {
+            const value = document.querySelector('input[name="executionType"]:checked').value;
+            if (value === 'command') {
+                commandField.style.display = 'flex';
+                scriptField.style.display = 'none';
+            } else {
+                commandField.style.display = 'none';
+                scriptField.style.display = 'flex';
+            }
+        }
+
+        function updateTriggerFields() {
+            const value = triggerSelect.value;
+            cronField.style.display = value === 'cron' ? 'flex' : 'none';
+            githubFields.style.display = value === 'github_push' ? 'flex' : 'none';
+            webhookField.style.display = value === 'webhook' ? 'flex' : 'none';
+        }
+
+        document.getElementById('resetForm').addEventListener('click', () => resetForm());
+        executionRadios.forEach(radio => radio.addEventListener('change', updateExecutionFields));
+        triggerSelect.addEventListener('change', updateTriggerFields);
+        runAllCheckbox.addEventListener('change', () => {
+            platformsSelect.disabled = runAllCheckbox.checked;
+        });
+        document.getElementById('generateSecret').addEventListener('click', () => {
+            const random = crypto.getRandomValues(new Uint8Array(24)).reduce((acc, val) => acc + val.toString(16).padStart(2, '0'), '');
+            document.getElementById('jobSecret').value = random.slice(0, 48);
+        });
+
+        document.getElementById('createJob').addEventListener('click', async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('jobName').value.trim();
+            if (!name) {
+                alert('Введите название задачи');
+                return;
+            }
+
+            const executionType = document.querySelector('input[name="executionType"]:checked').value;
+            const triggerType = triggerSelect.value;
+            const commandValue = document.getElementById('jobCommand').value.trim();
+            const scriptValue = document.getElementById('jobScript').value;
+            const cronValue = document.getElementById('jobCron').value.trim();
+            const secretValue = document.getElementById('jobSecret').value.trim();
+
+            if (executionType === 'command' && !commandValue) {
+                alert('Укажите команду для выполнения');
+                return;
+            }
+            if (executionType === 'script' && !scriptValue) {
+                alert('Выберите скрипт из библиотеки');
+                return;
+            }
+            if (triggerType === 'cron' && !cronValue) {
+                alert('Добавьте cron-выражение');
+                return;
+            }
+            if (triggerType === 'webhook' && !secretValue) {
+                alert('Укажите секрет вебхука');
+                return;
+            }
+            if (!runAllCheckbox.checked && Array.from(platformsSelect.selectedOptions).length === 0) {
+                alert('Выберите хотя бы одну платформу или включите запуск на всех.');
+                return;
+            }
+
+            const payload = {
+                name,
+                description: document.getElementById('jobDescription').value.trim() || null,
+                execution_type: executionType,
+                command: executionType === 'command' ? commandValue : null,
+                script_id: executionType === 'script' ? scriptValue || null : null,
+                trigger_type: triggerType,
+                cron_expression: triggerType === 'cron' ? cronValue : null,
+                repository_url: triggerType === 'github_push' ? document.getElementById('jobRepo').value.trim() : null,
+                repository_branch: triggerType === 'github_push' ? document.getElementById('jobBranch').value.trim() : null,
+                webhook_secret: triggerType === 'webhook' ? secretValue : null,
+                run_on_all_platforms: runAllCheckbox.checked,
+                target_platform_ids: runAllCheckbox.checked ? [] : Array.from(platformsSelect.selectedOptions).map(opt => opt.value),
+                environment: parseEnv(document.getElementById('jobEnv').value),
+                notification_settings: { emails: parseList(document.getElementById('jobNotifications').value) },
+                tags: parseList(document.getElementById('jobTags').value),
+                require_approval: document.getElementById('jobApproval').checked,
+                timeout_seconds: Number(document.getElementById('jobTimeout').value || 900),
+                max_retries: Number(document.getElementById('jobRetries').value || 0),
+                retry_delay_seconds: Number(document.getElementById('jobRetryDelay').value || 60),
+                concurrency_limit: document.getElementById('jobConcurrency').value ? Number(document.getElementById('jobConcurrency').value) : null,
+                notes: document.getElementById('jobNotes').value.trim() || null,
+                parameters: {
+                    drift_detection: true,
+                    smoke_tests: true,
+                    owner: 'automation-team'
+                },
+                is_enabled: true
+            };
+
+            try {
+                const response = await fetch('/api/automations/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    alert(`Не удалось создать задачу: ${err.error || response.statusText}`);
+                    return;
+                }
+                resetForm();
+                loadJobs();
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
+            }
+        });
+
+        loadPlatforms();
+        loadScripts();
+        loadJobs();
+        updateExecutionFields();
+        updateTriggerFields();
+    </script>
+{% endblock %}

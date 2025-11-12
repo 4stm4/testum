@@ -12,6 +12,7 @@ import jwt
 from datetime import datetime, timedelta
 
 from app.config import config
+from app.api.automations import automations_router
 from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
 from app.api.scripts import scripts_router
@@ -84,6 +85,11 @@ async def platforms_page(request: Request):
 async def scripts_page(request: Request):
     """Scripts library page."""
     return templates.TemplateResponse("scripts.html", {"request": request, "active_page": "scripts"})
+
+
+async def automations_page(request: Request):
+    """Automation jobs page."""
+    return templates.TemplateResponse("automations.html", {"request": request, "active_page": "automations"})
 
 
 async def settings_page(request: Request):
@@ -267,6 +273,7 @@ routes = [
     Route("/keys", keys_page),
     Route("/platforms", platforms_page),
     Route("/scripts", scripts_page),
+    Route("/automations", automations_page),
     Route("/jobs", jobs_page),
     Route("/jobs/{task_id}", job_detail_page),
     Route("/settings", settings_page),
@@ -282,6 +289,7 @@ routes = [
     Mount("/api/keys", keys_router),
     Mount("/api/platforms", platforms_router),
     Mount("/api/scripts", scripts_router),
+    Mount("/api/automations", automations_router),
     Mount("/api/tasks", tasks_router),
     Mount("/static", StaticFiles(directory="app/templates"), name="static"),
     WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),

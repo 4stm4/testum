@@ -1,8 +1,9 @@
 """Pydantic schemas for request and response validation."""
 from datetime import datetime
-from typing import Optional, List, Dict
+from typing import Any, Dict, List, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field, model_validator
 
 
 # SSH Key Schemas
@@ -99,6 +100,134 @@ class ScriptResponse(BaseModel):
     description: Optional[str]
     content: str
     created_by: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Automation Schemas
+class AutomationJobBase(BaseModel):
+    """Shared schema for automation jobs."""
+
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = Field(default=None, max_length=4000)
+    execution_type: str = Field(..., pattern="^(command|script)$")
+    command: Optional[str] = Field(default=None, min_length=1)
+    script_id: Optional[UUID] = None
+    trigger_type: str = Field(..., pattern="^(manual|cron|github_push|webhook)$")
+    cron_expression: Optional[str] = Field(default=None, max_length=255)
+    repository_url: Optional[str] = Field(default=None, max_length=512)
+    repository_branch: Optional[str] = Field(default=None, max_length=120)
+    webhook_secret: Optional[str] = Field(default=None, max_length=255)
+    environment: Dict[str, Any] = Field(default_factory=dict)
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list)
+    notification_settings: Dict[str, Any] = Field(default_factory=dict)
+    timeout_seconds: int = Field(default=600, ge=1, le=86400)
+    max_retries: int = Field(default=0, ge=0, le=10)
+    retry_delay_seconds: int = Field(default=60, ge=0, le=3600)
+    concurrency_limit: Optional[int] = Field(default=None, ge=1, le=100)
+    require_approval: bool = Field(default=False)
+    run_on_all_platforms: bool = Field(default=False)
+    notes: Optional[str] = Field(default=None, max_length=4000)
+    is_enabled: bool = Field(default=True)
+
+    @model_validator(mode="after")
+    def _validate_base(self):
+        """Validate base configuration combinations."""
+        if self.execution_type == "command" and not self.command:
+            raise ValueError("command is required when execution_type is 'command'")
+        if self.execution_type == "script" and not self.script_id:
+            raise ValueError("script_id is required when execution_type is 'script'")
+        if self.trigger_type == "cron" and not self.cron_expression:
+            raise ValueError("cron_expression is required for cron trigger")
+        if self.trigger_type == "github_push" and not self.repository_url:
+            raise ValueError("repository_url is required for GitHub triggers")
+        if self.trigger_type == "webhook" and not self.webhook_secret:
+            raise ValueError("webhook_secret is required for webhook triggers")
+        return self
+
+
+class AutomationJobCreate(AutomationJobBase):
+    """Schema for creating an automation job."""
+
+    target_platform_ids: List[UUID] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _validate_targets(self):
+        if not self.run_on_all_platforms and not self.target_platform_ids:
+            raise ValueError("target_platform_ids are required when run_on_all_platforms is False")
+        return self
+
+
+class AutomationJobUpdate(BaseModel):
+    """Schema for updating an automation job."""
+
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    description: Optional[str] = Field(default=None, max_length=4000)
+    execution_type: Optional[str] = Field(default=None, pattern="^(command|script)$")
+    command: Optional[str] = Field(default=None, min_length=1)
+    script_id: Optional[UUID] = None
+    trigger_type: Optional[str] = Field(default=None, pattern="^(manual|cron|github_push|webhook)$")
+    cron_expression: Optional[str] = Field(default=None, max_length=255)
+    repository_url: Optional[str] = Field(default=None, max_length=512)
+    repository_branch: Optional[str] = Field(default=None, max_length=120)
+    webhook_secret: Optional[str] = Field(default=None, max_length=255)
+    environment: Optional[Dict[str, Any]] = None
+    parameters: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
+    notification_settings: Optional[Dict[str, Any]] = None
+    timeout_seconds: Optional[int] = Field(default=None, ge=1, le=86400)
+    max_retries: Optional[int] = Field(default=None, ge=0, le=10)
+    retry_delay_seconds: Optional[int] = Field(default=None, ge=0, le=3600)
+    concurrency_limit: Optional[int] = Field(default=None, ge=1, le=100)
+    require_approval: Optional[bool] = None
+    run_on_all_platforms: Optional[bool] = None
+    notes: Optional[str] = Field(default=None, max_length=4000)
+    is_enabled: Optional[bool] = None
+    target_platform_ids: Optional[List[UUID]] = None
+
+    @model_validator(mode="after")
+    def _validate_update(self):
+        if self.execution_type == "command":
+            if "command" in self.model_fields_set and not self.command:
+                raise ValueError("command must be provided when execution_type is 'command'")
+        if self.execution_type == "script":
+            if "script_id" in self.model_fields_set and self.script_id is None:
+                raise ValueError("script_id must be provided when execution_type is 'script'")
+        if self.trigger_type == "cron":
+            if "cron_expression" in self.model_fields_set and not self.cron_expression:
+                raise ValueError("cron_expression must be provided for cron trigger")
+        if self.trigger_type == "github_push":
+            if "repository_url" in self.model_fields_set and not self.repository_url:
+                raise ValueError("repository_url must be provided for GitHub trigger")
+        if self.trigger_type == "webhook":
+            if "webhook_secret" in self.model_fields_set and not self.webhook_secret:
+                raise ValueError("webhook_secret must be provided for webhook trigger")
+        return self
+
+
+class AutomationJobTargetResponse(BaseModel):
+    """Schema describing a selected platform for an automation job."""
+
+    platform_id: UUID
+    platform_name: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class AutomationJobResponse(AutomationJobBase):
+    """Schema returned for automation jobs."""
+
+    id: UUID
+    target_platform_ids: List[UUID]
+    targets: List[AutomationJobTargetResponse]
+    created_by: Optional[str]
+    last_run_at: Optional[datetime]
+    next_run_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
 
