@@ -5,12 +5,26 @@
 
 {% block extra_styles %}
     <style>
-        .message > div {
-            padding: 12px 16px;
-            border-radius: 8px;
+        .page-header.compact {
             margin-bottom: 20px;
+        }
+
+        .page-header.compact .page-title {
+            font-size: 1.6em;
+            margin-bottom: 4px;
+        }
+
+        .page-header.compact .page-subtitle {
+            font-size: 0.95em;
+            color: var(--text-tertiary);
+        }
+
+        .message > div {
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
             border-left: 4px solid;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .message .success {
@@ -25,46 +39,66 @@
             border-color: var(--error-border);
         }
 
+        .settings-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            align-items: start;
+        }
+
+        .settings-grid .card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 18px;
+        }
+
+        .settings-grid .card-title {
+            font-size: 1.1em;
+            margin-bottom: 2px;
+        }
+
+        .settings-grid .card-description {
+            font-size: 0.85em;
+            margin-bottom: 0;
+        }
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 500;
             color: var(--text-primary);
-            font-size: 0.95em;
+            font-size: 0.9em;
         }
 
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             background: var(--input-bg);
             border: 1px solid var(--input-border);
             border-radius: 6px;
             color: var(--text-primary);
-            font-size: 1em;
+            font-size: 0.95em;
         }
 
         .current-value {
             background: var(--bg-tertiary);
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
             font-family: 'Courier New', monospace;
             color: var(--accent-primary);
+            font-size: 0.95em;
         }
 
         .card-description {
             color: var(--text-secondary);
             margin-bottom: 15px;
-        }
-
-        .settings-grid {
-            display: grid;
-            gap: 20px;
         }
 
         .note {
@@ -76,8 +110,23 @@
 
         .split-columns {
             display: grid;
-            gap: 20px;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+
+        .form-row {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .inline-note {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 18px;
+            flex-wrap: wrap;
         }
 
         .update-modal {
@@ -193,17 +242,17 @@
 {% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <h1 class="page-title"><span data-i18n="settingsTitle">⚙️ Settings</span></h1>
-        <p class="page-subtitle" data-i18n="settingsSubtitle">Manage your account settings and preferences</p>
+    <div class="page-header compact">
+        <h1 class="page-title" data-i18n="settingsTitle">Settings</h1>
+        <p class="page-subtitle" data-i18n="settingsSubtitle">Quick access to key configuration details</p>
     </div>
 
     <div id="message" class="message"></div>
 
     <div class="settings-grid">
         <div class="card">
-            <h2 class="card-title" data-i18n="accountInfo">👤 Account Information</h2>
-            <div class="card-description" data-i18n="accountInfoDesc">View your current account details</div>
+            <h2 class="card-title" data-i18n="accountInfo">Account</h2>
+            <div class="card-description" data-i18n="accountInfoDesc">Current profile overview</div>
             <div class="form-group">
                 <label data-i18n="currentUsername">Current Username</label>
                 <div class="current-value" id="currentUsername">Loading...</div>
@@ -215,8 +264,8 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title" data-i18n="appSettings">⚙️ Application Settings</h2>
-            <div class="card-description" data-i18n="appSettingsDesc">Core application configuration (read-only, update via docker-compose.yml)</div>
+            <h2 class="card-title" data-i18n="appSettings">Application</h2>
+            <div class="card-description" data-i18n="appSettingsDesc">Read-only runtime configuration</div>
             <div class="form-group">
                 <label data-i18n="environment">Environment</label>
                 <div class="current-value" id="appEnv">Loading...</div>
@@ -234,8 +283,8 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title" data-i18n="databaseSettings">🗄️ Database Settings</h2>
-            <div class="card-description" data-i18n="databaseSettingsDesc">Database connection configuration (read-only)</div>
+            <h2 class="card-title" data-i18n="databaseSettings">Database</h2>
+            <div class="card-description" data-i18n="databaseSettingsDesc">Connection endpoints</div>
             <div class="form-group">
                 <label data-i18n="databaseUrl">Database URL</label>
                 <div class="current-value" id="databaseUrl">Loading...</div>
@@ -247,8 +296,8 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title" data-i18n="taskQueueSettings">📨 Task Queue Settings</h2>
-            <div class="card-description" data-i18n="taskQueueSettingsDesc">Celery task queue configuration (read-only)</div>
+            <h2 class="card-title" data-i18n="taskQueueSettings">Task Queue</h2>
+            <div class="card-description" data-i18n="taskQueueSettingsDesc">Celery endpoints</div>
             <div class="form-group">
                 <label data-i18n="brokerUrl">Broker URL</label>
                 <div class="current-value" id="celeryBroker">Loading...</div>
@@ -260,8 +309,8 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title" data-i18n="storageSettings">📦 Storage Settings</h2>
-            <div class="card-description" data-i18n="storageSettingsDesc">MinIO S3-compatible storage configuration (read-only)</div>
+            <h2 class="card-title" data-i18n="storageSettings">Storage</h2>
+            <div class="card-description" data-i18n="storageSettingsDesc">MinIO configuration</div>
             <div class="form-group">
                 <label data-i18n="minioEndpoint">MinIO Endpoint</label>
                 <div class="current-value" id="minioEndpoint">Loading...</div>
@@ -281,8 +330,8 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title" data-i18n="sshSettings">🔐 SSH Settings</h2>
-            <div class="card-description" data-i18n="sshSettingsDesc">SSH connection behavior configuration</div>
+            <h2 class="card-title" data-i18n="sshSettings">SSH</h2>
+            <div class="card-description" data-i18n="sshSettingsDesc">Connection behaviour</div>
             <div class="form-group">
                 <label data-i18n="hostKeyPolicy">Host Key Policy</label>
                 <div class="current-value" id="sshPolicy">Loading...</div>
@@ -292,45 +341,49 @@
 
         <div class="split-columns">
             <div class="card">
-                <h2 class="card-title" data-i18n="changeUsername">🔄 Change Username</h2>
-                <div class="card-description" data-i18n="changeUsernameDesc">Update your login username. You will need to log in again after changing it.</div>
+                <h2 class="card-title" data-i18n="changeUsername">Username</h2>
+                <div class="card-description" data-i18n="changeUsernameDesc">Update login name</div>
                 <form id="usernameForm">
-                    <div class="form-group">
-                        <label data-i18n="currentPasswordForVerification">Current Password (for verification)</label>
-                        <input type="password" id="currentPasswordForUsername" required>
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="newUsername">New Username</label>
-                        <input type="text" id="newUsername" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="currentPasswordForVerification">Current Password</label>
+                            <input type="password" id="currentPasswordForUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="newUsername">New Username</label>
+                            <input type="text" id="newUsername" required>
+                        </div>
                     </div>
                     <button type="submit" data-i18n="updateUsername">Update Username</button>
                 </form>
             </div>
 
             <div class="card">
-                <h2 class="card-title" data-i18n="changePassword">🔒 Change Password</h2>
-                <div class="card-description" data-i18n="changePasswordDesc">Update your password to keep your account secure. Use a strong password with at least 8 characters.</div>
+                <h2 class="card-title" data-i18n="changePassword">Password</h2>
+                <div class="card-description" data-i18n="changePasswordDesc">Refresh credentials</div>
                 <form id="passwordForm">
-                    <div class="form-group">
-                        <label data-i18n="currentPassword">Current Password</label>
-                        <input type="password" id="currentPassword" required>
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="newPassword">New Password</label>
-                        <input type="password" id="newPassword" required>
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="confirmPassword">Confirm New Password</label>
-                        <input type="password" id="confirmPassword" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="newPassword">New Password</label>
+                            <input type="password" id="newPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="confirmPassword">Confirm</label>
+                            <input type="password" id="confirmPassword" required>
+                        </div>
                     </div>
                     <button type="submit" data-i18n="updatePassword">Update Password</button>
                 </form>
             </div>
         </div>
 
-        <div class="card">
-            <h2 class="card-title" data-i18n="noteTitle">Note:</h2>
-            <div class="card-description" data-i18n="noteText">After changing your username or password, you will be automatically logged out and need to sign in again with your new credentials.</div>
+        <div class="card inline-note">
+            <h2 class="card-title" data-i18n="noteTitle">Heads-up</h2>
+            <div class="card-description" data-i18n="noteText">Changing credentials will sign you out.</div>
         </div>
     </div>
 
