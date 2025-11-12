@@ -7,7 +7,7 @@ from starlette.testclient import TestClient
 
 # Set test environment variables
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
-os.environ["FERNET_KEY"] = "test-key-32-bytes-base64-urlsafe=="  # Mock key
+os.environ["FERNET_KEY"] = "XvgfcADXX1oKcITCS8V7iQWr9VcweqQR7H3Vc_2qsFs="  # Mock key
 os.environ["REDIS_URL"] = "redis://localhost:6379/1"
 os.environ["APP_ENV"] = "testing"
 

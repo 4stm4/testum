@@ -60,35 +60,3 @@ def log_audit(
     return audit_entry
 
 
-def get_audit_logs(
-    db: Session,
-    user: Optional[str] = None,
-    action: Optional[str] = None,
-    object_type: Optional[str] = None,
-    limit: int = 100,
-):
-    """
-    Query audit logs with filters.
-
-    Args:
-        db: Database session
-        user: Filter by user
-        action: Filter by action
-        object_type: Filter by object type
-        limit: Maximum number of records to return
-
-    Returns:
-        List of AuditLog entries
-    """
-    query = db.query(AuditLog)
-
-    if user:
-        query = query.filter(AuditLog.user == user)
-    if action:
-        query = query.filter(AuditLog.action == action)
-    if object_type:
-        query = query.filter(AuditLog.object_type == object_type)
-
-    query = query.order_by(AuditLog.timestamp.desc()).limit(limit)
-
-    return query.all()
