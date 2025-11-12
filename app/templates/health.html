@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block title %}Health Check - Testum{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title" data-i18n="healthCheck">Health Check</h1>
+    <p class="page-subtitle" data-i18n="healthCheckDescription">
+        Monitor system health and performance
+    </p>
+</div>
+
+<div class="card" id="healthStatusCard">
+    <div class="card-title" data-i18n="currentStatus">Current status</div>
+    <div class="card-description">
+        <p>
+            <strong data-i18n="statusLabel">Status:</strong>
+            <span id="healthStatusValue">{{ health.status }}</span>
+        </p>
+        <p>
+            <strong data-i18n="timestampLabel">Last checked:</strong>
+            <span id="healthTimestampValue">{{ health.timestamp }}</span>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadHealthStatus() {
+        try {
+            const response = await fetch('/health', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch health status');
+            }
+            const data = await response.json();
+            document.getElementById('healthStatusValue').textContent = data.status;
+            document.getElementById('healthTimestampValue').textContent = new Date(data.timestamp).toLocaleString();
+        } catch (error) {
+            console.error('Health check failed', error);
+            document.getElementById('healthStatusValue').textContent = 'unavailable';
+            document.getElementById('healthTimestampValue').textContent = '—';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadHealthStatus);
+</script>
+{% endblock %}

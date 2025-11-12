@@ -5,7 +5,7 @@ from starlette.testclient import TestClient
 
 def test_health_check(client: TestClient):
     """Test health check endpoint."""
-    response = client.get("/health")
+    response = client.get("/health", headers={"Accept": "application/json"})
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
