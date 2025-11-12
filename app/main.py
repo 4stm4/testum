@@ -127,13 +127,41 @@ def get_sidebar_counts() -> dict:
 
     session = SessionLocal()
     try:
-        return {
-            "keys": session.query(SSHKey).count(),
-            "platforms": session.query(Platform).count(),
-            "scripts": session.query(Script).count(),
-            "automations": session.query(AutomationJob).count(),
-            "jobs": session.query(TaskRun).count(),
+        counts = {
+            "keys": 0,
+            "platforms": 0,
+            "scripts": 0,
+            "automations": 0,
+            "jobs": 0,
         }
+        
+        # Try to count each table, handle missing tables gracefully
+        try:
+            counts["keys"] = session.query(SSHKey).count()
+        except Exception:
+            pass
+        
+        try:
+            counts["platforms"] = session.query(Platform).count()
+        except Exception:
+            pass
+        
+        try:
+            counts["scripts"] = session.query(Script).count()
+        except Exception:
+            pass
+        
+        try:
+            counts["automations"] = session.query(AutomationJob).count()
+        except Exception:
+            pass
+        
+        try:
+            counts["jobs"] = session.query(TaskRun).count()
+        except Exception:
+            pass
+        
+        return counts
     finally:
         session.close()
 
