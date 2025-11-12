@@ -214,8 +214,17 @@ async def get_settings_endpoint(request: Request):
 
 
 async def health_check(request: Request):
-    """Health check endpoint."""
-    return JSONResponse({"status": "healthy", "timestamp": datetime.utcnow().isoformat()})
+    """Health check endpoint with HTML and JSON responses."""
+    health_data = {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+    accept_header = request.headers.get("accept", "")
+    wants_html = "text/html" in accept_header and "application/json" not in accept_header
+
+    if wants_html:
+        context = {"request": request, "active_page": "health", "health": health_data}
+        return templates.TemplateResponse("health.html", context)
+
+    return JSONResponse(health_data)
 
 
 async def check_updates_endpoint(request: Request):
