@@ -176,13 +176,14 @@ services:
       set -e &&
       echo 'Installing system dependencies...' &&
       apt-get update -qq && 
-      apt-get install -y -qq gcc libpq-dev postgresql-client git && 
+      apt-get install -y -qq --no-install-recommends gcc libpq-dev postgresql-client git && 
+      rm -rf /var/lib/apt/lists/* &&
       echo 'Cloning repository...' &&
-      git clone https://github.com/4stm4/testum.git /app &&
+      git clone --depth 1 https://github.com/4stm4/testum.git /app &&
       cd /app &&
-      git config --global --add safe.directory /app &&
       echo 'Installing Python packages...' &&
-      pip install -q --no-cache-dir -r /app/requirements.txt && 
+      pip install --no-cache-dir --upgrade pip setuptools wheel &&
+      pip install --no-cache-dir -r /app/requirements.txt && 
       echo 'Waiting for database...' &&
       until pg_isready -h db -p 5432 -U postgres; do
         echo 'Database unavailable - sleeping';
@@ -191,7 +192,7 @@ services:
       echo 'Running migrations...' &&
       alembic upgrade head &&
       echo 'Starting application...' &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8000
+      exec uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
   celery_worker:
@@ -225,15 +226,16 @@ services:
       set -e &&
       echo 'Installing system dependencies...' &&
       apt-get update -qq && 
-      apt-get install -y -qq gcc libpq-dev postgresql-client git && 
+      apt-get install -y -qq --no-install-recommends gcc libpq-dev postgresql-client git && 
+      rm -rf /var/lib/apt/lists/* &&
       echo 'Cloning repository...' &&
-      git clone https://github.com/4stm4/testum.git /app &&
+      git clone --depth 1 https://github.com/4stm4/testum.git /app &&
       cd /app &&
-      git config --global --add safe.directory /app &&
       echo 'Installing Python packages...' &&
-      pip install -q --no-cache-dir -r /app/requirements.txt && 
+      pip install --no-cache-dir --upgrade pip setuptools wheel &&
+      pip install --no-cache-dir -r /app/requirements.txt && 
       echo 'Starting Celery worker...' &&
-      celery -A app.celery_app worker --loglevel=info --concurrency=2
+      exec celery -A app.celery_app worker --loglevel=info --concurrency=2
       "
 
 networks:
