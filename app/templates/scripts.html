@@ -1,0 +1,500 @@
+{% extends "layout.html" %}
+{% set active_page = 'scripts' %}
+
+{% block title %}Scripts Library{% endblock %}
+
+{% block extra_styles %}
+    <style>
+        .scripts-grid {
+            display: grid;
+            gap: 24px;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 1100px) {
+            .scripts-grid {
+                grid-template-columns: 340px 1fr;
+            }
+        }
+
+        .scripts-list-card,
+        .scripts-form-card {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .scripts-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .scripts-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .scripts-list .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+        }
+
+        .scripts-list li {
+            margin: 0;
+        }
+
+        .script-item {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: inherit;
+            text-align: left;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .script-item:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-1px);
+        }
+
+        .script-item.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 1px var(--accent-primary);
+        }
+
+        .script-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+
+        .script-item-title {
+            font-size: 1.05em;
+            font-weight: 600;
+        }
+
+        .script-item-language {
+            background: var(--bg-tertiary);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            color: var(--text-secondary);
+        }
+
+        .script-item-description {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .script-item-updated {
+            font-size: 0.75em;
+            color: var(--text-tertiary);
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-field label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 0.95em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 1px var(--accent-primary);
+        }
+
+        #scriptContent {
+            min-height: 220px;
+            resize: vertical;
+            font-family: "JetBrains Mono", "Fira Code", monospace;
+            line-height: 1.4;
+        }
+
+        .script-metadata {
+            display: grid;
+            gap: 4px;
+            font-size: 0.8em;
+            color: var(--text-tertiary);
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .form-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .primary-btn,
+        .secondary-btn,
+        .ghost-btn,
+        .danger-btn {
+            border-radius: 6px;
+            border: none;
+            padding: 10px 16px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .primary-btn {
+            background: var(--accent-primary);
+            color: #fff;
+        }
+
+        .primary-btn:hover,
+        .secondary-btn:hover,
+        .ghost-btn:hover,
+        .danger-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.95;
+        }
+
+        .secondary-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .ghost-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .danger-btn {
+            background: var(--button-logout);
+            color: var(--bg-primary);
+            border: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title" data-i18n="scriptsTitle">📜 Scripts</h1>
+        <p class="page-subtitle" data-i18n="scriptsSubtitle">Organize reusable automation snippets for teams</p>
+    </div>
+
+    <div class="scripts-grid">
+        <section class="card scripts-list-card">
+            <div class="scripts-list-header">
+                <h2 class="card-title" data-i18n="scriptsLibrary">Script Library</h2>
+                <button id="newScriptBtn" type="button" class="secondary-btn" data-i18n="newScript">New Script</button>
+            </div>
+            <ul id="scriptsList" class="scripts-list">
+                <li class="empty" data-i18n="noScriptsFound">No scripts saved yet.</li>
+            </ul>
+        </section>
+
+        <section class="card scripts-form-card">
+            <h2 class="card-title" id="scriptFormTitle" data-i18n="createScriptTitle">Create script</h2>
+            <form id="scriptForm" class="form" autocomplete="off">
+                <div class="form-field">
+                    <label for="scriptName" data-i18n="scriptName">Script name</label>
+                    <input id="scriptName" name="name" type="text" required placeholder="Script name" data-i18n="scriptName">
+                </div>
+                <div class="form-field">
+                    <label for="scriptLanguage" data-i18n="scriptLanguage">Language</label>
+                    <select id="scriptLanguage" name="language">
+                        <option value="bash">Bash</option>
+                        <option value="python">Python</option>
+                        <option value="powershell">PowerShell</option>
+                        <option value="ansible">Ansible</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="scriptDescription" data-i18n="scriptDescription">Description</label>
+                    <textarea id="scriptDescription" name="description" rows="3" placeholder="Short description" data-i18n="scriptDescription"></textarea>
+                </div>
+                <div class="form-field">
+                    <label for="scriptContent" data-i18n="scriptContent">Script content</label>
+                    <textarea id="scriptContent" name="content" required placeholder="#!/bin/bash" data-i18n="scriptContent"></textarea>
+                </div>
+                <div id="scriptMetadata" class="script-metadata hidden">
+                    <div><span data-i18n="createdLabel">Created</span>: <span id="scriptCreatedAt">—</span></div>
+                    <div><span data-i18n="updatedLabel">Updated</span>: <span id="scriptUpdatedAt">—</span></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="resetScriptBtn" class="ghost-btn" data-i18n="resetForm">Reset</button>
+                    <button type="button" id="deleteScriptBtn" class="danger-btn hidden" data-i18n="deleteScript">Delete Script</button>
+                    <button type="submit" id="saveScriptBtn" class="primary-btn" data-i18n="saveScript">Save Script</button>
+                </div>
+            </form>
+        </section>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const scriptsListEl = document.getElementById('scriptsList');
+            const scriptForm = document.getElementById('scriptForm');
+            const newScriptBtn = document.getElementById('newScriptBtn');
+            const deleteScriptBtn = document.getElementById('deleteScriptBtn');
+            const resetScriptBtn = document.getElementById('resetScriptBtn');
+            const scriptFormTitle = document.getElementById('scriptFormTitle');
+            const saveScriptBtn = document.getElementById('saveScriptBtn');
+            const metadataBlock = document.getElementById('scriptMetadata');
+            const createdAtEl = document.getElementById('scriptCreatedAt');
+            const updatedAtEl = document.getElementById('scriptUpdatedAt');
+            const languageSelect = document.getElementById('scriptLanguage');
+
+            let scriptsCache = [];
+            let editingScriptId = null;
+
+            function setFormMode(mode) {
+                if (mode === 'create') {
+                    editingScriptId = null;
+                    scriptForm.reset();
+                    languageSelect.value = 'bash';
+                    metadataBlock.classList.add('hidden');
+                    deleteScriptBtn.classList.add('hidden');
+                    scriptFormTitle.setAttribute('data-i18n', 'createScriptTitle');
+                    saveScriptBtn.setAttribute('data-i18n', 'saveScript');
+                } else {
+                    scriptFormTitle.setAttribute('data-i18n', 'editScriptTitle');
+                    saveScriptBtn.setAttribute('data-i18n', 'updateScript');
+                    deleteScriptBtn.classList.remove('hidden');
+                    metadataBlock.classList.remove('hidden');
+                }
+                applyTranslations();
+            }
+
+            function highlightSelected() {
+                const items = scriptsListEl.querySelectorAll('.script-item');
+                items.forEach(item => {
+                    const isActive = item.dataset.id === editingScriptId;
+                    item.classList.toggle('active', isActive);
+                });
+            }
+
+            function renderScriptsList() {
+                scriptsListEl.innerHTML = '';
+
+                if (!scriptsCache.length) {
+                    const emptyState = document.createElement('li');
+                    emptyState.className = 'empty';
+                    emptyState.setAttribute('data-i18n', 'noScriptsFound');
+                    emptyState.textContent = t('noScriptsFound');
+                    scriptsListEl.appendChild(emptyState);
+                    return;
+                }
+
+                scriptsCache.forEach(script => {
+                    const listItem = document.createElement('li');
+
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'script-item';
+                    button.dataset.id = script.id;
+
+                    const header = document.createElement('div');
+                    header.className = 'script-item-header';
+
+                    const title = document.createElement('div');
+                    title.className = 'script-item-title';
+                    title.textContent = script.name;
+
+                    const language = document.createElement('span');
+                    language.className = 'script-item-language';
+                    language.textContent = script.language;
+
+                    header.appendChild(title);
+                    header.appendChild(language);
+
+                    const description = document.createElement('div');
+                    description.className = 'script-item-description';
+                    if (script.description && script.description.trim()) {
+                        description.textContent = script.description;
+                        description.removeAttribute('data-i18n');
+                    } else {
+                        description.setAttribute('data-i18n', 'noDescription');
+                        description.textContent = t('noDescription');
+                    }
+
+                    const updated = document.createElement('div');
+                    updated.className = 'script-item-updated';
+                    const updatedDate = new Date(script.updated_at).toLocaleString();
+                    const updatedLabel = document.createElement('span');
+                    updatedLabel.setAttribute('data-i18n', 'updatedLabel');
+                    updatedLabel.textContent = t('updatedLabel');
+                    const updatedValue = document.createElement('span');
+                    updatedValue.textContent = updatedDate;
+                    updated.appendChild(updatedLabel);
+                    updated.appendChild(document.createTextNode(': '));
+                    updated.appendChild(updatedValue);
+
+                    button.appendChild(header);
+                    button.appendChild(description);
+                    button.appendChild(updated);
+
+                    button.addEventListener('click', () => {
+                        loadScriptIntoForm(script.id);
+                    });
+
+                    listItem.appendChild(button);
+                    scriptsListEl.appendChild(listItem);
+                });
+
+                highlightSelected();
+            }
+
+            async function loadScripts() {
+                try {
+                    const response = await fetch('/api/scripts/');
+                    if (!response.ok) {
+                        throw new Error('Failed to load scripts');
+                    }
+                    scriptsCache = await response.json();
+                    renderScriptsList();
+                } catch (error) {
+                    console.error(error);
+                    scriptsListEl.innerHTML = '';
+                    const errorItem = document.createElement('li');
+                    errorItem.className = 'empty';
+                    errorItem.setAttribute('data-i18n', 'loadError');
+                    errorItem.textContent = t('loadError');
+                    scriptsListEl.appendChild(errorItem);
+                }
+            }
+
+            function loadScriptIntoForm(scriptId) {
+                const script = scriptsCache.find(item => item.id === scriptId);
+                if (!script) {
+                    return;
+                }
+
+                editingScriptId = script.id;
+                scriptForm.elements['name'].value = script.name;
+                scriptForm.elements['language'].value = script.language;
+                scriptForm.elements['description'].value = script.description || '';
+                scriptForm.elements['content'].value = script.content;
+
+                createdAtEl.textContent = new Date(script.created_at).toLocaleString();
+                updatedAtEl.textContent = new Date(script.updated_at).toLocaleString();
+
+                setFormMode('edit');
+                highlightSelected();
+            }
+
+            async function handleSubmit(event) {
+                event.preventDefault();
+                const formData = new FormData(scriptForm);
+                const payload = Object.fromEntries(formData.entries());
+
+                const requestInit = {
+                    method: editingScriptId ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                };
+
+                const url = editingScriptId ? `/api/scripts/${editingScriptId}` : '/api/scripts/';
+
+                try {
+                    const response = await fetch(url, requestInit);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        const message = errorData.error || t('saveError');
+                        alert(message);
+                        return;
+                    }
+
+                    const data = await response.json();
+                    await loadScripts();
+
+                    if (editingScriptId) {
+                        loadScriptIntoForm(editingScriptId);
+                    } else {
+                        loadScriptIntoForm(data.id);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert(t('saveError'));
+                }
+            }
+
+            async function handleDelete() {
+                if (!editingScriptId) {
+                    return;
+                }
+
+                if (!confirm(t('confirmDeleteScript'))) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/scripts/${editingScriptId}`, { method: 'DELETE' });
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        alert(errorData.error || t('deleteError'));
+                        return;
+                    }
+
+                    setFormMode('create');
+                    await loadScripts();
+                } catch (error) {
+                    console.error(error);
+                    alert(t('deleteError'));
+                }
+            }
+
+            function handleReset() {
+                setFormMode('create');
+                highlightSelected();
+            }
+
+            newScriptBtn.addEventListener('click', () => {
+                setFormMode('create');
+                highlightSelected();
+            });
+            deleteScriptBtn.addEventListener('click', handleDelete);
+            resetScriptBtn.addEventListener('click', handleReset);
+            scriptForm.addEventListener('submit', handleSubmit);
+
+            setFormMode('create');
+            loadScripts();
+        });
+    </script>
+{% endblock %}

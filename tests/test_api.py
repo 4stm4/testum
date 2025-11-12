@@ -141,11 +141,58 @@ def test_delete_platform(client: TestClient):
     }
     create_response = client.post("/api/platforms/", json=platform_data)
     platform_id = create_response.json()["id"]
-    
+
     # Delete it
     response = client.delete(f"/api/platforms/{platform_id}")
     assert response.status_code == 200
-    
+
     # Verify it's gone
     get_response = client.get(f"/api/platforms/{platform_id}")
     assert get_response.status_code == 404
+
+
+def test_script_crud_flow(client: TestClient):
+    """Test creating, updating, listing, and deleting scripts."""
+    script_payload = {
+        "name": "Deploy web",
+        "language": "bash",
+        "description": "Restart web service",
+        "content": "#!/bin/bash\nsystemctl restart web.service",
+    }
+
+    # Create script
+    create_response = client.post("/api/scripts/", json=script_payload)
+    assert create_response.status_code == 201
+    created = create_response.json()
+    assert created["name"] == script_payload["name"]
+    assert created["language"] == script_payload["language"]
+    assert "id" in created
+
+    script_id = created["id"]
+
+    # Update script
+    update_payload = {"description": "Restart the web application service"}
+    update_response = client.put(f"/api/scripts/{script_id}", json=update_payload)
+    assert update_response.status_code == 200
+    updated = update_response.json()
+    assert updated["description"] == update_payload["description"]
+
+    # Get single script
+    get_response = client.get(f"/api/scripts/{script_id}")
+    assert get_response.status_code == 200
+    fetched = get_response.json()
+    assert fetched["id"] == script_id
+
+    # List scripts
+    list_response = client.get("/api/scripts/")
+    assert list_response.status_code == 200
+    scripts = list_response.json()
+    assert any(item["id"] == script_id for item in scripts)
+
+    # Delete script
+    delete_response = client.delete(f"/api/scripts/{script_id}")
+    assert delete_response.status_code == 200
+
+    # Ensure removed
+    verify_response = client.get(f"/api/scripts/{script_id}")
+    assert verify_response.status_code == 404
