@@ -7,15 +7,9 @@ on:
       - hexagonal-architecture
     tags:
       - 'v*.*.*'
-    paths:
-      - 'testup/**'
-      - '.github/workflows/docker-publish.yml'
   pull_request:
     branches:
       - main
-    paths:
-      - 'testup/**'
-      - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
 
 env:
@@ -25,6 +19,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    if: github.repository != '4stm4/testum'
     permissions:
       contents: read
       packages: write
