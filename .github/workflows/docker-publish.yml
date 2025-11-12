@@ -7,9 +7,15 @@ on:
       - hexagonal-architecture
     tags:
       - 'v*.*.*'
+    paths:
+      - 'testup/**'
+      - '.github/workflows/docker-publish.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'testup/**'
+      - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
 
 env:
