@@ -159,14 +159,8 @@ services:
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
       SSH_HOST_KEY_POLICY: auto_add
-      USE_RUNTIME_INSTALL: "1"
-      RUNTIME_CACHE_DIR: /runtime-cache
     ports:
       - "8001:8000"
-    volumes:
-      - ./:/app
-      - app_runtime_cache:/runtime-cache
-    entrypoint: ["/app/entrypoint.sh"]
     networks:
       - testum_network
     depends_on:
@@ -176,11 +170,22 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    entrypoint: /bin/bash
     command: >
-      bash -c "
+      -c "
+      set -e &&
+      echo 'Installing system dependencies...' &&
+      apt-get update -qq && 
+      apt-get install -y -qq gcc libpq-dev postgresql-client git && 
+      echo 'Cloning repository...' &&
+      git clone https://github.com/4stm4/testum.git /app &&
+      cd /app &&
+      git config --global --add safe.directory /app &&
+      echo 'Installing Python packages...' &&
+      pip install -q --no-cache-dir -r /app/requirements.txt && 
       echo 'Waiting for database...' &&
       until pg_isready -h db -p 5432 -U postgres; do
-        echo 'Database unavailable - sleeping' &&
+        echo 'Database unavailable - sleeping';
         sleep 2;
       done &&
       echo 'Running migrations...' &&
@@ -207,13 +212,6 @@ services:
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
       SSH_HOST_KEY_POLICY: auto_add
-      RUN_MIGRATIONS: "0"
-      USE_RUNTIME_INSTALL: "1"
-      RUNTIME_CACHE_DIR: /runtime-cache
-    volumes:
-      - ./:/app
-      - app_runtime_cache:/runtime-cache
-    entrypoint: ["/app/entrypoint.sh"]
     networks:
       - testum_network
     depends_on:
@@ -221,9 +219,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
-        condition: service_healthy
-    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      set -e &&
+      echo 'Installing system dependencies...' &&
+      apt-get update -qq && 
+      apt-get install -y -qq gcc libpq-dev postgresql-client git && 
+      echo 'Cloning repository...' &&
+      git clone https://github.com/4stm4/testum.git /app &&
+      cd /app &&
+      git config --global --add safe.directory /app &&
+      echo 'Installing Python packages...' &&
+      pip install -q --no-cache-dir -r /app/requirements.txt && 
+      echo 'Starting Celery worker...' &&
+      celery -A app.celery_app worker --loglevel=info --concurrency=2
+      "
 
 networks:
   testum_network:
@@ -232,4 +243,3 @@ networks:
 volumes:
   postgres_data:
   minio_data:
-  app_runtime_cache:
