@@ -1,7 +1,19 @@
 """SQLAlchemy database models."""
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, Text, LargeBinary, DateTime, Enum, ForeignKey, JSON
+from sqlalchemy import (
+    Boolean,
+    Column,
+    String,
+    Integer,
+    Text,
+    LargeBinary,
+    DateTime,
+    Enum,
+    ForeignKey,
+    JSON,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.types import CHAR, TypeDecorator
 from sqlalchemy.orm import relationship
@@ -152,6 +164,92 @@ class Script(Base):
 
     def __repr__(self):
         return f"<Script(id={self.id}, name={self.name}, language={self.language})>"
+
+
+class AutomationExecutionEnum(str, enum.Enum):
+    """Execution strategy for automation jobs."""
+
+    COMMAND = "command"
+    SCRIPT = "script"
+
+
+class AutomationTriggerEnum(str, enum.Enum):
+    """Trigger type for automation jobs."""
+
+    MANUAL = "manual"
+    CRON = "cron"
+    GITHUB_PUSH = "github_push"
+    WEBHOOK = "webhook"
+
+
+class AutomationJob(Base):
+    """Reusable automation definition with scheduling and triggers."""
+
+    __tablename__ = "automation_jobs"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False, unique=True, index=True)
+    description = Column(Text, nullable=True)
+    execution_type = Column(
+        Enum(AutomationExecutionEnum, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=AutomationExecutionEnum.COMMAND,
+    )
+    command = Column(Text, nullable=True)
+    script_id = Column(GUID(), ForeignKey("scripts.id"), nullable=True)
+    trigger_type = Column(
+        Enum(AutomationTriggerEnum, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=AutomationTriggerEnum.MANUAL,
+    )
+    cron_expression = Column(String(255), nullable=True)
+    repository_url = Column(String(512), nullable=True)
+    repository_branch = Column(String(120), nullable=True)
+    webhook_secret = Column(String(255), nullable=True)
+    environment = Column(JSON, nullable=True)
+    parameters = Column(JSON, nullable=True)
+    tags = Column(JSON, nullable=True)
+    notification_settings = Column(JSON, nullable=True)
+    timeout_seconds = Column(Integer, default=600, nullable=False)
+    max_retries = Column(Integer, default=0, nullable=False)
+    retry_delay_seconds = Column(Integer, default=60, nullable=False)
+    concurrency_limit = Column(Integer, nullable=True)
+    require_approval = Column(Boolean, default=False, nullable=False)
+    run_on_all_platforms = Column(Boolean, default=False, nullable=False)
+    notes = Column(Text, nullable=True)
+    is_enabled = Column(Boolean, default=True, nullable=False)
+    created_by = Column(String(255), nullable=True)
+    last_run_at = Column(DateTime, nullable=True)
+    next_run_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    script = relationship("Script")
+    platform_links = relationship(
+        "AutomationJobPlatform",
+        back_populates="job",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self):
+        return f"<AutomationJob(id={self.id}, name={self.name}, trigger={self.trigger_type})>"
+
+
+class AutomationJobPlatform(Base):
+    """Association table between automation jobs and platforms."""
+
+    __tablename__ = "automation_job_platforms"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    job_id = Column(GUID(), ForeignKey("automation_jobs.id", ondelete="CASCADE"), nullable=False)
+    platform_id = Column(GUID(), ForeignKey("platforms.id", ondelete="CASCADE"), nullable=False)
+
+    job = relationship("AutomationJob", back_populates="platform_links")
+    platform = relationship("Platform")
+
+    __table_args__ = (
+        UniqueConstraint("job_id", "platform_id", name="uq_automation_job_platform"),
+    )
 
 
 class AuditLog(Base):

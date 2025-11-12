@@ -196,3 +196,86 @@ def test_script_crud_flow(client: TestClient):
     # Ensure removed
     verify_response = client.get(f"/api/scripts/{script_id}")
     assert verify_response.status_code == 404
+
+
+def test_automation_job_flow(client: TestClient):
+    """Ensure automation jobs can be created, listed, updated, and deleted."""
+
+    # Prepare platform target
+    platform_payload = {
+        "name": "automation-platform",
+        "host": "10.0.0.10",
+        "port": 22,
+        "username": "deploy",
+        "auth_method": "password",
+        "password": "secret123",
+    }
+    platform_response = client.post("/api/platforms/", json=platform_payload)
+    assert platform_response.status_code == 201
+    platform_id = platform_response.json()["id"]
+
+    job_payload = {
+        "name": "Nightly baseline",
+        "description": "Run baseline checks every night",
+        "execution_type": "command",
+        "command": "uptime",
+        "trigger_type": "cron",
+        "cron_expression": "0 3 * * *",
+        "run_on_all_platforms": False,
+        "target_platform_ids": [platform_id],
+        "environment": {"ENV": "nightly"},
+        "notification_settings": {"emails": ["ops@example.com"]},
+        "tags": ["nightly", "baseline"],
+        "require_approval": True,
+        "timeout_seconds": 600,
+        "max_retries": 1,
+        "retry_delay_seconds": 120,
+        "concurrency_limit": 2,
+        "notes": "Baseline health-check",
+        "parameters": {"owner": "sre-team"},
+        "is_enabled": True,
+    }
+
+    create_job = client.post("/api/automations/", json=job_payload)
+    assert create_job.status_code == 201
+    created_job = create_job.json()
+    assert created_job["name"] == job_payload["name"]
+    assert created_job["trigger_type"] == "cron"
+    assert created_job["run_on_all_platforms"] is False
+    assert created_job["target_platform_ids"] == [platform_id]
+
+    # Fetch list
+    list_response = client.get("/api/automations/")
+    assert list_response.status_code == 200
+    jobs = list_response.json()
+    assert any(job["id"] == created_job["id"] for job in jobs)
+
+    # Update job (pause and switch to all platforms)
+    update_payload = {
+        "is_enabled": False,
+        "run_on_all_platforms": True,
+    }
+    update_response = client.put(f"/api/automations/{created_job['id']}", json=update_payload)
+    assert update_response.status_code == 200
+    updated = update_response.json()
+    assert updated["is_enabled"] is False
+    assert updated["run_on_all_platforms"] is True
+    assert updated["target_platform_ids"] == []
+
+    # Switch back to targeted platforms
+    retarget_payload = {
+        "run_on_all_platforms": False,
+        "target_platform_ids": [platform_id],
+    }
+    retarget_response = client.put(f"/api/automations/{created_job['id']}", json=retarget_payload)
+    assert retarget_response.status_code == 200
+    retargeted = retarget_response.json()
+    assert retargeted["run_on_all_platforms"] is False
+    assert retargeted["target_platform_ids"] == [platform_id]
+
+    # Delete job
+    delete_response = client.delete(f"/api/automations/{created_job['id']}")
+    assert delete_response.status_code == 200
+
+    verify_deleted = client.get(f"/api/automations/{created_job['id']}")
+    assert verify_deleted.status_code == 404
