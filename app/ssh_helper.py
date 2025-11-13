@@ -179,3 +179,99 @@ class AsyncSSHClient:
                 await self._connection.wait_closed()
             finally:
                 self._connection = None
+
+
+class SSHHelper:
+    """Synchronous SSH client using paramiko for basic operations."""
+
+    def __init__(self, host: str, port: int, username: str) -> None:
+        """Initialize SSH client."""
+        import paramiko
+        
+        self.host = host
+        self.port = port
+        self.username = username
+        self.client: Optional[paramiko.SSHClient] = None
+
+    def connect_with_password(self, password: str) -> None:
+        """Connect using password authentication."""
+        import paramiko
+        
+        self.client = paramiko.SSHClient()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        try:
+            self.client.connect(
+                hostname=self.host,
+                port=self.port,
+                username=self.username,
+                password=password,
+                timeout=10,
+            )
+            logger.info("Connected to %s@%s:%s with password", self.username, self.host, self.port)
+        except Exception as exc:
+            logger.error("SSH connection error: %s", exc)
+            if self.client:
+                self.client.close()
+                self.client = None
+            raise
+
+    def connect_with_key(self, private_key_str: str) -> None:
+        """Connect using private key authentication."""
+        import paramiko
+        from io import StringIO
+        
+        self.client = paramiko.SSHClient()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        try:
+            private_key = paramiko.RSAKey.from_private_key(StringIO(private_key_str))
+        except Exception:
+            try:
+                private_key = paramiko.Ed25519Key.from_private_key(StringIO(private_key_str))
+            except Exception:
+                try:
+                    private_key = paramiko.ECDSAKey.from_private_key(StringIO(private_key_str))
+                except Exception as exc:
+                    logger.error("Failed to load private key: %s", exc)
+                    raise ValueError("Invalid private key format")
+        
+        try:
+            self.client.connect(
+                hostname=self.host,
+                port=self.port,
+                username=self.username,
+                pkey=private_key,
+                timeout=10,
+            )
+            logger.info("Connected to %s@%s:%s with private key", self.username, self.host, self.port)
+        except Exception as exc:
+            logger.error("SSH connection error: %s", exc)
+            if self.client:
+                self.client.close()
+                self.client = None
+            raise
+
+    def execute_command(self, command: str, timeout: int = 60) -> Tuple[int, str, str]:
+        """Execute a command on the remote host."""
+        if not self.client:
+            raise RuntimeError("Not connected")
+        
+        logger.info("Executing command on %s: %s", self.host, command)
+        
+        try:
+            stdin, stdout, stderr = self.client.exec_command(command, timeout=timeout)
+            exit_code = stdout.channel.recv_exit_status()
+            stdout_text = stdout.read().decode("utf-8")
+            stderr_text = stderr.read().decode("utf-8")
+            
+            return exit_code, stdout_text, stderr_text
+        except Exception as exc:
+            logger.error("Command execution error: %s", exc)
+            return 255, "", str(exc)
+
+    def close(self) -> None:
+        """Close the SSH connection."""
+        if self.client:
+            self.client.close()
+            self.client = None

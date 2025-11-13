@@ -92,61 +92,63 @@ async def create_platform(request: Request):
         user = get_request_user(request)
 
         if config.APP_ENV != "testing":
-            from app.ssh_helper import AsyncSSHClient
+            from app.ssh_helper import SSHHelper
 
-            ssh_kwargs = {
-                "host": platform_data.host,
-                "port": platform_data.port,
-                "username": platform_data.username,
-            }
-
-            if platform_data.auth_method == "password":
-                ssh_kwargs["password"] = platform_data.password
-            else:
-                ssh_key = db.query(SSHKey).filter(SSHKey.id == platform_data.ssh_key_id).first()
-                if not ssh_key:
-                    return JSONResponse({"error": "SSH Key not found"}, status_code=400)
-
-                if not ssh_key.encrypted_private_key:
-                    return JSONResponse({"error": "SSH Key has no private key for authentication"}, status_code=400)
-
-                ssh_kwargs["private_key"] = crypto.decrypt_string(ssh_key.encrypted_private_key)
-
-            system_info = {}
+            ssh = SSHHelper(
+                host=platform_data.host,
+                port=platform_data.port,
+                username=platform_data.username,
+            )
 
             try:
-                async with AsyncSSHClient(**ssh_kwargs) as ssh:
-                    exit_code, stdout, stderr = await ssh.execute_command("echo 'Connection test successful'")
-                    if exit_code != 0:
-                        raise Exception(f"Test command failed with exit code {exit_code}: {stderr}")
-                    logger.info("Connection test successful: %s", stdout.strip())
+                if platform_data.auth_method == "password":
+                    ssh.connect_with_password(platform_data.password)
+                else:
+                    ssh_key = db.query(SSHKey).filter(SSHKey.id == platform_data.ssh_key_id).first()
+                    if not ssh_key:
+                        return JSONResponse({"error": "SSH Key not found"}, status_code=400)
 
-                    try:
-                        _, os_release, _ = await ssh.execute_command("cat /etc/os-release 2>/dev/null || echo 'N/A'")
-                        system_info["os_release"] = os_release.strip()
+                    if not ssh_key.encrypted_private_key:
+                        return JSONResponse({"error": "SSH Key has no private key for authentication"}, status_code=400)
 
-                        _, kernel, _ = await ssh.execute_command("uname -r")
-                        system_info["kernel"] = kernel.strip()
+                    private_key_str = crypto.decrypt_string(ssh_key.encrypted_private_key)
+                    ssh.connect_with_key(private_key_str)
 
-                        _, cpu_model, _ = await ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
-                        _, cpu_cores, _ = await ssh.execute_command("nproc")
-                        system_info["cpu"] = f"{cpu_model.strip()} ({cpu_cores.strip()} cores)"
+                exit_code, stdout, stderr = ssh.execute_command("echo 'Connection test successful'")
+                if exit_code != 0:
+                    raise Exception(f"Test command failed with exit code {exit_code}: {stderr}")
+                logger.info("Connection test successful: %s", stdout.strip())
 
-                        _, memory, _ = await ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used\"}'")
-                        system_info["memory"] = memory.strip()
+                system_info = {}
+                try:
+                    _, os_release, _ = ssh.execute_command("cat /etc/os-release 2>/dev/null || echo 'N/A'")
+                    system_info["os_release"] = os_release.strip()
 
-                        _, uptime, _ = await ssh.execute_command("uptime -p 2>/dev/null || uptime")
-                        system_info["uptime"] = uptime.strip()
+                    _, kernel, _ = ssh.execute_command("uname -r")
+                    system_info["kernel"] = kernel.strip()
 
-                        logger.info("System info gathered: %s", system_info)
-                    except Exception as info_err:
-                        logger.warning("Failed to gather some system info: %s", info_err)
+                    _, cpu_model, _ = ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
+                    _, cpu_cores, _ = ssh.execute_command("nproc")
+                    system_info["cpu"] = f"{cpu_model.strip()} ({cpu_cores.strip()} cores)"
+
+                    _, memory, _ = ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used\"}'")
+                    system_info["memory"] = memory.strip()
+
+                    _, uptime, _ = ssh.execute_command("uptime -p 2>/dev/null || uptime")
+                    system_info["uptime"] = uptime.strip()
+
+                    logger.info("System info gathered: %s", system_info)
+                except Exception as info_err:
+                    logger.warning("Failed to gather some system info: %s", info_err)
+
             except Exception as conn_err:
                 logger.error("Connection test failed: %s", conn_err)
                 return JSONResponse(
                     {"error": "Connection test failed", "details": str(conn_err)},
                     status_code=400,
                 )
+            finally:
+                ssh.close()
 
         # Encrypt password if provided
         encrypted_password = None

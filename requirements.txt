@@ -14,6 +14,7 @@ redis==5.2.0
 
 # SSH & Crypto
 paramiko==3.5.0
+asyncssh==2.17.0
 cryptography==44.0.0
 
 # S3 Storage
