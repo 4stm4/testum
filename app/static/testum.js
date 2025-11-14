@@ -5,18 +5,47 @@
 // ===== THEME MANAGEMENT =====
 const THEME_KEY = 'testum-theme';
 const LANG_KEY = 'testum-language';
+const DEFAULT_THEME = 'dark';
+
+function normalizeTheme(value) {
+    return value === 'light' ? 'light' : DEFAULT_THEME;
+}
 
 // Initialize theme IMMEDIATELY to prevent flash
-(function() {
-    const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+(function initializeTheme() {
+    let savedTheme = DEFAULT_THEME;
+
+    try {
+        const stored = localStorage.getItem(THEME_KEY);
+        if (stored) {
+            savedTheme = normalizeTheme(stored);
+        } else {
+            const currentAttr = document.documentElement.getAttribute('data-theme');
+            savedTheme = normalizeTheme(currentAttr);
+        }
+    } catch (error) {
+        const currentAttr = document.documentElement.getAttribute('data-theme');
+        savedTheme = normalizeTheme(currentAttr);
+    }
+
     document.documentElement.setAttribute('data-theme', savedTheme);
+    document.documentElement.style.colorScheme = savedTheme;
+
+    if (document.body) {
+        document.body.setAttribute('data-theme', savedTheme);
+        document.body.style.colorScheme = savedTheme;
+    }
 })();
 
 // Get current theme
 function getCurrentTheme() {
-    const saved = localStorage.getItem(THEME_KEY);
-    // Default to dark theme if not set
-    return saved || 'dark';
+    try {
+        const saved = localStorage.getItem(THEME_KEY);
+        return normalizeTheme(saved);
+    } catch (error) {
+        const currentAttr = document.documentElement.getAttribute('data-theme');
+        return normalizeTheme(currentAttr);
+    }
 }
 
 // Get current language
@@ -26,16 +55,28 @@ function getCurrentLanguage() {
 
 // Apply theme
 function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem(THEME_KEY, theme);
-    
+    const resolvedTheme = normalizeTheme(theme);
+
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    document.documentElement.style.colorScheme = resolvedTheme;
+
+    if (document.body) {
+        document.body.setAttribute('data-theme', resolvedTheme);
+        document.body.style.colorScheme = resolvedTheme;
+    }
+
+    try {
+        localStorage.setItem(THEME_KEY, resolvedTheme);
+    } catch (error) {
+        // Ignore storage errors (e.g., privacy mode)
+    }
+
     // Update theme toggle button
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
-        const icon = theme === 'dark' ? 'light_mode' : 'dark_mode';
+        const icon = resolvedTheme === 'dark' ? 'light_mode' : 'dark_mode';
         themeToggle.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">${icon}</span>`;
-        themeToggle.title = theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+        themeToggle.title = resolvedTheme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme';
         themeToggle.setAttribute('aria-label', themeToggle.title);
     }
 }
