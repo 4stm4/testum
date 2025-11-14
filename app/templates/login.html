@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Testum</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,-50..200" rel="stylesheet">
     <link rel="stylesheet" href="/static/material.css">
     <link rel="stylesheet" href="/static/app.css">
     <style>
@@ -54,6 +57,10 @@
             font-size: 72px;
             margin-bottom: 16px;
             animation: float 3s ease-in-out infinite;
+        }
+
+        .logo .material-symbols-rounded {
+            font-size: 72px;
         }
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
@@ -161,8 +168,8 @@
             align-items: center;
             gap: 12px;
         }
-        .message.error::before {
-            content: '⚠️';
+
+        .message .material-symbols-rounded {
             font-size: 20px;
         }
         @keyframes slideIn {
@@ -205,16 +212,18 @@
     <div class="login-container">
         <!-- Theme and Language toggles -->
         <div class="login-actions">
-            <button id="themeToggle" class="login-toggle" type="button">
-                🌙
+            <button id="themeToggle" class="login-toggle" type="button" aria-label="Toggle Theme">
+                <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
             </button>
-            <button id="langToggle" class="login-toggle" type="button">
-                EN
+            <button id="langToggle" class="login-toggle" type="button" aria-label="Toggle Language">
+                <span class="material-symbols-rounded" aria-hidden="true">translate</span>
             </button>
         </div>
-        
+
         <div class="logo-section">
-            <div class="logo">🔐</div>
+            <div class="logo">
+                <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+            </div>
             <div class="app-name" data-i18n="welcomeTitle">Testum</div>
             <div class="tagline" data-i18n="welcomeSubtitle">Remote SSH Execution Platform</div>
         </div>
@@ -265,8 +274,19 @@
     <script>
         function showMessage(text, type = 'error') {
             const msg = document.getElementById('message');
-            msg.textContent = text;
+            if (!text) {
+                msg.style.display = 'none';
+                msg.className = 'message';
+                msg.innerHTML = '';
+                return;
+            }
+
+            const icon = type === 'error' ? 'error' : 'info';
             msg.className = `message ${type}`;
+            msg.innerHTML = `
+                <span class="material-symbols-rounded" aria-hidden="true">${icon}</span>
+                <span>${text}</span>`;
+            msg.style.display = 'flex';
         }
 
         function setLoading(isLoading) {

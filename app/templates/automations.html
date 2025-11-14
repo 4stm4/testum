@@ -90,6 +90,13 @@
             padding: 10px 16px;
             font-size: 0.9em;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .actions button .material-symbols-rounded {
+            font-size: 20px;
         }
 
         .actions .primary {
@@ -115,6 +122,16 @@
             padding: 22px;
             display: grid;
             gap: 16px;
+        }
+
+        .job-card button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .job-card button .material-symbols-rounded {
+            font-size: 20px;
         }
 
         .job-header {
@@ -200,7 +217,10 @@
 
 {% block content %}
     <div class="page-header">
-        <h1 class="page-title">⚙️ Automation Hub</h1>
+        <h1 class="page-title title-with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">smart_toy</span>
+            <span>Automation Hub</span>
+        </h1>
         <p class="page-subtitle">Планируйте выполнение команд и скриптов по расписанию или по событиям</p>
     </div>
 
@@ -420,6 +440,10 @@ DEPLOY_ENV=staging"></textarea>
             const tags = job.tags && job.tags.length ? job.tags.map(tag => `<span class="chip">#${tag}</span>`).join('') : '<span class="form-helper">Без тегов</span>';
             const commandPreview = job.execution_type === 'command' ? `<pre style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; white-space: pre-wrap;">${(job.command || '').slice(0, 400)}</pre>` : `<div class="form-helper">Используется скрипт: ${job.script_id}</div>`;
             const statusChip = job.is_enabled ? '<span class="chip" style="background: rgba(166,227,161,0.1); color: #a6e3a1;">ENABLED</span>' : '<span class="chip" style="background: rgba(243,139,168,0.1); color: #f38ba8;">PAUSED</span>';
+            const toggleLabel = job.is_enabled
+                ? '<span class="material-symbols-rounded" aria-hidden="true">pause_circle</span><span>Пауза</span>'
+                : '<span class="material-symbols-rounded" aria-hidden="true">play_circle</span><span>Включить</span>';
+            const deleteLabel = '<span class="material-symbols-rounded" aria-hidden="true">delete</span><span>Удалить</span>';
 
             return `
                 <article class="job-card" data-id="${job.id}">
@@ -444,8 +468,8 @@ DEPLOY_ENV=staging"></textarea>
                         <div class="tags">${tags}</div>
                     </div>
                     <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <button class="ghost" data-action="toggle">${job.is_enabled ? '⏸️ Пауза' : '▶️ Включить'}</button>
-                        <button class="ghost" data-action="delete" style="color:#f38ba8; border-color:#f38ba8;">🗑️ Удалить</button>
+                        <button class="ghost" data-action="toggle">${toggleLabel}</button>
+                        <button class="ghost" data-action="delete" style="color:#f38ba8; border-color:#f38ba8;">${deleteLabel}</button>
                         <span style="font-size:0.75em; color:var(--text-tertiary);">Последний запуск: ${job.last_run_at ? new Date(job.last_run_at).toLocaleString() : '—'} | Следующий: ${job.next_run_at ? new Date(job.next_run_at).toLocaleString() : 'Расписание TBD'}</span>
                     </div>
                 </article>
@@ -453,9 +477,10 @@ DEPLOY_ENV=staging"></textarea>
         }
 
         jobsListEl.addEventListener('click', async (event) => {
-            const action = event.target.dataset.action;
-            if (!action) return;
-            const card = event.target.closest('.job-card');
+            const button = event.target.closest('button[data-action]');
+            if (!button) return;
+            const action = button.dataset.action;
+            const card = button.closest('.job-card');
             const jobId = card?.dataset.id;
             if (!jobId) return;
 
@@ -471,7 +496,7 @@ DEPLOY_ENV=staging"></textarea>
             }
 
             if (action === 'toggle') {
-                const isEnabled = event.target.textContent.includes('Пауза');
+                const isEnabled = button.textContent.includes('Пауза');
                 const payload = { is_enabled: !isEnabled };
                 const response = await fetch(`/api/automations/${jobId}`, {
                     method: 'PUT',

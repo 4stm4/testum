@@ -11,6 +11,18 @@
             margin-bottom: 20px;
             border-left: 4px solid;
             white-space: pre-line;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .message > div .material-symbols-rounded {
+            font-size: 24px;
+            margin-top: 2px;
+        }
+
+        .message-text {
+            flex: 1;
         }
 
         .message .success {
@@ -131,13 +143,17 @@
             color: var(--text-secondary);
         }
 
-        .platform-meta span {
+        .platform-meta .meta-chip {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             background: var(--bg-tertiary);
             padding: 6px 10px;
             border-radius: 999px;
+        }
+
+        .platform-meta .meta-chip .material-symbols-rounded {
+            font-size: 18px;
         }
 
         .platform-badges {
@@ -207,7 +223,7 @@
 
         .deploy-btn {
             background: var(--accent-primary);
-            color: #fff;
+            color: var(--accent-primary-contrast);
             padding: 10px 18px;
             border-radius: 6px;
             border: none;
@@ -221,8 +237,8 @@
         }
 
         .delete-btn {
-            background: var(--error-text);
-            color: var(--bg-primary);
+            background: var(--error-border);
+            color: var(--error-text);
             padding: 10px 18px;
             border-radius: 6px;
             border: none;
@@ -231,7 +247,7 @@
         }
 
         .delete-btn:hover {
-            opacity: 0.9;
+            filter: brightness(1.1);
         }
 
         .empty-state {
@@ -334,14 +350,18 @@
 
 {% block content %}
     <div class="page-header">
-        <h1 class="page-title"><span data-i18n="platformsTitle">🖥️ Platforms</span></h1>
+        <h1 class="page-title title-with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">dns</span>
+            <span data-i18n="platformsTitle">Platforms</span>
+        </h1>
         <p class="page-subtitle" data-i18n="platformsSubtitle">Compact overview of SSH targets and quick actions</p>
     </div>
 
     <div id="message" class="message"></div>
 
     <button class="add-platform-btn" onclick="openModal()">
-        ➕ <span data-i18n="addNewPlatform">Add New Platform</span>
+        <span class="material-symbols-rounded" aria-hidden="true">add</span>
+        <span data-i18n="addNewPlatform">Add New Platform</span>
     </button>
 
     <div class="card">
@@ -350,8 +370,14 @@
         <div id="bulkActionsPanel" class="bulk-actions" style="display: none;">
             <span class="bulk-actions-label">Selected: <strong id="selectedCount">0</strong></span>
             <button class="select-all-btn" onclick="toggleSelectAll()">Select All / None</button>
-            <button class="deploy-btn" onclick="bulkDeployKeys()" id="bulkDeployBtn" disabled>🚀 Deploy Keys to Selected</button>
-            <button class="deploy-btn" onclick="bulkRunCommand()" id="bulkRunBtn" disabled>⚡ Run Command on Selected</button>
+            <button class="deploy-btn" onclick="bulkDeployKeys()" id="bulkDeployBtn" disabled>
+                <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
+                <span data-i18n="deployKeys">Deploy Keys</span>
+            </button>
+            <button class="deploy-btn" onclick="bulkRunCommand()" id="bulkRunBtn" disabled>
+                <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+                <span data-i18n="runCommand">Run Command</span>
+            </button>
         </div>
 
         <div id="platformsList"></div>
@@ -443,8 +469,36 @@
 
         function showMessage(text, type = 'success') {
             const msg = document.getElementById('message');
-            msg.innerHTML = `<div class="${type}">${text}</div>`;
-            setTimeout(() => msg.innerHTML = '', 5000);
+            msg.innerHTML = '';
+
+            const container = document.createElement('div');
+            container.className = type;
+
+            const iconMap = {
+                success: 'check_circle',
+                error: 'error',
+                info: 'info'
+            };
+            const iconName = iconMap[type] || iconMap.info;
+
+            const icon = document.createElement('span');
+            icon.className = 'material-symbols-rounded';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.textContent = iconName;
+
+            const messageText = document.createElement('span');
+            messageText.className = 'message-text';
+            messageText.style.whiteSpace = 'pre-line';
+            messageText.textContent = text;
+
+            container.append(icon, messageText);
+            msg.appendChild(container);
+
+            setTimeout(() => {
+                if (msg.contains(container)) {
+                    msg.removeChild(container);
+                }
+            }, 5000);
         }
 
         function openModal() {
@@ -539,8 +593,14 @@
                                     <div class="platform-title">
                                         <h3>${escapeHtml(p.name)}</h3>
                                         <div class="platform-meta">
-                                            <span>📡 ${escapeHtml(p.host)}:${p.port}</span>
-                                            <span>👤 ${escapeHtml(p.username)}</span>
+                                            <span class="meta-chip">
+                                                <span class="material-symbols-rounded" aria-hidden="true">router</span>
+                                                <span>${escapeHtml(p.host)}:${p.port}</span>
+                                            </span>
+                                            <span class="meta-chip">
+                                                <span class="material-symbols-rounded" aria-hidden="true">person</span>
+                                                <span>${escapeHtml(p.username)}</span>
+                                            </span>
                                         </div>
                                         <div class="platform-badges">
                                             <span class="platform-badge" data-i18n="${authKey}">${authFallback}</span>
@@ -552,9 +612,18 @@
                                     ${statsMarkup}
                                 </ul>
                                 <div class="platform-actions">
-                                    <button class="deploy-btn" onclick="deployKeys('${p.id}')" data-i18n="deployKeys">🚀 Deploy Keys</button>
-                                    <button class="deploy-btn" onclick="runCommand('${p.id}')" data-i18n="runCommand">⚡ Run Command</button>
-                                    <button class="delete-btn" onclick="deletePlatform('${p.id}')" data-i18n="delete">🗑️ Delete</button>
+                                    <button class="deploy-btn" onclick="deployKeys('${p.id}')">
+                                        <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
+                                        <span data-i18n="deployKeys">Deploy Keys</span>
+                                    </button>
+                                    <button class="deploy-btn" onclick="runCommand('${p.id}')">
+                                        <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+                                        <span data-i18n="runCommand">Run Command</span>
+                                    </button>
+                                    <button class="delete-btn" onclick="deletePlatform('${p.id}')">
+                                        <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                                        <span data-i18n="delete">Delete</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -596,7 +665,7 @@
             if (platformIds.length === 0) return;
             if (!confirm(`Deploy all SSH keys to ${platformIds.length} selected platform(s)?`)) return;
 
-            showMessage(`Starting deployment to ${platformIds.length} platform(s)...`);
+            showMessage(`Starting deployment to ${platformIds.length} platform(s)...`, 'info');
             let successCount = 0;
             let failCount = 0;
 
@@ -635,7 +704,7 @@
             const timeoutStr = prompt('Timeout in seconds (default: 60):', '60');
             const timeout = parseInt(timeoutStr) || 60;
 
-            showMessage(`Starting command execution on ${platformIds.length} platform(s)...`);
+            showMessage(`Starting command execution on ${platformIds.length} platform(s)...`, 'info');
 
             let successCount = 0;
             let failCount = 0;
@@ -732,9 +801,9 @@
             e.preventDefault();
 
             const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
+            const originalContent = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.textContent = '🔄 Testing connection...';
+            submitBtn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">progress_activity</span><span>Testing connection...</span>';
 
             const formData = {
                 name: document.getElementById('name').value,
@@ -760,11 +829,11 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    let successMsg = '✅ Platform added successfully! Connection test passed.';
+                    let successMsg = 'Platform added successfully! Connection test passed.';
 
                     if (result.system_info) {
                         const info = result.system_info;
-                        successMsg += '\n\n📊 System Information:';
+                        successMsg += '\n\nSystem Information:';
                         if (info.os_release) {
                             const osMatch = info.os_release.match(/PRETTY_NAME="([^"]+)"/);
                             if (osMatch) successMsg += `\n• OS: ${osMatch[1]}`;
@@ -784,13 +853,13 @@
                     if (result.details) {
                         errorMsg += '\n\nDetails: ' + result.details;
                     }
-                    showMessage('❌ ' + errorMsg, 'error');
+                    showMessage(errorMsg, 'error');
                 }
             } catch (error) {
                 showMessage('Failed to add platform: ' + error.message, 'error');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+                submitBtn.innerHTML = originalContent;
             }
         });
 
