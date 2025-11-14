@@ -6,9 +6,17 @@
 const THEME_KEY = 'testum-theme';
 const LANG_KEY = 'testum-language';
 
+// Initialize theme IMMEDIATELY to prevent flash
+(function() {
+    const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+})();
+
 // Get current theme
 function getCurrentTheme() {
-    return localStorage.getItem(THEME_KEY) || 'dark';
+    const saved = localStorage.getItem(THEME_KEY);
+    // Default to dark theme if not set
+    return saved || 'dark';
 }
 
 // Get current language
@@ -18,6 +26,7 @@ function getCurrentLanguage() {
 
 // Apply theme
 function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_KEY, theme);
     
