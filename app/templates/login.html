@@ -21,6 +21,36 @@
             width: 100%;
             max-width: 420px;
         }
+        .login-actions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .login-toggle {
+            background: var(--bg-secondary) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .login-toggle:hover {
+            background: var(--bg-tertiary) !important;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        .login-toggle:focus-visible {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 2px;
+        }
+        [data-theme="light"] .login-toggle {
+            background: #f3f4f6 !important;
+        }
         .logo-section {
             text-align: center;
             margin-bottom: 40px;
@@ -90,7 +120,7 @@
         .login-btn {
             width: 100%;
             background: var(--accent-primary);
-            color: var(--bg-primary);
+            color: #ffffff !important;
             padding: 14px;
             border: none;
             border-radius: 8px;
@@ -156,10 +186,6 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
         }
         
-        [data-theme="light"] .login-btn {
-            color: #ffffff;
-        }
-        
         [data-theme="light"] input {
             background: #ffffff;
             border: 1px solid #d1d5db;
@@ -174,11 +200,11 @@
 <body>
     <div class="login-container">
         <!-- Theme and Language toggles -->
-        <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 1000;">
-            <button id="themeToggle" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+        <div class="login-actions">
+            <button id="themeToggle" class="login-toggle" type="button">
                 🌙
             </button>
-            <button id="langToggle" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <button id="langToggle" class="login-toggle" type="button">
                 EN
             </button>
         </div>
