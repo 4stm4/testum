@@ -479,7 +479,7 @@ routes = [
     Mount("/api/users", users_router),
     Mount("/api/automations", automations_router),
     Mount("/api/tasks", tasks_router),
-    Mount("/static", StaticFiles(directory="app/templates"), name="static"),
+    Mount("/static", StaticFiles(directory="app/static"), name="static"),
     WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),
 ]
 
