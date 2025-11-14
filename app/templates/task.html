@@ -6,7 +6,9 @@
 {% block extra_styles %}
     <style>
         .back-link {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             margin-bottom: 20px;
             color: var(--accent-primary);
             text-decoration: none;
@@ -36,6 +38,9 @@
             margin-bottom: 15px;
             background: var(--bg-tertiary);
             color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .connection-status.connected {
@@ -46,6 +51,10 @@
         .connection-status.disconnected {
             background: var(--error-bg);
             color: var(--error-text);
+        }
+
+        .connection-status .material-symbols-rounded {
+            font-size: 20px;
         }
 
         .task-metadata {
@@ -113,12 +122,19 @@
 {% endblock %}
 
 {% block content %}
-    <a href="/jobs" class="back-link">← Back to Jobs</a>
-    <h1 class="page-title">📊 Task Monitor</h1>
+    <a href="/jobs" class="back-link">
+        <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+        <span>Back to Jobs</span>
+    </a>
+    <h1 class="page-title title-with-icon">
+        <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
+        <span>Task Monitor</span>
+    </h1>
     <p class="page-subtitle">Task ID: <code style="background: var(--bg-tertiary); padding: 3px 8px; border-radius: 4px; color: var(--accent-primary);">{{ task_id }}</code></p>
 
     <div id="connectionStatus" class="connection-status disconnected">
-        🔴 Connecting to task stream...
+        <span class="material-symbols-rounded" aria-hidden="true">progress_activity</span>
+        <span>Connecting to task stream...</span>
     </div>
 
     <div id="taskInfo">
@@ -126,15 +142,24 @@
     </div>
 
     <div class="task-metadata" id="taskMetadata" style="display: none;">
-        <h3>📋 Task Details</h3>
+        <h3 class="title-with-icon" style="font-size: 1.1em;">
+            <span class="material-symbols-rounded" aria-hidden="true">description</span>
+            <span>Task Details</span>
+        </h3>
         <p><strong>Type:</strong> <span id="taskType">—</span></p>
         <p><strong>Platform:</strong> <span id="platformName">—</span></p>
         <p id="commandInfo" style="display: none;"><strong>Command:</strong> <code id="command">—</code></p>
         <p id="timeoutInfo" style="display: none;"><strong>Timeout:</strong> <span id="timeout">—</span>s</p>
-        <button id="stopTaskBtn" onclick="stopTask()">🛑 Stop Task</button>
+        <button id="stopTaskBtn" onclick="stopTask()">
+            <span class="material-symbols-rounded" aria-hidden="true">stop_circle</span>
+            <span>Stop Task</span>
+        </button>
     </div>
 
-    <h3>Live Output:</h3>
+    <h3 class="title-with-icon" style="margin-top: 30px;">
+        <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+        <span>Live Output</span>
+    </h3>
     <div class="log-container" id="logContainer">
         <div class="log-line">Waiting for messages...</div>
     </div>
@@ -149,6 +174,15 @@
     let ws;
     let reconnectAttempts = 0;
     let statusPollTimer = null;
+
+    function setConnectionStatus(statusClass, icon, message) {
+        connectionStatus.className = `connection-status ${statusClass}`;
+        connectionStatus.innerHTML = `
+            <span class="material-symbols-rounded" aria-hidden="true">${icon}</span>
+            <span>${message}</span>`;
+    }
+
+    setConnectionStatus('disconnected', 'progress_activity', 'Connecting to task stream...');
 
         function addLogLine(type, message, timestamp) {
             const line = document.createElement('div');
@@ -189,8 +223,7 @@
 
             ws.onopen = () => {
                 console.log('WebSocket connected');
-                connectionStatus.textContent = '🟢 Connected to task stream';
-                connectionStatus.className = 'connection-status connected';
+                setConnectionStatus('connected', 'check_circle', 'Connected to task stream');
                 addLogLine('progress', 'WebSocket connection established', null);
                 reconnectAttempts = 0;
                 stopStatusPolling();
@@ -220,15 +253,13 @@
 
             ws.onerror = (error) => {
                 console.error('WebSocket error:', error);
-                connectionStatus.textContent = '🔴 Connection error';
-                connectionStatus.className = 'connection-status disconnected';
+                setConnectionStatus('disconnected', 'error', 'Connection error');
                 addLogLine('error', 'WebSocket connection error', null);
             };
 
             ws.onclose = () => {
                 console.log('WebSocket closed');
-                connectionStatus.textContent = '🔴 Disconnected from task stream';
-                connectionStatus.className = 'connection-status disconnected';
+                setConnectionStatus('disconnected', 'link_off', 'Disconnected from task stream');
                 addLogLine('progress', 'WebSocket connection closed', null);
                 if (shouldKeepTrying()) {
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);

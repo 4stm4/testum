@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Testum - Remote SSH Execution Platform{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,-50..200" rel="stylesheet">
     <link rel="stylesheet" href="/static/material.css">
     <link rel="stylesheet" href="/static/app.css">
     <style>
@@ -33,28 +36,6 @@
             display: flex;
             align-items: center;
             gap: 12px;
-        }
-
-        .theme-toggle,
-        .lang-toggle {
-            background: var(--md-surface-container-high);
-            color: var(--md-on-surface);
-            width: 40px;
-            height: 40px;
-            border-radius: 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .theme-toggle:hover,
-        .lang-toggle:hover {
-            background: var(--md-primary-container);
-            transform: scale(1.1);
         }
 
         .logout-btn {
@@ -139,9 +120,14 @@
         }
 
         .sidebar-icon {
-            font-size: 20px;
-            width: 24px;
-            text-align: center;
+            width: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-icon .material-symbols-rounded {
+            font-size: 22px;
         }
 
         .sidebar-count {
@@ -207,14 +193,19 @@
     {% set active_page = active_page | default('') %}
     <div class="header">
         <div class="logo">
-            <span data-i18n="welcomeTitle">🔐 Testum</span>
+            <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+            <span data-i18n="welcomeTitle">Testum</span>
         </div>
         <div class="header-right">
-            <button id="themeToggle" class="theme-toggle" title="Toggle Theme">🌙</button>
-            <button id="langToggle" class="lang-toggle" title="Toggle Language">RU</button>
+            <button id="themeToggle" class="md-icon-button" title="Toggle Theme" aria-label="Toggle Theme">
+                <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
+            </button>
+            <button id="langToggle" class="md-icon-button" title="Toggle Language" aria-label="Toggle Language">
+                <span class="material-symbols-rounded" aria-hidden="true">translate</span>
+            </button>
             <span class="version">v0.1.0</span>
             <a href="/api/auth/logout" class="logout-btn">
-                <span>🚪</span>
+                <span class="material-symbols-rounded" aria-hidden="true">logout</span>
                 <span data-i18n="logout">Logout</span>
             </a>
         </div>
@@ -226,35 +217,35 @@
                 <div class="sidebar-title" data-i18n="resources">Resources</div>
                 <a href="/keys" class="sidebar-link{% if active_page == 'keys' %} active{% endif %}">
                     <span class="sidebar-link-main">
-                        <span class="sidebar-icon">🔑</span>
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">vpn_key</span></span>
                         <span data-i18n="sshKeys">SSH Keys</span>
                     </span>
                     <span class="sidebar-count">{{ sidebar_counts.keys }}</span>
                 </a>
                 <a href="/platforms" class="sidebar-link{% if active_page == 'platforms' %} active{% endif %}">
                     <span class="sidebar-link-main">
-                        <span class="sidebar-icon">🖥️</span>
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">dns</span></span>
                         <span data-i18n="platforms">Platforms</span>
                     </span>
                     <span class="sidebar-count">{{ sidebar_counts.platforms }}</span>
                 </a>
                 <a href="/scripts" class="sidebar-link{% if active_page == 'scripts' %} active{% endif %}">
                     <span class="sidebar-link-main">
-                        <span class="sidebar-icon">📜</span>
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">code_blocks</span></span>
                         <span data-i18n="scripts">Scripts</span>
                     </span>
                     <span class="sidebar-count">{{ sidebar_counts.scripts }}</span>
                 </a>
                 <a href="/automations" class="sidebar-link{% if active_page == 'automations' %} active{% endif %}">
                     <span class="sidebar-link-main">
-                        <span class="sidebar-icon">⏱️</span>
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">smart_toy</span></span>
                         <span data-i18n="automations">Automations</span>
                     </span>
                     <span class="sidebar-count">{{ sidebar_counts.automations }}</span>
                 </a>
                 <a href="/jobs" class="sidebar-link{% if active_page == 'jobs' %} active{% endif %}">
                     <span class="sidebar-link-main">
-                        <span class="sidebar-icon">📦</span>
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">assignment</span></span>
                         <span>Jobs</span>
                     </span>
                     <span class="sidebar-count">{{ sidebar_counts.jobs }}</span>
@@ -264,11 +255,11 @@
             <div class="sidebar-section">
                 <div class="sidebar-title" data-i18n="system">System</div>
                 <a href="/settings" class="sidebar-link{% if active_page == 'settings' %} active{% endif %}">
-                    <span class="sidebar-icon">⚙️</span>
+                    <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">settings</span></span>
                     <span data-i18n="settings">Settings</span>
                 </a>
                 <a href="/health" class="sidebar-link{% if active_page == 'health' %} active{% endif %}">
-                    <span class="sidebar-icon">❤️</span>
+                    <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span></span>
                     <span data-i18n="healthCheck">Health Check</span>
                 </a>
             </div>

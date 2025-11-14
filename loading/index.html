@@ -22,6 +22,17 @@
             padding: 20px;
         }
 
+        .material-symbols-rounded {
+            font-family: 'Material Symbols Rounded';
+            font-weight: normal;
+            font-style: normal;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .container {
             text-align: center;
             max-width: 600px;
@@ -110,7 +121,15 @@
 
         .step-icon {
             margin-right: 10px;
-            font-size: 1.2em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+
+        .step-icon .material-symbols-rounded {
+            font-size: 22px;
         }
 
         .spinner {
@@ -145,7 +164,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">🔐</div>
+        <div class="logo"><span class="material-symbols-rounded" aria-hidden="true">terminal</span></div>
         <h1>Testum</h1>
         <p class="subtitle">Remote SSH Execution Platform</p>
 
@@ -157,15 +176,15 @@
 
             <div class="steps">
                 <div class="step done">
-                    <span class="step-icon">✓</span>
+                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">task_alt</span></span>
                     <span>Docker containers started</span>
                 </div>
                 <div class="step done">
-                    <span class="step-icon">✓</span>
+                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">task_alt</span></span>
                     <span>PostgreSQL database ready</span>
                 </div>
                 <div class="step done">
-                    <span class="step-icon">✓</span>
+                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">task_alt</span></span>
                     <span>Redis cache ready</span>
                 </div>
                 <div class="step active" id="step-git">
@@ -173,15 +192,15 @@
                     <span>Cloning repository from GitHub...</span>
                 </div>
                 <div class="step" id="step-deps">
-                    <span class="step-icon">○</span>
+                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">radio_button_unchecked</span></span>
                     <span>Installing dependencies...</span>
                 </div>
                 <div class="step" id="step-migrations">
-                    <span class="step-icon">○</span>
+                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">radio_button_unchecked</span></span>
                     <span>Running database migrations...</span>
                 </div>
                 <div class="step" id="step-app">
-                    <span class="step-icon">○</span>
+                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">radio_button_unchecked</span></span>
                     <span>Starting web server...</span>
                 </div>
             </div>
@@ -257,13 +276,13 @@
 
             step.className = `step ${status}`;
             const icon = step.querySelector('.step-icon');
-            
+
             if (status === 'done') {
-                icon.innerHTML = '✓';
+                icon.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">task_alt</span>';
             } else if (status === 'active') {
                 icon.innerHTML = '<span class="spinner"></span>';
             } else {
-                icon.innerHTML = '○';
+                icon.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">radio_button_unchecked</span>';
             }
         }
 

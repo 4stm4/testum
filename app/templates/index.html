@@ -112,6 +112,13 @@
             padding: 6px 12px;
             border-radius: 100px;
             font: var(--md-label-small);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .platform-badge .material-symbols-rounded {
+            font-size: 18px;
         }
 
         .platform-info {
@@ -147,6 +154,26 @@
             font-weight: 500;
         }
 
+        .status-loading {
+            color: var(--md-on-surface-variant);
+            font-weight: 500;
+        }
+
+        .status-error {
+            color: var(--md-tertiary);
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator .material-symbols-rounded {
+            font-size: 18px;
+        }
+
         .empty-state {
             text-align: center;
             padding: 64px 20px;
@@ -154,9 +181,15 @@
         }
 
         .empty-state-icon {
-            font-size: 64px;
             margin-bottom: 16px;
             opacity: 0.5;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state-icon .material-symbols-rounded {
+            font-size: 64px;
         }
 
         .empty-state-text {
@@ -242,7 +275,9 @@
             if (platforms.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">🖥️</div>
+                        <div class="empty-state-icon">
+                            <span class="material-symbols-rounded" aria-hidden="true">dns</span>
+                        </div>
                         <div class="empty-state-text" data-i18n="noPlatforms">No platforms configured yet</div>
                         <a href="/platforms" class="md-button-filled">
                             <span data-i18n="addFirstPlatform">Add your first platform</span>
@@ -261,7 +296,9 @@
                             <div class="platform-host">${p.host}:${p.port}</div>
                         </div>
                         <div class="platform-badge">
-                            ${p.auth_method === 'password' ? '🔑 Password' : '🔐 SSH Key'}
+                            ${p.auth_method === 'password'
+                                ? '<span class="material-symbols-rounded" aria-hidden="true">key</span><span>Password</span>'
+                                : '<span class="material-symbols-rounded" aria-hidden="true">vpn_key</span><span>SSH Key</span>'}
                         </div>
                     </div>
                     <div class="platform-info">
@@ -271,7 +308,12 @@
                         </div>
                         <div class="info-item">
                             <div class="info-label">Status</div>
-                            <div class="info-value" id="status-${p.id}">⏳ Loading...</div>
+                            <div class="info-value" id="status-${p.id}">
+                                <span class="status-indicator status-loading">
+                                    <span class="material-symbols-rounded" aria-hidden="true">progress_activity</span>
+                                    <span>Loading...</span>
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div id="info-${p.id}" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--md-outline-variant);">
@@ -288,10 +330,18 @@
                         const info = await response.json();
                         updatePlatformInfo(p.id, info);
                     } else {
-                        document.getElementById(`status-${p.id}`).innerHTML = '<span class="status-offline">● Offline</span>';
+                        document.getElementById(`status-${p.id}`).innerHTML = `
+                            <span class="status-indicator status-offline">
+                                <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
+                                <span>Offline</span>
+                            </span>`;
                     }
                 } catch (error) {
-                    document.getElementById(`status-${p.id}`).innerHTML = '<span class="status-offline">● Error</span>';
+                    document.getElementById(`status-${p.id}`).innerHTML = `
+                        <span class="status-indicator status-error">
+                            <span class="material-symbols-rounded" aria-hidden="true">error</span>
+                            <span>Error</span>
+                        </span>`;
                 }
             });
         }
@@ -301,7 +351,11 @@
             const infoEl = document.getElementById(`info-${platformId}`);
 
             if (info.status === 'online' || info.system_info) {
-                statusEl.innerHTML = '<span class="status-online">● Online</span>';
+                statusEl.innerHTML = `
+                    <span class="status-indicator status-online">
+                        <span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+                        <span>Online</span>
+                    </span>`;
 
                 // Parse OS info
                 let osName = 'Unknown OS';

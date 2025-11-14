@@ -33,8 +33,10 @@ function applyTheme(theme) {
     // Update theme toggle button
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
-        themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        const icon = theme === 'dark' ? 'light_mode' : 'dark_mode';
+        themeToggle.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">${icon}</span>`;
         themeToggle.title = theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+        themeToggle.setAttribute('aria-label', themeToggle.title);
     }
 }
 
@@ -64,7 +66,7 @@ const translations = {
         apiDocs: 'API Docs',
         
         // Dashboard
-        welcomeTitle: '🔐 Testum',
+        welcomeTitle: 'Testum',
         welcomeSubtitle: 'Remote SSH Execution Platform',
         welcomeDescription: 'Execute commands and code on remote hosts via SSH',
         sshKeysCard: 'SSH Keys',
@@ -128,7 +130,7 @@ const translations = {
         platformAuthKey: 'SSH Key',
 
         // Scripts Page
-        scriptsTitle: '📜 Scripts',
+        scriptsTitle: 'Scripts',
         scriptsSubtitle: 'Store and reuse automation snippets for deployments',
         scriptsLibrary: 'Script Library',
         newScript: 'New Script',
@@ -239,7 +241,7 @@ const translations = {
         apiDocs: 'API Документация',
         
         // Dashboard
-        welcomeTitle: '🔐 Testum',
+        welcomeTitle: 'Testum',
         welcomeSubtitle: 'Платформа удаленного выполнения через SSH',
         welcomeDescription: 'Выполняйте команды и код на удаленных хостах через SSH',
         sshKeysCard: 'SSH Ключи',
@@ -303,7 +305,7 @@ const translations = {
         platformAuthKey: 'SSH-ключ',
 
         // Scripts Page
-        scriptsTitle: '📜 Скрипты',
+        scriptsTitle: 'Скрипты',
         scriptsSubtitle: 'Храните и переиспользуйте сценарии автоматизации для задач',
         scriptsLibrary: 'Библиотека скриптов',
         newScript: 'Новый скрипт',
@@ -425,8 +427,11 @@ function applyTranslations() {
     const langToggle = document.getElementById('langToggle');
     if (langToggle) {
         const currentLang = getCurrentLanguage();
-        langToggle.textContent = currentLang === 'en' ? 'RU' : 'EN';
-        langToggle.title = currentLang === 'en' ? 'Переключить на русский' : 'Switch to English';
+        const nextLang = currentLang === 'en' ? 'ru' : 'en';
+        langToggle.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">translate</span>';
+        const title = nextLang === 'ru' ? 'Переключить на русский' : 'Switch to English';
+        langToggle.title = title;
+        langToggle.setAttribute('aria-label', title);
     }
 }
 

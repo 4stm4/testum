@@ -209,9 +209,14 @@
         }
 
         .update-step-icon {
-            font-size: 1.5em;
             min-width: 30px;
-            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .update-step-icon .material-symbols-rounded {
+            font-size: 28px;
         }
 
         .update-step-text {
@@ -494,18 +499,18 @@
             updateProgress.innerHTML = '';
 
             const steps = [
-                { icon: '⬇️', text: 'Downloading update package...' },
-                { icon: '📦', text: 'Extracting files...' },
-                { icon: '🛠️', text: 'Applying migrations...' },
-                { icon: '🚀', text: 'Restarting services...' },
-                { icon: '✅', text: 'Update completed successfully!' },
+                { icon: 'download', text: 'Downloading update package...' },
+                { icon: 'inventory_2', text: 'Extracting files...' },
+                { icon: 'handyman', text: 'Applying migrations...' },
+                { icon: 'rocket_launch', text: 'Restarting services...' },
+                { icon: 'task_alt', text: 'Update completed successfully!' },
             ];
 
             for (let i = 0; i < steps.length; i++) {
                 const step = document.createElement('div');
                 step.className = 'update-step' + (i === 0 ? ' active' : '');
                 step.innerHTML = `
-                    <div class="update-step-icon">${steps[i].icon}</div>
+                    <div class="update-step-icon"><span class="material-symbols-rounded" aria-hidden="true">${steps[i].icon}</span></div>
                     <div class="update-step-text">
                         <div>${steps[i].text}</div>
                         <div class="update-step-status" id="step-status-${i}">In progress...</div>
@@ -517,7 +522,7 @@
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
                 document.getElementById(`step-status-${i}`).textContent = 'Completed';
-                document.getElementById(`spinner-${i}`).outerHTML = '✅';
+                document.getElementById(`spinner-${i}`).outerHTML = '<span class="material-symbols-rounded" aria-hidden="true">task_alt</span>';
                 step.classList.remove('active');
                 step.classList.add('completed');
 

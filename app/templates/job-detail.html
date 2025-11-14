@@ -8,12 +8,24 @@
         .back-link {
             color: var(--accent-primary);
             font-size: 0.85em;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             margin-bottom: 15px;
         }
 
         .back-link:hover {
             text-decoration: underline;
+        }
+
+        .job-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #taskIcon.material-symbols-rounded {
+            font-size: 32px;
         }
 
         .status-chip {
@@ -148,16 +160,22 @@
 {% endblock %}
 
 {% block content %}
-    <a href="/jobs" class="back-link">← Back to Jobs</a>
-    <h1 style="display: flex; align-items: center; gap: 12px;">
-        <span id="taskIcon">📦</span>
+    <a href="/jobs" class="back-link">
+        <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+        <span>Back to Jobs</span>
+    </a>
+    <h1 class="job-title">
+        <span id="taskIcon" class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
         <span>Job Details</span>
         <span class="status-chip pending" id="statusBadge">Loading...</span>
     </h1>
     <div class="subtitle" id="taskIdDisplay">Task ID: <code>{{ task_id }}</code></div>
 
     <div class="card">
-        <h2 class="card-title">📊 Overview</h2>
+        <h2 class="card-title title-with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">insights</span>
+            <span>Overview</span>
+        </h2>
         <div class="info-grid">
             <div class="info-item">
                 <div class="info-label">Task ID</div>
@@ -187,7 +205,10 @@
     </div>
 
     <div class="card" id="metadataCard" style="display: none;">
-        <h2 class="card-title">🔧 Task Details</h2>
+        <h2 class="card-title title-with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">build</span>
+            <span>Task Details</span>
+        </h2>
         <div class="info-grid">
             <div class="info-item" id="commandItem" style="display: none;">
                 <div class="info-label">Command</div>
@@ -205,7 +226,10 @@
     </div>
 
     <div class="card" id="outputCard" style="display: none;">
-        <h2 class="card-title">📝 Output</h2>
+        <h2 class="card-title title-with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+            <span>Output</span>
+        </h2>
         <h3 style="font-size: 0.9em; margin-bottom: 8px; color: var(--text-secondary);">STDOUT:</h3>
         <div class="output-box stdout" id="stdoutContent">
             <div class="empty">No output</div>
@@ -218,19 +242,25 @@
     </div>
 
     <div class="card" id="errorCard" style="display: none;">
-        <h2 class="card-title">❌ Error</h2>
+        <h2 class="card-title title-with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">error</span>
+            <span>Error</span>
+        </h2>
         <div class="output-box stderr" id="errorContent"></div>
     </div>
 
     <div class="actions">
         <a href="/tasks/{{ task_id }}" class="btn" target="_blank">
-            🔍 Live Monitor
+            <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
+            <span>Live Monitor</span>
         </a>
         <button class="btn btn-secondary" onclick="location.reload()">
-            🔄 Refresh
+            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+            <span>Refresh</span>
         </button>
         <button class="btn" id="stopBtn" onclick="stopTask()" style="background: #f38ba8; display: none;">
-            🛑 Stop Task
+            <span class="material-symbols-rounded" aria-hidden="true">stop_circle</span>
+            <span>Stop Task</span>
         </button>
     </div>
 {% endblock %}
@@ -252,10 +282,11 @@
                 statusBadge.className = `status-chip ${data.status}`;
 
                 const icons = {
-                    'deploy': '🚀',
-                    'run_command': '⚡'
+                    'deploy': 'rocket_launch',
+                    'run_command': 'terminal'
                 };
-                document.getElementById('taskIcon').textContent = icons[data.type] || '📦';
+                const taskIcon = document.getElementById('taskIcon');
+                taskIcon.textContent = icons[data.type] || 'inventory_2';
 
                 document.getElementById('celeryTaskId').textContent = data.celery_task_id;
                 document.getElementById('taskType').textContent = data.type;

@@ -126,7 +126,7 @@
 
         .pagination button:hover {
             background: var(--accent-primary);
-            color: #fff;
+            color: var(--accent-primary-contrast);
         }
 
         .platform-link,
@@ -137,13 +137,23 @@
 
         .task-link {
             margin: 0 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .task-link .material-symbols-rounded {
+            font-size: 18px;
         }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="page-header">
-        <h1 class="page-title">📦 Jobs</h1>
+        <h1 class="page-title title-with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+            <span>Jobs</span>
+        </h1>
         <p class="page-subtitle">История и состояние задач (Task Runs)</p>
     </div>
 
@@ -162,7 +172,10 @@
                 <option value="run_command">Run Command</option>
             </select>
         </div>
-        <button id="refreshBtn">🔄 Refresh</button>
+        <button id="refreshBtn">
+            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+            <span>Refresh</span>
+        </button>
     </div>
 
     <div style="overflow-x: auto;">
@@ -236,8 +249,15 @@
                 <td>${started}</td>
                 <td>${finished}</td>
                 <td>
-                    <a class="task-link" href="/jobs/${t.celery_task_id}" title="View Details">📋 Details</a> |
-                    <a class="task-link" href="/tasks/${t.celery_task_id}" target="_blank" title="Live Monitor">🔍 Monitor</a>
+                    <a class="task-link" href="/jobs/${t.celery_task_id}" title="View Details">
+                        <span class="material-symbols-rounded" aria-hidden="true">description</span>
+                        <span>Details</span>
+                    </a>
+                    |
+                    <a class="task-link" href="/tasks/${t.celery_task_id}" target="_blank" title="Live Monitor">
+                        <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
+                        <span>Monitor</span>
+                    </a>
                 </td>
             </tr>`;
         }
