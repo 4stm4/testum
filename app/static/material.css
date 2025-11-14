@@ -1,7 +1,14 @@
 /* Material Design 3 Theme for Testum */
 /* Based on https://m3.material.io/styles/color/the-color-system/tokens */
 
+/* Default to dark theme */
 :root {
+  color-scheme: dark;
+}
+
+/* Light Theme (default in CSS, will be overridden by data-theme="dark") */
+:root,
+[data-theme="light"] {
   /* Primary Colors - Material You Blue */
   --md-primary: #6750A4;
   --md-on-primary: #FFFFFF;
