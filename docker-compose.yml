@@ -109,6 +109,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache musl-locales musl-locales-lang
+        exec docker-entrypoint.sh postgres
 
   minio:
     image: minio/minio:latest
