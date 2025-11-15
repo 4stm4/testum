@@ -5,196 +5,89 @@
 
 {% block extra_styles %}
     <style>
-        .toolbar {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+        .jobs-toolbar {
+            margin-bottom: 24px;
         }
 
-        .toolbar select,
-        .toolbar input {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 0.85em;
+        .jobs-toolbar .filters-inline select {
+            min-width: 140px;
         }
 
-        .toolbar button {
-            background: var(--accent-primary);
-            color: #fff;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .toolbar button:hover {
-            opacity: 0.9;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        thead {
-            background: var(--bg-tertiary);
-        }
-
-        th,
-        td {
-            padding: 10px 12px;
-            font-size: 0.85em;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            color: var(--text-secondary);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        tbody tr {
-            transition: background 0.2s;
-        }
-
-        tbody tr:hover {
-            background: var(--bg-tertiary);
-        }
-
-        .status-chip {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .status-chip.pending {
-            background: #2d2616;
-            color: #fab387;
-        }
-
-        .status-chip.running {
-            background: #162d3b;
-            color: #89b4fa;
-        }
-
-        .status-chip.success {
-            background: #1e2d28;
-            color: #a6e3a1;
-        }
-
-        .status-chip.failed {
-            background: #2d1e22;
-            color: #f38ba8;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 50px 20px;
-            color: var(--text-secondary);
-        }
-
-        .pagination {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        .pagination button {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.75em;
-            cursor: pointer;
-        }
-
-        .pagination button:hover {
-            background: var(--accent-primary);
-            color: var(--accent-primary-contrast);
-        }
-
-        .platform-link,
-        .task-link {
-            color: var(--accent-primary);
-            font-weight: 600;
-        }
-
-        .task-link {
-            margin: 0 4px;
+        .job-type {
             display: inline-flex;
             align-items: center;
             gap: 6px;
         }
 
-        .task-link .material-symbols-rounded {
-            font-size: 18px;
+        .job-type.deploy {
+            background: color-mix(in srgb, var(--md-tertiary) 18%, transparent);
+            color: var(--md-tertiary);
+        }
+
+        .job-type.run_command {
+            background: color-mix(in srgb, var(--md-primary) 18%, transparent);
+            color: var(--md-primary);
+        }
+
+        .jobs-table .material-symbols-rounded {
+            font-size: 20px;
         }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="page-header">
-        <h1 class="page-title title-with-icon">
-            <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-            <span>Jobs</span>
-        </h1>
-    </div>
-
-    <div class="toolbar">
-        <div class="filters-inline">
-            <select id="filterStatus">
-                <option value="">Status: All</option>
-                <option value="pending">Pending</option>
-                <option value="running">Running</option>
-                <option value="success">Success</option>
-                <option value="failed">Failed</option>
-            </select>
-            <select id="filterType">
-                <option value="">Type: All</option>
-                <option value="deploy">Deploy</option>
-                <option value="run_command">Run Command</option>
-            </select>
+        <div>
+            <h1 class="page-title">
+                <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+                <span>Jobs</span>
+            </h1>
+            <p class="page-subtitle">Track execution history and live status for your automation jobs.</p>
         </div>
-        <button id="refreshBtn">
-            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-            <span>Refresh</span>
-        </button>
+        <div class="page-actions">
+            <button id="refreshBtn" class="btn btn-secondary">
+                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+                <span>Refresh</span>
+            </button>
+        </div>
     </div>
 
-    <div style="overflow-x: auto;">
-        <table id="tasksTable">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Celery ID</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Platform</th>
-                    <th>Started</th>
-                    <th>Finished</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="tasksBody">
-                <tr><td colspan="8" class="empty">Loading tasks...</td></tr>
-            </tbody>
-        </table>
+    <div class="card table-card">
+        <div class="card-header jobs-toolbar">
+            <div class="filters-inline">
+                <select id="filterStatus">
+                    <option value="">Status: All</option>
+                    <option value="pending">Pending</option>
+                    <option value="running">Running</option>
+                    <option value="success">Success</option>
+                    <option value="failed">Failed</option>
+                </select>
+                <select id="filterType">
+                    <option value="">Type: All</option>
+                    <option value="deploy">Deploy</option>
+                    <option value="run_command">Run Command</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table id="tasksTable" class="data-table jobs-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Celery ID</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Platform</th>
+                        <th>Started</th>
+                        <th>Finished</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksBody">
+                    <tr><td colspan="8" class="table-empty-state">Loading tasks…</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="pagination">
@@ -215,23 +108,23 @@
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (type) url += `&type=${encodeURIComponent(type)}`;
             const bodyEl = document.getElementById('tasksBody');
-            bodyEl.innerHTML = `<tr><td colspan="8" class="empty">Loading...</td></tr>`;
+            bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">Loading tasks…</td></tr>`;
             try {
                 const resp = await fetch(url);
                 if (!resp.ok) {
-                    bodyEl.innerHTML = `<tr><td colspan="8" class="empty">Failed to load tasks</td></tr>`;
+                    bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">Failed to load tasks</td></tr>`;
                     return;
                 }
                 const data = await resp.json();
                 if (data.length === 0) {
-                    bodyEl.innerHTML = `<tr><td colspan="8" class="empty">No tasks found</td></tr>`;
+                    bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">No tasks found</td></tr>`;
                 } else {
-                    bodyEl.innerHTML = data.map(t => renderRow(t)).join('');
+                    bodyEl.innerHTML = data.map(renderRow).join('');
                 }
                 document.getElementById('prevPage').disabled = offset === 0;
                 document.getElementById('nextPage').disabled = data.length < limit;
             } catch (e) {
-                bodyEl.innerHTML = `<tr><td colspan="8" class="empty">Error: ${e.message}</td></tr>`;
+                bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">Error: ${e.message}</td></tr>`;
             }
         }
 
@@ -239,24 +132,26 @@
             const started = t.started_at ? new Date(t.started_at).toLocaleString() : '—';
             const finished = t.finished_at ? new Date(t.finished_at).toLocaleString() : '—';
             const shortId = t.id.substring(0, 8);
+            const typeLabel = t.type.replace('_', ' ');
             return `<tr>
-                <td><a href="/jobs/${t.celery_task_id}" class="task-link" title="${t.id}">${shortId}...</a></td>
-                <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis;" title="${t.celery_task_id}"><code>${t.celery_task_id}</code></td>
-                <td>${t.type}</td>
+                <td><a href="/jobs/${t.celery_task_id}" class="task-link" title="${t.id}">${shortId}…</a></td>
+                <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis;" title="${t.celery_task_id}"><code>${t.celery_task_id}</code></td>
+                <td><span class="chip job-type ${t.type}">${typeLabel}</span></td>
                 <td><span class="status-chip ${t.status}">${t.status.toUpperCase()}</span></td>
                 <td>${t.platform_name ? `<span class="platform-link" title="${t.platform_id}">${t.platform_name}</span>` : '—'}</td>
                 <td>${started}</td>
                 <td>${finished}</td>
                 <td>
-                    <a class="task-link" href="/jobs/${t.celery_task_id}" title="View Details">
-                        <span class="material-symbols-rounded" aria-hidden="true">description</span>
-                        <span>Details</span>
-                    </a>
-                    |
-                    <a class="task-link" href="/tasks/${t.celery_task_id}" target="_blank" title="Live Monitor">
-                        <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
-                        <span>Monitor</span>
-                    </a>
+                    <div class="table-actions">
+                        <a class="btn btn-ghost" href="/jobs/${t.celery_task_id}" title="View Details">
+                            <span class="material-symbols-rounded" aria-hidden="true">description</span>
+                            <span>Details</span>
+                        </a>
+                        <a class="btn btn-ghost" href="/tasks/${t.celery_task_id}" target="_blank" title="Live Monitor">
+                            <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
+                            <span>Monitor</span>
+                        </a>
+                    </div>
                 </td>
             </tr>`;
         }
