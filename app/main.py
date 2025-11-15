@@ -217,6 +217,17 @@ async def settings_page(request: Request):
     )
 
 
+async def users_page(request: Request):
+    """User management page (admin only)."""
+    user = get_request_user(request)
+    if not user or not user.is_admin():
+        return JSONResponse({"error": "Admin access required"}, status_code=403)
+    
+    return templates.TemplateResponse(
+        "users.html", build_template_context(request, "users")
+    )
+
+
 async def jobs_page(request: Request):
     """Jobs page listing recent tasks."""
     return templates.TemplateResponse(
@@ -459,6 +470,7 @@ routes = [
     Route("/automations", automations_page),
     Route("/jobs", jobs_page),
     Route("/jobs/{task_id}", job_detail_page),
+    Route("/users", users_page),
     Route("/settings", settings_page),
     Route("/tasks/{task_id}", task_page),
     Route("/health", health_check),
