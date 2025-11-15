@@ -187,9 +187,12 @@ services:
       echo 'Running migrations...' &&
       alembic upgrade head &&
       echo 'Starting Taskiq worker in background...' &&
-      taskiq worker app.tasks_new:broker --fs-discover &
+      taskiq worker app.tasks_new:broker --fs-discover > /tmp/taskiq.log 2>&1 &
+      TASKIQ_PID=$! &&
+      echo \"Taskiq worker started with PID: $TASKIQ_PID\" &&
+      trap \"kill $TASKIQ_PID 2>/dev/null\" EXIT INT TERM &&
       echo 'Starting application...' &&
-      exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+      uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
 networks:
