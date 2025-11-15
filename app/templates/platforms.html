@@ -732,8 +732,19 @@
             checkboxes.forEach(cb => { cb.checked = !allChecked; });
             updateBulkActions();
         }
+        
+        // Alias for loadPlatforms
+        async function fetchPlatforms() {
+            await loadPlatforms();
+        }
+        
+        // Refresh button handler
+        async function refreshPlatforms() {
+            await loadPlatforms();
+            updateSidebarCount();
+        }
 
-        async function bulkDeployKeys() {        async function bulkDeployKeys() {
+        async function bulkDeployKeys() {
             const platformIds = getSelectedPlatforms();
             if (platformIds.length === 0) return;
             if (!confirm(`Deploy all SSH keys to ${platformIds.length} selected platform(s)?`)) return;
