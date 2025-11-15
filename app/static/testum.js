@@ -75,7 +75,12 @@ function applyTheme(theme) {
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
         const icon = resolvedTheme === 'dark' ? 'light_mode' : 'dark_mode';
-        themeToggle.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">${icon}</span>`;
+        const iconElement = themeToggle.querySelector('.material-symbols-rounded');
+        if (iconElement) {
+            iconElement.textContent = icon;
+        } else {
+            themeToggle.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">${icon}</span>`;
+        }
         themeToggle.title = resolvedTheme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme';
         themeToggle.setAttribute('aria-label', themeToggle.title);
     }
@@ -468,9 +473,9 @@ function applyTranslations() {
     const langToggle = document.getElementById('langToggle');
     if (langToggle) {
         const currentLang = getCurrentLanguage();
-        const nextLang = currentLang === 'en' ? 'ru' : 'en';
-        langToggle.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">translate</span>';
-        const title = nextLang === 'ru' ? 'Переключить на русский' : 'Switch to English';
+        const displayLang = currentLang === 'en' ? 'RU' : 'EN';
+        langToggle.innerHTML = `<span aria-hidden="true">${displayLang}</span>`;
+        const title = currentLang === 'en' ? 'Переключить на русский' : 'Switch to English';
         langToggle.title = title;
         langToggle.setAttribute('aria-label', title);
     }

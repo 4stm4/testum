@@ -39,26 +39,29 @@
             top: 20px;
             right: 20px;
             display: flex;
-            gap: 12px;
+            gap: 8px;
             z-index: 1000;
         }
         .login-toggle {
             background: var(--md-surface-container-high);
-            color: var(--md-on-surface);
+            color: var(--md-on-surface-variant);
             border: none;
-            width: 48px;
-            height: 48px;
-            border-radius: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 18px;
             transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: var(--md-elevation-1);
+            font-weight: 500;
+            font-family: 'Roboto', sans-serif;
         }
         .login-toggle:hover {
-            background: var(--md-surface-container-highest);
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
             box-shadow: var(--md-elevation-2);
             transform: scale(1.05);
         }
@@ -66,27 +69,22 @@
             text-align: center;
             margin-bottom: 48px;
         }
-        .logo {
-            font-size: 72px;
-            margin-bottom: 16px;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .logo .material-symbols-rounded {
-            font-size: 72px;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
         .app-name {
             font: var(--md-display-small);
             color: var(--md-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
             margin-bottom: 8px;
         }
-        .tagline {
-            font: var(--md-body-large);
+        .version-inline {
+            font: var(--md-label-medium);
+            background: var(--md-surface-container-high);
             color: var(--md-on-surface-variant);
+            padding: 4px 12px;
+            border-radius: 100px;
+            box-shadow: var(--md-elevation-1);
         }
         .login-card {
             background: var(--md-surface-container-low);
@@ -201,17 +199,6 @@
             color: var(--md-on-surface-variant);
             font: var(--md-body-small);
         }
-        .version-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--md-surface-container-high);
-            padding: 6px 12px;
-            border-radius: 100px;
-            margin-top: 12px;
-            font: var(--md-label-small);
-            box-shadow: var(--md-elevation-1);
-        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
@@ -226,19 +213,18 @@
         <!-- Theme and Language toggles -->
         <div class="login-actions">
             <button id="themeToggle" class="login-toggle" type="button" aria-label="Toggle Theme">
-                <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
+                <span class="material-symbols-rounded" aria-hidden="true">brightness_6</span>
             </button>
             <button id="langToggle" class="login-toggle" type="button" aria-label="Toggle Language">
-                <span class="material-symbols-rounded" aria-hidden="true">translate</span>
+                <span aria-hidden="true">EN</span>
             </button>
         </div>
 
         <div class="logo-section">
-            <div class="logo">
-                <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+            <div class="app-name">
+                <span data-i18n="welcomeTitle">Testum</span>
+                <span class="version-inline">v0.1.0</span>
             </div>
-            <div class="app-name" data-i18n="welcomeTitle">Testum</div>
-            <div class="tagline" data-i18n="welcomeSubtitle">Remote SSH Execution Platform</div>
         </div>
 
         <div class="login-card">
@@ -279,8 +265,7 @@
         </div>
 
         <div class="footer">
-            <div>Testum Platform</div>
-            <div class="version-badge">v0.1.0</div>
+            © 2025 Testum
         </div>
     </div>
 
