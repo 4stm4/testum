@@ -177,11 +177,11 @@ services:
       mv .* /app/ 2>/dev/null || true &&
       cd /app &&
       echo 'Installing Python packages...' &&
-      pip install --no-cache-dir --upgrade pip setuptools wheel &&
-      pip install --no-cache-dir -r /app/requirements.txt &&
-      pip install --no-cache-dir 'uvicorn[standard]==0.32.1' &&
+      python -m pip install --no-cache-dir --upgrade pip setuptools wheel &&
+      python -m pip install --no-cache-dir -r /app/requirements.txt &&
+      python -m pip install --no-cache-dir \"uvicorn[standard]==0.32.1\" &&
       echo 'Checking installed packages...' &&
-      pip list | grep -E '(uvicorn|taskiq|starlette)' &&
+      python -m pip list | grep -E '(uvicorn|taskiq|starlette)' &&
       echo 'Waiting for database...' &&
       until pg_isready -h db -p 5432 -U postgres; do
         echo 'Database unavailable - sleeping';
