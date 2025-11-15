@@ -180,24 +180,14 @@ services:
         cd /app
         
         echo 'Installing Python packages...'
+        rm -rf /app/.venv
         python3 -m venv /app/.venv
         . /app/.venv/bin/activate
         python -m pip install --no-cache-dir --upgrade pip setuptools wheel
         python -m pip install --no-cache-dir -r /app/requirements.txt
         
         echo 'Checking installed packages...'
-        python - <<'PY'
-        import importlib
-        missing = []
-        for module_name in ("uvicorn", "taskiq", "taskiq_postgres"):
-            try:
-                module = importlib.import_module(module_name)
-                print(f"{module_name} available at {module.__file__}")
-            except ImportError:
-                missing.append(module_name)
-        if missing:
-            raise SystemExit(f"Missing modules after installation: {', '.join(missing)}")
-        PY
+        python -c "import uvicorn, taskiq; from taskiq_postgres import PostgresBroker; print('All required modules imported successfully')"
         
         echo 'Waiting for database...'
         until pg_isready -h db -p 5432 -U postgres; do
