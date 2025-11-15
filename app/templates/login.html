@@ -313,14 +313,25 @@
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        required 
-                        placeholder="Enter your password"
-                        autocomplete="current-password"
-                    >
+                    <div style="position: relative;">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            required 
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            style="padding-right: 48px;"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="toggleLoginPasswordVisibility()" 
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; color: var(--md-on-surface-variant); padding: 8px; display: flex; align-items: center; justify-content: center;" 
+                            aria-label="Toggle password visibility"
+                        >
+                            <span class="material-symbols-rounded" id="loginPasswordToggleIcon" style="font-size: 20px;">visibility</span>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="login-btn" id="loginBtn">
                     Sign In
@@ -399,6 +410,63 @@
             window.location.href = '/';
         }
         
+        // Toggle password visibility
+        function toggleLoginPasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('loginPasswordToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.textContent = 'visibility_off';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.textContent = 'visibility';
+            }
+        }
+        
+        // Theme toggle handler
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                document.documentElement.style.colorScheme = newTheme;
+                
+                try {
+                    localStorage.setItem('testum-theme', newTheme);
+                } catch (e) {
+                    console.warn('Failed to save theme preference:', e);
+                }
+                
+                updateThemeButton();
+            });
+        }
+        
+        // Language toggle handler
+        const langToggle = document.getElementById('langToggle');
+        if (langToggle) {
+            langToggle.addEventListener('click', function() {
+                const currentLang = document.documentElement.getAttribute('lang') || 'en';
+                const newLang = currentLang === 'en' ? 'ru' : 'en';
+                
+                document.documentElement.setAttribute('lang', newLang);
+                langToggle.querySelector('span[aria-hidden="true"]').textContent = newLang === 'en' ? 'RU' : 'EN';
+                
+                try {
+                    localStorage.setItem('testum-lang', newLang);
+                } catch (e) {
+                    console.warn('Failed to save language preference:', e);
+                }
+                
+                // Trigger i18n update if available
+                if (window.applyTranslations) {
+                    window.applyTranslations();
+                }
+            });
+        }
+        
         // Initialize theme toggle button
         function updateThemeButton() {
             const themeToggle = document.getElementById('themeToggle');
@@ -412,8 +480,21 @@
             }
         }
         
-        // Call immediately to set initial icon
+        // Initialize language button
+        function updateLanguageButton() {
+            const langToggle = document.getElementById('langToggle');
+            if (langToggle) {
+                const currentLang = document.documentElement.getAttribute('lang') || 'en';
+                const textElement = langToggle.querySelector('span[aria-hidden="true"]');
+                if (textElement) {
+                    textElement.textContent = currentLang === 'en' ? 'RU' : 'EN';
+                }
+            }
+        }
+        
+        // Call immediately to set initial icons
         updateThemeButton();
+        updateLanguageButton();
     </script>
     <script src="/static/testum.js"></script>
 </body>
