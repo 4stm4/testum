@@ -37,26 +37,6 @@
             border-color: var(--error-border);
         }
 
-        .add-platform-btn {
-            background: var(--accent-primary);
-            color: #fff;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .add-platform-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
         .bulk-actions {
             display: flex;
             gap: 12px;
@@ -355,11 +335,12 @@
             <span data-i18n="platformsTitle">Platforms</span>
         </h1>
         
-        <div class="page-actions" style="display: flex; gap: 12px;">
-            <button class="add-platform-btn" onclick="openModal()" title="Add new platform">
+        <div class="page-actions" style="display: flex; gap: 8px; align-items: center;">
+            <button class="action-btn" onclick="openModal()" title="Add new platform">
                 <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                <span data-i18n="addPlatform">Add Platform</span>
             </button>
+            
+            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 4px;" id="toolbarDivider" aria-hidden="true"></div>
             
             <button class="action-btn" onclick="toggleSelectAll()" title="Select all platforms" id="selectAllBtn" style="display: none;">
                 <span class="material-symbols-rounded" aria-hidden="true">select_all</span>
@@ -373,7 +354,9 @@
                 <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
             </button>
             
-            <button class="action-btn" onclick="refreshPlatforms()" title="Refresh list">
+            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 4px;" id="toolbarDivider2" style="display: none;" aria-hidden="true"></div>
+            
+            <button class="action-btn" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn">
                 <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
             </button>
         </div>
@@ -685,12 +668,14 @@
             document.getElementById('selectAllBtn').style.display = 'flex';
             document.getElementById('bulkDeployBtnTop').style.display = 'flex';
             document.getElementById('bulkRunBtnTop').style.display = 'flex';
+            document.getElementById('toolbarDivider2').style.display = 'block';
         }
 
         function hideToolbarButtons() {
             document.getElementById('selectAllBtn').style.display = 'none';
             document.getElementById('bulkDeployBtnTop').style.display = 'none';
             document.getElementById('bulkRunBtnTop').style.display = 'none';
+            document.getElementById('toolbarDivider2').style.display = 'none';
         }
 
         function toggleSelectAll() {
