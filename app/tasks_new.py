@@ -1,14 +1,10 @@
 """Taskiq tasks for SSH operations."""
-import asyncio
-import json
 import logging
 from datetime import datetime
 from typing import List, Optional
 
 import boto3
 from botocore.client import Config
-from redis import asyncio as aioredis
-from taskiq import TaskiqDepends
 
 from app.taskiq_app import broker
 from app.config import config
@@ -18,17 +14,6 @@ from app.crypto import crypto
 from app.ssh_helper import AsyncSSHClient
 
 logger = logging.getLogger(__name__)
-
-# Async Redis client for pub/sub
-_redis_client = None
-
-
-async def get_redis_client():
-    """Get or create async Redis client."""
-    global _redis_client
-    if _redis_client is None:
-        _redis_client = await aioredis.from_url(config.REDIS_URL)
-    return _redis_client
 
 
 # MinIO/S3 client
@@ -43,22 +28,14 @@ s3_client = boto3.client(
 
 async def publish_task_message(task_id: str, msg_type: str, payload: str):
     """
-    Publish message to Redis channel for WebSocket streaming.
+    Log task message (WebSocket pub/sub removed - Redis not used).
 
     Args:
         task_id: Task ID
         msg_type: Message type (stdout, stderr, progress, done, error)
         payload: Message payload
     """
-    redis = await get_redis_client()
-    message = {
-        "ts": datetime.utcnow().isoformat(),
-        "type": msg_type,
-        "payload": payload,
-    }
-    channel = f"task:{task_id}"
-    await redis.publish(channel, json.dumps(message))
-    logger.debug(f"Published to {channel}: {msg_type}")
+    logger.info(f"[{task_id}] {msg_type}: {payload}")
 
 
 def ensure_s3_bucket():

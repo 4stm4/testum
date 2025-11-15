@@ -110,18 +110,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: testum_redis
-    restart: unless-stopped
-    networks:
-      - testum_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-
   minio:
     image: minio/minio:latest
     container_name: testum_minio
@@ -155,9 +143,6 @@ services:
       ADMIN_PASSWORD: admin123
       FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
       DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
@@ -170,8 +155,6 @@ services:
       - testum_network
     depends_on:
       db:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       minio:
         condition: service_healthy
@@ -203,56 +186,10 @@ services:
       done &&
       echo 'Running migrations...' &&
       alembic upgrade head &&
+      echo 'Starting Taskiq worker in background...' &&
+      taskiq worker app.tasks_new:broker --fs-discover &
       echo 'Starting application...' &&
       exec uvicorn app.main:app --host 0.0.0.0 --port 8000
-      "
-
-  taskiq_worker:
-    image: python:3.12-slim
-    container_name: testum_taskiq
-    restart: unless-stopped
-    working_dir: /app
-    environment:
-      APP_ENV: production
-      FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
-      REDIS_URL: redis://redis:6379/0
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: testum-artifacts
-      MINIO_SECURE: "false"
-      SSH_HOST_KEY_POLICY: auto_add
-    networks:
-      - testum_network
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    entrypoint: /bin/bash
-    command: >
-      -c "
-      set -e &&
-      echo 'Installing system dependencies...' &&
-      apt-get update -qq && 
-      apt-get install -y -qq --no-install-recommends gcc libpq-dev postgresql-client git && 
-      rm -rf /var/lib/apt/lists/* &&
-      echo 'Cloning repository (forcing fresh clone)...' &&
-      cd /tmp &&
-      rm -rf testum &&
-      git clone --depth 1 --branch main https://github.com/4stm4/testum.git testum &&
-      cd testum &&
-      git log -1 --oneline &&
-      rm -rf /app/* &&
-      mv * /app/ 2>/dev/null || true &&
-      mv .* /app/ 2>/dev/null || true &&
-      cd /app &&
-      echo 'Installing Python packages...' &&
-      pip install --no-cache-dir --upgrade pip setuptools wheel &&
-      pip install --no-cache-dir -r /app/requirements.txt && 
-      echo 'Starting Taskiq worker...' &&
-      exec taskiq worker app.tasks_new:broker --fs-discover
       "
 
 networks:

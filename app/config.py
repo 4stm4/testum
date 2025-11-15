@@ -20,9 +20,6 @@ class Config:
         "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/ocultum"
     )
 
-    # Redis (for Taskiq broker and pub/sub)
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-
     # MinIO S3
     MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "localhost:9000")
     MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "minioadmin")

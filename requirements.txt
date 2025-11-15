@@ -11,9 +11,7 @@ asyncpg==0.30.0
 
 # Async & Background tasks
 taskiq==0.11.7
-taskiq-aio-pika==0.4.1
-taskiq-redis==1.0.2
-aio-pika==9.4.3
+taskiq-postgres==0.0.15
 
 # SSH & Crypto
 paramiko==3.5.0
