@@ -520,8 +520,24 @@ app = Starlette(
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize application services."""
-
+    from app.taskiq_app import broker
+    
+    # Initialize Taskiq broker
+    logger.info("Initializing Taskiq broker...")
+    await broker.startup()
+    logger.info("Taskiq broker initialized")
+    
     ensure_default_admin_user()
+
+
+@app.on_event("shutdown")
+async def shutdown_event() -> None:
+    """Cleanup application services."""
+    from app.taskiq_app import broker
+    
+    logger.info("Shutting down Taskiq broker...")
+    await broker.shutdown()
+    logger.info("Taskiq broker shut down")
 
 
 logger.info(f"Application started in {config.APP_ENV} mode")
