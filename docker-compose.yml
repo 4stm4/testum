@@ -97,6 +97,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: testum
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8"
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
