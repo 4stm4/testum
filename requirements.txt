@@ -31,3 +31,6 @@ pydantic==2.10.3
 
 # Auth (JWT)
 pyjwt==2.10.1
+
+# YAML parsing
+pyyaml==6.0.2

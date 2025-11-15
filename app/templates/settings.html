@@ -349,6 +349,25 @@
             </div>
         </div>
 
+        <!-- Backup & Restore -->
+        <div class="card">
+            <h2 class="card-title">🔄 Backup & Restore</h2>
+            <div class="card-description">Export or import configuration (platforms, SSH keys)</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <button type="button" onclick="exportBackup()" class="btn-secondary">
+                        📥 Export Backup (YAML)
+                    </button>
+                    <small class="note">Downloads configuration as YAML file (passwords excluded)</small>
+                </div>
+                <div class="form-group">
+                    <label for="backupFile">Import Backup</label>
+                    <input type="file" id="backupFile" accept=".yaml,.yml" onchange="importBackup(event)">
+                    <small class="note">Upload YAML file to restore configuration</small>
+                </div>
+            </div>
+        </div>
+
         <div class="split-columns">
             <div class="card">
                 <h2 class="card-title" data-i18n="changeUsername">Username</h2>
@@ -534,6 +553,58 @@
             setTimeout(() => {
                 updateModal.classList.remove('active');
             }, 2000);
+        }
+
+        // Backup & Restore functions
+        function exportBackup() {
+            window.open('/api/backup/export', '_blank');
+            showMessage('Backup export started...', 'success');
+        }
+
+        async function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!confirm(`Import configuration from ${file.name}? Existing items with same names will be skipped.`)) {
+                event.target.value = '';
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                const fileContent = await file.text();
+                
+                const response = await fetch('/api/backup/import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-yaml',
+                    },
+                    body: fileContent,
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Import failed');
+                }
+
+                let message = `Import completed!\n`;
+                message += `- Platforms: ${result.stats.platforms_imported}\n`;
+                message += `- SSH Keys: ${result.stats.ssh_keys_imported}\n`;
+                if (result.stats.errors.length > 0) {
+                    message += `\nWarnings:\n${result.stats.errors.join('\n')}`;
+                }
+
+                alert(message);
+                showMessage('Backup imported successfully', 'success');
+                
+                // Reload page to show new data
+                setTimeout(() => window.location.reload(), 1500);
+            } catch (error) {
+                showMessage('Import failed: ' + error.message, 'error');
+            } finally {
+                event.target.value = '';
+            }
         }
 
         fetchSettings();

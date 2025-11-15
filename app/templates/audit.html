@@ -271,6 +271,8 @@
             <div class="filter-actions">
                 <button class="btn-filter" onclick="applyFilters()">Apply</button>
                 <button class="btn-clear" onclick="clearFilters()">Clear</button>
+                <button class="btn-filter" onclick="exportLogs('json')" style="background: var(--md-tertiary);">Export JSON</button>
+                <button class="btn-filter" onclick="exportLogs('csv')" style="background: var(--md-tertiary);">Export CSV</button>
             </div>
         </div>
     </div>
@@ -440,6 +442,25 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function exportLogs(format) {
+            // Build query params from current filters
+            const params = new URLSearchParams();
+            params.append('format', format);
+
+            const user = document.getElementById('filterUser').value.trim();
+            const action = document.getElementById('filterAction').value.trim();
+            const resourceType = document.getElementById('filterResourceType').value.trim();
+            const days = document.getElementById('filterDays').value;
+
+            if (user) params.append('user', user);
+            if (action) params.append('action', action);
+            if (resourceType) params.append('resource_type', resourceType);
+            if (days) params.append('days', days);
+
+            // Open download in new window
+            window.open(`${API_BASE}/export?${params}`, '_blank');
         }
 
         // Load on page ready

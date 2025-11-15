@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: MIT
 """Audit log API endpoints."""
+import csv
+import io
+import json
 from datetime import datetime, timedelta
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, StreamingResponse
 from starlette.routing import Route
 
 from app.db import get_db
@@ -124,10 +127,115 @@ async def get_audit_stats(request: Request):
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
+async def export_audit_logs(request: Request):
+    """Export audit logs to JSON or CSV."""
+    db: Session = next(get_db())
+    try:
+        # Get format and filters
+        export_format = request.query_params.get("format", "json").lower()
+        user_filter = request.query_params.get("user")
+        action_filter = request.query_params.get("action")
+        resource_type_filter = request.query_params.get("resource_type")
+        days = request.query_params.get("days", "30")
+
+        try:
+            days_int = int(days)
+            if days_int < 1 or days_int > 365:
+                days_int = 30
+        except (ValueError, TypeError):
+            days_int = 30
+
+        since_date = datetime.utcnow() - timedelta(days=days_int)
+
+        # Build query
+        query = db.query(AuditLog).filter(AuditLog.timestamp >= since_date)
+
+        if user_filter:
+            query = query.filter(AuditLog.user.ilike(f"%{user_filter}%"))
+        
+        if action_filter:
+            query = query.filter(AuditLog.action.ilike(f"%{action_filter}%"))
+        
+        if resource_type_filter:
+            query = query.filter(AuditLog.resource_type.ilike(f"%{resource_type_filter}%"))
+
+        logs = query.order_by(desc(AuditLog.timestamp)).all()
+
+        # Export as JSON
+        if export_format == "json":
+            data = []
+            for log in logs:
+                data.append({
+                    "id": str(log.id),
+                    "user": log.user,
+                    "action": log.action,
+                    "resource_type": log.resource_type,
+                    "resource_id": log.resource_id,
+                    "details": log.details,
+                    "ip_address": log.ip_address,
+                    "user_agent": log.user_agent,
+                    "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+                })
+            
+            content = json.dumps(data, indent=2, ensure_ascii=False)
+            filename = f"audit_logs_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+            
+            return StreamingResponse(
+                io.BytesIO(content.encode('utf-8')),
+                media_type="application/json",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
+        
+        # Export as CSV
+        elif export_format == "csv":
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Header
+            writer.writerow([
+                "ID", "User", "Action", "Resource Type", "Resource ID", 
+                "Details", "IP Address", "User Agent", "Timestamp"
+            ])
+            
+            # Data
+            for log in logs:
+                writer.writerow([
+                    str(log.id),
+                    log.user or "",
+                    log.action or "",
+                    log.resource_type or "",
+                    log.resource_id or "",
+                    log.details or "",
+                    log.ip_address or "",
+                    log.user_agent or "",
+                    log.timestamp.isoformat() if log.timestamp else "",
+                ])
+            
+            content = output.getvalue()
+            filename = f"audit_logs_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+            
+            return StreamingResponse(
+                io.BytesIO(content.encode('utf-8')),
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
+        
+        else:
+            return JSONResponse(
+                {"error": "Invalid format. Use 'json' or 'csv'"},
+                status_code=400
+            )
+            
+    finally:
+        db.close()
+
+
 # Router
 audit_router = Starlette(
     routes=[
         Route("/", list_audit_logs, methods=["GET"]),
         Route("/stats", get_audit_stats, methods=["GET"]),
+        Route("/export", export_audit_logs, methods=["GET"]),
     ]
 )
