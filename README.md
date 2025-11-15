@@ -188,6 +188,88 @@ ws.onmessage = (event) => {
   
   if (msg.type === 'output') {
     console.log(msg.data);  // Вывод команды
+  } else if (msg.type === 'done') {
+    console.log('Exit code:', msg.exit_code);
+  }
+};
+```
+
+**Примечание**: WebSocket работает через polling БД (без Redis)
+
+## 🖥️ CLI-клиент testumctl
+
+Testumctl - command-line интерфейс для управления Testum.
+
+### Установка
+
+```bash
+# Из корня проекта
+chmod +x testumctl
+sudo ln -s $(pwd)/testumctl /usr/local/bin/testumctl
+```
+
+### Использование
+
+```bash
+# Авторизация
+testumctl login --url http://localhost:8000 -u admin
+
+# Список платформ
+testumctl platforms list
+testumctl platforms list --json  # JSON формат
+
+# Добавить платформу (пароль)
+testumctl platforms add \
+  --name server-01 \
+  --host 192.168.1.100 \
+  --username ubuntu \
+  --auth-method password
+
+# Добавить платформу (SSH ключ)
+testumctl platforms add \
+  --name server-02 \
+  --host 192.168.1.101 \
+  --username ubuntu \
+  --auth-method key \
+  --ssh-key-id 1
+
+# Удалить платформу
+testumctl platforms remove <platform_id>
+
+# Выполнить команду
+testumctl exec <platform_id> "uptime"
+testumctl exec <platform_id> "df -h" --wait  # Ждать завершения
+```
+
+### Конфигурация
+
+Токен авторизации хранится в `~/.testum/config.json` с правами `0600`.
+
+## 📥 Backup & Restore
+
+### Экспорт конфигурации
+
+```bash
+curl -X GET http://localhost:8000/api/backup/export \
+  -H "Authorization: Bearer <token>" \
+  -o backup.yaml
+```
+
+### Импорт конфигурации
+
+```bash
+curl -X POST http://localhost:8000/api/backup/import \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@backup.yaml"
+```
+
+**Формат YAML**:
+- Metadata (version, timestamp, author)
+- Платформы (без паролей)
+- SSH ключи (без приватных ключей)
+- Пользователи (только список, без паролей)
+
+**Примечание**: WebSocket работает через polling БД (без Redis)
   } else if (msg.type === 'status') {
     console.log(`Status: ${msg.status}`);
   } else if (msg.type === 'done') {
@@ -296,14 +378,12 @@ make migrate                           # Применить
 - ✅ Audit Logs UI с фильтрами и статистикой
 - ✅ Rate limiting и pagination
 - ✅ Material Design 3 UI
-
-### В разработке
-- 🔄 Экспорт audit-логов (JSON/CSV)
-- 🔄 Backup/Restore конфигурации (YAML)
+- ✅ Экспорт audit-логов (JSON/CSV)
+- ✅ Backup/Restore конфигурации (YAML)
+- ✅ CLI-клиент testumctl
 
 ### Планы
 - 🔮 GitOps Import (импорт платформ/ключей из Git)
-- 🔮 CLI-клиент testumctl
 - 🔮 Нативные контейнеры
 - 🔮 VM управление (libvirt + KVM + QEMU)
 - 🔮 HashiCorp Vault интеграция

@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+"""testumctl - CLI client for Testum platform."""
+import sys
+import argparse
+import json
+import requests
+from getpass import getpass
+from pathlib import Path
+from typing import Optional
+
+
+class TestumClient:
+    """Testum API client."""
+    
+    def __init__(self, base_url: str, token: Optional[str] = None):
+        self.base_url = base_url.rstrip('/')
+        self.token = token
+        self.session = requests.Session()
+        if token:
+            self.session.cookies.set('access_token', token)
+    
+    def login(self, username: str, password: str) -> str:
+        """Login and get access token."""
+        response = self.session.post(
+            f"{self.base_url}/api/auth/login",
+            json={"username": username, "password": password}
+        )
+        response.raise_for_status()
+        data = response.json()
+        self.token = data['access_token']
+        return self.token
+    
+    def list_platforms(self, limit: int = 100, offset: int = 0) -> list:
+        """List all platforms."""
+        response = self.session.get(
+            f"{self.base_url}/api/platforms/",
+            params={"limit": limit, "offset": offset}
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    def get_platform(self, platform_id: str) -> dict:
+        """Get platform by ID."""
+        response = self.session.get(f"{self.base_url}/api/platforms/{platform_id}")
+        response.raise_for_status()
+        return response.json()
+    
+    def create_platform(self, data: dict) -> dict:
+        """Create new platform."""
+        response = self.session.post(
+            f"{self.base_url}/api/platforms/",
+            json=data
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    def delete_platform(self, platform_id: str) -> None:
+        """Delete platform."""
+        response = self.session.delete(f"{self.base_url}/api/platforms/{platform_id}")
+        response.raise_for_status()
+    
+    def run_command(self, platform_id: str, command: str, timeout: int = 60) -> dict:
+        """Run command on platform."""
+        response = self.session.post(
+            f"{self.base_url}/api/platforms/{platform_id}/run_command",
+            json={"command": command, "timeout": timeout}
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    def get_task(self, task_id: str) -> dict:
+        """Get task status."""
+        response = self.session.get(f"{self.base_url}/api/tasks/{task_id}")
+        response.raise_for_status()
+        return response.json()
+
+
+class ConfigManager:
+    """Manage CLI configuration."""
+    
+    def __init__(self):
+        self.config_dir = Path.home() / '.testum'
+        self.config_file = self.config_dir / 'config.json'
+        self.config_dir.mkdir(exist_ok=True)
+    
+    def load(self) -> dict:
+        """Load configuration."""
+        if self.config_file.exists():
+            return json.loads(self.config_file.read_text())
+        return {}
+    
+    def save(self, config: dict) -> None:
+        """Save configuration."""
+        self.config_file.write_text(json.dumps(config, indent=2))
+        self.config_file.chmod(0o600)  # Secure permissions
+
+
+def cmd_login(args, config_manager: ConfigManager):
+    """Login to Testum."""
+    base_url = args.url or input("Testum URL (e.g., http://localhost:8000): ")
+    username = args.username or input("Username: ")
+    password = args.password or getpass("Password: ")
+    
+    client = TestumClient(base_url)
+    try:
+        token = client.login(username, password)
+        config_manager.save({
+            "base_url": base_url,
+            "token": token,
+            "username": username
+        })
+        print(f"✓ Logged in as {username}")
+    except requests.HTTPError as e:
+        print(f"✗ Login failed: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_platforms_list(args, client: TestumClient):
+    """List platforms."""
+    try:
+        platforms = client.list_platforms(limit=args.limit, offset=args.offset)
+        if args.json:
+            print(json.dumps(platforms, indent=2))
+        else:
+            print(f"{'ID':<36} {'Name':<20} {'Host':<30} {'Status':<10}")
+            print("-" * 100)
+            for p in platforms:
+                print(f"{p['id']:<36} {p['name']:<20} {p['host']:<30} {'Active' if p.get('is_active', True) else 'Inactive':<10}")
+    except requests.HTTPError as e:
+        print(f"✗ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_platforms_add(args, client: TestumClient):
+    """Add new platform."""
+    data = {
+        "name": args.name,
+        "host": args.host,
+        "port": args.port,
+        "username": args.username,
+        "auth_method": args.auth_method,
+    }
+    
+    if args.auth_method == "password":
+        password = args.password or getpass("Password: ")
+        data["password"] = password
+    
+    try:
+        platform = client.create_platform(data)
+        print(f"✓ Platform created: {platform['id']}")
+    except requests.HTTPError as e:
+        print(f"✗ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_platforms_remove(args, client: TestumClient):
+    """Remove platform."""
+    if not args.yes:
+        confirm = input(f"Delete platform {args.platform_id}? [y/N]: ")
+        if confirm.lower() != 'y':
+            print("Cancelled")
+            return
+    
+    try:
+        client.delete_platform(args.platform_id)
+        print(f"✓ Platform deleted: {args.platform_id}")
+    except requests.HTTPError as e:
+        print(f"✗ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_exec(args, client: TestumClient):
+    """Execute command on platform."""
+    try:
+        result = client.run_command(args.platform_id, args.command, args.timeout)
+        task_id = result.get('task_id')
+        
+        if args.wait:
+            print(f"Task ID: {task_id}")
+            print("Waiting for completion...")
+            # TODO: Poll task status
+            import time
+            time.sleep(2)
+            task = client.get_task(task_id)
+            print(f"Status: {task.get('status')}")
+            if task.get('output'):
+                print("\nOutput:")
+                print(task['output'])
+        else:
+            print(f"✓ Task started: {task_id}")
+            print(f"  View status: testumctl task get {task_id}")
+    
+    except requests.HTTPError as e:
+        print(f"✗ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def main():
+    """Main CLI entry point."""
+    parser = argparse.ArgumentParser(
+        description="testumctl - CLI client for Testum platform",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    subparsers = parser.add_subparsers(dest='command', help='Commands')
+    
+    # Login
+    login_parser = subparsers.add_parser('login', help='Login to Testum')
+    login_parser.add_argument('--url', help='Testum URL')
+    login_parser.add_argument('--username', '-u', help='Username')
+    login_parser.add_argument('--password', '-p', help='Password')
+    
+    # Platforms
+    platforms_parser = subparsers.add_parser('platforms', help='Manage platforms')
+    platforms_sub = platforms_parser.add_subparsers(dest='subcommand')
+    
+    # Platforms list
+    list_parser = platforms_sub.add_parser('list', help='List platforms')
+    list_parser.add_argument('--limit', type=int, default=100)
+    list_parser.add_argument('--offset', type=int, default=0)
+    list_parser.add_argument('--json', action='store_true', help='Output as JSON')
+    
+    # Platforms add
+    add_parser = platforms_sub.add_parser('add', help='Add platform')
+    add_parser.add_argument('--name', required=True, help='Platform name')
+    add_parser.add_argument('--host', required=True, help='Hostname or IP')
+    add_parser.add_argument('--port', type=int, default=22, help='SSH port')
+    add_parser.add_argument('--username', required=True, help='SSH username')
+    add_parser.add_argument('--auth-method', choices=['password', 'key'], default='password')
+    add_parser.add_argument('--password', help='SSH password')
+    
+    # Platforms remove
+    remove_parser = platforms_sub.add_parser('remove', help='Remove platform')
+    remove_parser.add_argument('platform_id', help='Platform ID')
+    remove_parser.add_argument('--yes', '-y', action='store_true', help='Skip confirmation')
+    
+    # Exec
+    exec_parser = subparsers.add_parser('exec', help='Execute command on platform')
+    exec_parser.add_argument('platform_id', help='Platform ID')
+    exec_parser.add_argument('command', help='Command to execute')
+    exec_parser.add_argument('--timeout', type=int, default=60, help='Timeout in seconds')
+    exec_parser.add_argument('--wait', action='store_true', help='Wait for completion')
+    
+    # Parse args
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+    
+    # Config manager
+    config_manager = ConfigManager()
+    
+    # Handle login separately
+    if args.command == 'login':
+        cmd_login(args, config_manager)
+        return
+    
+    # Load config and create client
+    config = config_manager.load()
+    if not config.get('base_url') or not config.get('token'):
+        print("✗ Not logged in. Run: testumctl login", file=sys.stderr)
+        sys.exit(1)
+    
+    client = TestumClient(config['base_url'], config['token'])
+    
+    # Route commands
+    if args.command == 'platforms':
+        if args.subcommand == 'list':
+            cmd_platforms_list(args, client)
+        elif args.subcommand == 'add':
+            cmd_platforms_add(args, client)
+        elif args.subcommand == 'remove':
+            cmd_platforms_remove(args, client)
+        else:
+            platforms_parser.print_help()
+    
+    elif args.command == 'exec':
+        cmd_exec(args, client)
+    
+    else:
+        parser.print_help()
+
+
+if __name__ == '__main__':
+    main()
