@@ -10,8 +10,8 @@ result_backend = AsyncpgResultBackend(dsn=config.DATABASE_URL)
 # Create broker with result backend
 broker = AsyncpgBroker(dsn=config.DATABASE_URL).with_result_backend(result_backend)
 
-# Optional: Create scheduler for periodic tasks
-scheduler = TaskiqScheduler(broker=broker)
+# Optional: Create scheduler for periodic tasks (pass empty sources list)
+scheduler = TaskiqScheduler(broker=broker, sources=[])
 
 # Task decorator
 task = broker.task
