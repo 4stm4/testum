@@ -81,7 +81,7 @@
             max-width: 420px;
         }
         .login-actions {
-            position: absolute;
+            position: fixed;
             top: 20px;
             right: 20px;
             display: flex;
@@ -152,12 +152,20 @@
             color: var(--md-on-surface-variant);
         }
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             position: relative;
         }
+        
+        .form-group label {
+            display: block;
+            font: var(--md-label-large);
+            color: var(--md-on-surface);
+            margin-bottom: 8px;
+        }
+        
         .form-group input {
             width: 100%;
-            padding: 16px;
+            padding: 14px 16px;
             background: var(--md-surface-container-highest);
             border: 1px solid var(--md-outline);
             border-radius: 12px;
@@ -165,22 +173,21 @@
             font: var(--md-body-large);
             transition: all 0.2s ease;
             outline: none;
+            box-sizing: border-box;
         }
+        
         .form-group input:focus {
             border-color: var(--md-primary);
             border-width: 2px;
-            padding: 15px;
+            padding: 13px 15px;
             box-shadow: 0 0 0 4px color-mix(in srgb, var(--md-primary) 12%, transparent);
         }
+        
         .form-group input::placeholder {
             color: var(--md-on-surface-variant);
+            opacity: 0.6;
         }
-        .form-group label {
-            display: block;
-            font: var(--md-label-large);
-            color: var(--md-on-surface);
-            margin-bottom: 8px;
-        }
+        
         .login-btn {
             width: 100%;
             background: var(--md-primary);
@@ -245,6 +252,12 @@
             color: var(--md-on-surface-variant);
             font: var(--md-body-small);
         }
+        
+        .footer .trademark {
+            font-size: 0.75em;
+            vertical-align: super;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
@@ -311,7 +324,7 @@
         </div>
 
         <div class="footer">
-            Testum Platform
+            4stm4<sup class="trademark">™</sup>
         </div>
     </div>
 
@@ -380,6 +393,22 @@
         if (document.cookie.includes('access_token=')) {
             window.location.href = '/';
         }
+        
+        // Initialize theme toggle button
+        function updateThemeButton() {
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+                const icon = currentTheme === 'dark' ? 'light_mode' : 'dark_mode';
+                const iconElement = themeToggle.querySelector('.material-symbols-rounded');
+                if (iconElement) {
+                    iconElement.textContent = icon;
+                }
+            }
+        }
+        
+        // Call immediately to set initial icon
+        updateThemeButton();
     </script>
     <script src="/static/testum.js"></script>
 </body>
