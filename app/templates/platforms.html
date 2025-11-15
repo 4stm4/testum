@@ -5,32 +5,34 @@
 
 {% block extra_styles %}
     <style>
-        /* Toolbar container */
+        /* M3 Toolbar container - 64dp height, full rounded, 16dp padding */
         .toolbar-container {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px;
-            border-radius: 999px;
-            background: color-mix(in srgb, var(--md-surface-container-highest) 92%, white);
-            box-shadow: 0 16px 30px rgba(17, 24, 39, 0.2);
-            border: 1px solid color-mix(in srgb, var(--md-outline-variant) 60%, transparent);
-            backdrop-filter: blur(12px);
+            gap: 8px;
+            padding: 12px 16px;
+            height: 64px;
+            box-sizing: border-box;
+            border-radius: 9999px;
+            background: var(--md-surface-container, #2B2930);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
-        /* Icon buttons in toolbar */
+        /* M3 Icon buttons in toolbar - 40x40dp */
         .toolbar-icon-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 999px;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            border-radius: 50%;
             border: none;
             background: transparent;
-            color: var(--md-on-surface-variant);
+            color: var(--md-on-surface-variant, #CAC4D0);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
             position: relative;
         }
 
@@ -38,42 +40,29 @@
             font-size: 24px;
         }
 
-        .toolbar-icon-btn:hover:not(:disabled),
-        .toolbar-icon-btn:focus-visible:not(:disabled) {
-            background: color-mix(in srgb, var(--md-primary) 12%, transparent);
-            color: var(--md-on-surface);
-            transform: translateY(-1px);
+        .toolbar-icon-btn:hover:not(:disabled) {
+            background: rgba(208, 188, 255, 0.08);
         }
 
         .toolbar-icon-btn:focus-visible {
-            outline: 3px solid color-mix(in srgb, var(--md-primary) 40%, transparent);
+            outline: 2px solid var(--md-primary);
             outline-offset: 2px;
         }
 
         .toolbar-icon-btn:disabled {
-            opacity: 0.35;
+            opacity: 0.38;
             cursor: not-allowed;
         }
 
+        /* M3 Primary filled button */
         .toolbar-icon-btn.primary {
-            background: var(--md-primary);
-            color: var(--md-on-primary);
-            box-shadow: 0 8px 20px color-mix(in srgb, var(--md-primary) 40%, transparent);
+            background: var(--md-primary, #D0BCFF);
+            color: var(--md-on-primary, #381E72);
         }
 
-        .toolbar-icon-btn.primary:hover:not(:disabled),
-        .toolbar-icon-btn.primary:focus-visible:not(:disabled) {
-            background: color-mix(in srgb, var(--md-primary) 92%, white);
-            color: var(--md-on-primary);
-            box-shadow: 0 12px 24px color-mix(in srgb, var(--md-primary) 45%, transparent);
-        }
-
-        /* Toolbar divider */
-        .toolbar-divider {
-            width: 1px;
-            height: 24px;
-            background: color-mix(in srgb, var(--md-outline-variant) 80%, transparent);
-            margin: 0 4px;
+        .toolbar-icon-btn.primary:hover:not(:disabled) {
+            background: color-mix(in srgb, var(--md-primary, #D0BCFF) 92%, white);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
         }
 
         .message > div {
@@ -408,31 +397,17 @@
         
         <div style="display: flex; gap: 16px; align-items: center;">
             <div class="toolbar-container" role="toolbar" aria-label="Platform actions">
-                <button class="toolbar-icon-btn" onclick="toggleSelectAll()" title="Select all platforms" id="selectAllBtn" style="display: none;" aria-label="Select all">
-                    <span class="material-symbols-rounded" aria-hidden="true">select_all</span>
-                </button>
-
-                <button class="toolbar-icon-btn" onclick="bulkDeployKeys()" title="Deploy keys to selected" id="bulkDeployBtnTop" disabled style="display: none;" aria-label="Deploy keys">
-                    <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
-                </button>
-
-                <button class="toolbar-icon-btn" onclick="bulkRunCommand()" title="Run command on selected" id="bulkRunBtnTop" disabled style="display: none;" aria-label="Run command">
-                    <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
-                </button>
-
-                <button class="toolbar-icon-btn" onclick="bulkEditPlatforms()" title="Edit selected platform" id="bulkEditBtnTop" disabled style="display: none;" aria-label="Edit platform">
-                    <span class="material-symbols-rounded" aria-hidden="true">edit</span>
-                </button>
-
-                <button class="toolbar-icon-btn" onclick="bulkDeletePlatforms()" title="Delete selected platforms" id="bulkDeleteBtnTop" disabled style="display: none;" aria-label="Delete platforms">
-                    <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-                </button>
-
                 <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
                     <span class="material-symbols-rounded" aria-hidden="true">add</span>
                 </button>
-
-                <div class="toolbar-divider" id="toolbarDivider2" style="display: none;" aria-hidden="true"></div>
+                
+                <button class="toolbar-icon-btn" onclick="bulkEditPlatforms()" title="Edit selected platform" id="editBtn" disabled aria-label="Edit platform">
+                    <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                </button>
+                
+                <button class="toolbar-icon-btn" onclick="bulkDeletePlatforms()" title="Delete selected platforms" id="deleteBtn" disabled aria-label="Delete platforms">
+                    <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                </button>
 
                 <button class="toolbar-icon-btn" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn" aria-label="Refresh">
                     <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
@@ -648,11 +623,8 @@
 
                 if (platforms.length === 0) {
                     container.innerHTML = '<div class="empty-state">No platforms found. Add your first platform above.</div>';
-                    hideToolbarButtons();
                     return;
                 }
-
-                showToolbarButtons();
 
                 container.innerHTML = platforms.map((p) => {
                     const info = p.system_info || {};
@@ -740,10 +712,11 @@
             const hasSelection = count > 0;
             const singleSelection = count === 1;
             
-            document.getElementById('bulkDeployBtnTop').disabled = !hasSelection;
-            document.getElementById('bulkRunBtnTop').disabled = !hasSelection;
-            document.getElementById('bulkEditBtnTop').disabled = !singleSelection;
-            document.getElementById('bulkDeleteBtnTop').disabled = !hasSelection;
+            const editBtn = document.getElementById('editBtn');
+            const deleteBtn = document.getElementById('deleteBtn');
+            
+            if (editBtn) editBtn.disabled = !singleSelection;
+            if (deleteBtn) deleteBtn.disabled = !hasSelection;
             
             // Update select all checkbox state
             const checkboxes = document.querySelectorAll('.platform-checkbox');
@@ -751,24 +724,6 @@
             if (selectAllCb) {
                 selectAllCb.checked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
             }
-        }
-
-        function showToolbarButtons() {
-            document.getElementById('selectAllBtn').style.display = 'flex';
-            document.getElementById('bulkDeployBtnTop').style.display = 'flex';
-            document.getElementById('bulkRunBtnTop').style.display = 'flex';
-            document.getElementById('bulkEditBtnTop').style.display = 'flex';
-            document.getElementById('bulkDeleteBtnTop').style.display = 'flex';
-            document.getElementById('toolbarDivider2').style.display = 'block';
-        }
-
-        function hideToolbarButtons() {
-            document.getElementById('selectAllBtn').style.display = 'none';
-            document.getElementById('bulkDeployBtnTop').style.display = 'none';
-            document.getElementById('bulkRunBtnTop').style.display = 'none';
-            document.getElementById('bulkEditBtnTop').style.display = 'none';
-            document.getElementById('bulkDeleteBtnTop').style.display = 'none';
-            document.getElementById('toolbarDivider2').style.display = 'none';
         }
 
         function toggleSelectAll() {
