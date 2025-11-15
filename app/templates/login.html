@@ -364,8 +364,11 @@
 
         function setLoading(isLoading) {
             const btn = document.getElementById('loginBtn');
+            const currentLang = document.documentElement.getAttribute('lang') || 'en';
+            const t = translations[currentLang] || translations.en;
+            
             btn.disabled = isLoading;
-            btn.textContent = isLoading ? 'Signing in...' : 'Sign In';
+            btn.textContent = isLoading ? t.signingIn : t.signIn;
         }
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -460,11 +463,67 @@
                     console.warn('Failed to save language preference:', e);
                 }
                 
-                // Trigger i18n update if available
-                if (window.applyTranslations) {
-                    window.applyTranslations();
+                // Apply translations
+                applyLoginTranslations(newLang);
+            });
+        }
+        
+        // Simple i18n for login page
+        const translations = {
+            en: {
+                welcomeTitle: 'Testum',
+                welcomeBack: 'Welcome Back',
+                loginPrompt: 'Please enter your credentials to continue',
+                username: 'Username',
+                password: 'Password',
+                signIn: 'Sign In',
+                signingIn: 'Signing in...',
+                enterUsername: 'Enter your username',
+                enterPassword: 'Enter your password'
+            },
+            ru: {
+                welcomeTitle: 'Testum',
+                welcomeBack: 'С возвращением',
+                loginPrompt: 'Пожалуйста, введите свои учетные данные',
+                username: 'Имя пользователя',
+                password: 'Пароль',
+                signIn: 'Войти',
+                signingIn: 'Вход...',
+                enterUsername: 'Введите имя пользователя',
+                enterPassword: 'Введите пароль'
+            }
+        };
+        
+        function applyLoginTranslations(lang) {
+            const t = translations[lang] || translations.en;
+            
+            // Translate elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.textContent = t[key];
                 }
             });
+            
+            // Update labels
+            const usernameLabel = document.querySelector('label[for="username"]');
+            if (usernameLabel) usernameLabel.textContent = t.username;
+            
+            const passwordLabel = document.querySelector('label[for="password"]');
+            if (passwordLabel) passwordLabel.textContent = t.password;
+            
+            // Update placeholders
+            const usernameInput = document.getElementById('username');
+            if (usernameInput) usernameInput.placeholder = t.enterUsername;
+            
+            const passwordInput = document.getElementById('password');
+            if (passwordInput) passwordInput.placeholder = t.enterPassword;
+            
+            // Update button
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn && !loginBtn.disabled) {
+                loginBtn.textContent = t.signIn;
+            }
         }
         
         // Initialize theme toggle button
@@ -492,9 +551,21 @@
             }
         }
         
-        // Call immediately to set initial icons
+        // Initialize language from localStorage
+        function initLanguage() {
+            try {
+                const savedLang = localStorage.getItem('testum-lang') || 'en';
+                document.documentElement.setAttribute('lang', savedLang);
+                applyLoginTranslations(savedLang);
+                updateLanguageButton();
+            } catch (e) {
+                console.warn('Failed to load language preference:', e);
+            }
+        }
+        
+        // Call immediately to set initial state
         updateThemeButton();
-        updateLanguageButton();
+        initLanguage();
     </script>
     <script src="/static/testum.js"></script>
 </body>
