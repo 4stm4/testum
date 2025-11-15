@@ -188,7 +188,7 @@ services:
         python -m pip install --no-cache-dir -r /app/requirements.txt
         
         echo 'Checking installed packages...'
-        python -c "import uvicorn, taskiq; from taskiq_postgres import PostgresBroker; print('All required modules imported successfully')"
+        python -c "import uvicorn, taskiq; from taskiq_pg.asyncpg import AsyncpgBroker; print('All required modules imported successfully')"
         
         echo 'Waiting for database...'
         until pg_isready -h db -p 5432 -U postgres; do

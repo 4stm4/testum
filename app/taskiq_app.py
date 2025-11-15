@@ -1,17 +1,14 @@
 # SPDX-License-Identifier: MIT
 """Taskiq broker and scheduler configuration."""
 from taskiq import TaskiqScheduler
-from taskiq_postgres import PostgresAsyncResultBackend, PostgresBroker
+from taskiq_pg.asyncpg import AsyncpgBroker, AsyncpgResultBackend
 from app.config import config
 
 # Create result backend using Postgres
-result_backend = PostgresAsyncResultBackend(dsn=config.DATABASE_URL)
+result_backend = AsyncpgResultBackend(dsn=config.DATABASE_URL)
 
 # Create broker with result backend
-broker = PostgresBroker(
-    dsn=config.DATABASE_URL,
-    result_backend=result_backend,
-)
+broker = AsyncpgBroker(dsn=config.DATABASE_URL).with_result_backend(result_backend)
 
 # Optional: Create scheduler for periodic tasks
 scheduler = TaskiqScheduler(broker=broker)
