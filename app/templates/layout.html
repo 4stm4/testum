@@ -58,9 +58,19 @@
             font-size: 28px;
         }
 
+        .version {
+            background: var(--md-surface-container-highest);
+            padding: 4px 10px;
+            border-radius: 100px;
+            font: var(--md-label-small);
+            color: var(--md-on-surface-variant);
+            margin-left: auto;
+        }
+
         .sidebar-controls {
             display: flex;
             gap: 8px;
+            margin-bottom: 12px;
         }
 
         .md-icon-button {
@@ -159,18 +169,6 @@
         .sidebar-footer {
             padding: 16px;
             border-top: 1px solid var(--md-outline-variant);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .version {
-            background: var(--md-surface-container-highest);
-            padding: 6px 12px;
-            border-radius: 100px;
-            font: var(--md-label-small);
-            color: var(--md-on-surface-variant);
-            text-align: center;
         }
 
         .logout-btn {
@@ -187,6 +185,7 @@
             gap: 8px;
             transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
             text-decoration: none;
+            width: 100%;
         }
 
         .logout-btn:hover {
@@ -236,14 +235,15 @@
             }
 
             .sidebar-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
                 padding: 16px;
             }
 
             .sidebar-logo {
-                margin-bottom: 0;
+                margin-bottom: 12px;
+            }
+
+            .sidebar-controls {
+                margin-bottom: 12px;
             }
         }
     </style>
@@ -259,6 +259,7 @@
                 <div class="sidebar-logo">
                     <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
                     <span data-i18n="welcomeTitle">Testum</span>
+                    <span class="version">v0.1.0</span>
                 </div>
                 <div class="sidebar-controls">
                     <button id="themeToggle" class="md-icon-button" title="Toggle Theme" aria-label="Toggle Theme">
@@ -268,6 +269,10 @@
                         <span class="material-symbols-rounded" aria-hidden="true">translate</span>
                     </button>
                 </div>
+                <a href="/api/auth/logout" class="logout-btn">
+                    <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+                    <span data-i18n="logout">Logout</span>
+                </a>
             </div>
 
             <!-- Navigation Links -->
@@ -326,13 +331,8 @@
                 </a>
             </div>
 
-            <!-- Sidebar Footer with Logout -->
+            <!-- Sidebar Footer (empty or for future use) -->
             <div class="sidebar-footer">
-                <span class="version">v0.1.0</span>
-                <a href="/api/auth/logout" class="logout-btn">
-                    <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-                    <span data-i18n="logout">Logout</span>
-                </a>
             </div>
         </nav>
 
