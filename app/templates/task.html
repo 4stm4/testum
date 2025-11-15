@@ -130,7 +130,10 @@
         <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
         <span>Task Monitor</span>
     </h1>
-    <p class="page-subtitle">Task ID: <code style="background: var(--bg-tertiary); padding: 3px 8px; border-radius: 4px; color: var(--accent-primary);">{{ task_id }}</code></p>
+    <div style="margin-bottom: 16px;">
+        <span style="color: var(--md-on-surface-variant); font: var(--md-label-large);">Task ID:</span>
+        <code style="background: var(--md-surface-container-highest); padding: 4px 12px; border-radius: 8px; color: var(--md-primary); font: var(--md-label-large); margin-left: 8px;">{{ task_id }}</code>
+    </div>
 
     <div id="connectionStatus" class="connection-status disconnected">
         <span class="material-symbols-rounded" aria-hidden="true">progress_activity</span>
