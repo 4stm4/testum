@@ -340,16 +340,27 @@ async def run_command(request: Request):
         db.refresh(task_run)
 
         # Start Taskiq task
-        taskiq_result = await run_command_task.kiq(
-            str(task_run.id),
-            platform_id,
-            command_request.command,
-            command_request.timeout,
-        )
-
-        # Update task_run with task ID
-        task_run.celery_task_id = taskiq_result.task_id
-        db.commit()
+        try:
+            taskiq_result = await run_command_task.kiq(
+                str(task_run.id),
+                platform_id,
+                command_request.command,
+                command_request.timeout,
+            )
+            
+            # Update task_run with task ID
+            task_run.celery_task_id = taskiq_result.task_id
+            db.commit()
+        except Exception as task_error:
+            # Update task status to failed
+            task_run.status = TaskStatusEnum.FAILED
+            task_run.error_message = f"Failed to queue task: {str(task_error)}"
+            db.commit()
+            return JSONResponse({
+                "error": "Failed to queue task. Taskiq worker may not be running.",
+                "details": str(task_error),
+                "task_id": str(task_run.id)
+            }, status_code=500)
 
         # Audit log
         user = get_request_user(request)
