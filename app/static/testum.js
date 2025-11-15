@@ -152,7 +152,7 @@ const translations = {
         // Platforms Page
         platformsTitle: 'Platforms',
         platformsSubtitle: 'Compact overview of SSH targets and quick actions',
-        addNewPlatform: 'Add New Platform',
+        addPlatform: 'Add Platform',
         platformName: 'Platform Name',
         host: 'Host',
         port: 'Port',
@@ -161,7 +161,6 @@ const translations = {
         password: 'Password',
         privateKey: 'Private Key',
         sshKey: 'SSH Key',
-        addPlatform: 'Add Platform',
         existingPlatforms: 'Existing Platforms',
         noPlatformsFound: 'No platforms found. Add your first platform above.',
         deployKeys: 'Deploy Keys',
@@ -327,7 +326,7 @@ const translations = {
         // Platforms Page
         platformsTitle: 'Платформы',
         platformsSubtitle: 'Компактный обзор SSH-платформ и быстрых действий',
-        addNewPlatform: 'Добавить новую платформу',
+        addPlatform: 'Добавить платформу',
         platformName: 'Название платформы',
         host: 'Хост',
         port: 'Порт',
@@ -336,7 +335,6 @@ const translations = {
         password: 'Пароль',
         privateKey: 'Приватный ключ',
         sshKey: 'SSH ключ',
-        addPlatform: 'Добавить платформу',
         existingPlatforms: 'Существующие платформы',
         noPlatformsFound: 'Платформы не найдены. Добавьте первую платформу выше.',
         deployKeys: 'Развернуть ключи',
