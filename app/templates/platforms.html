@@ -205,7 +205,7 @@
         .empty-state {
             text-align: center;
             padding: 40px;
-            color: var(--text-secondary);
+            color: var(--md-on-surface-variant);
         }
 
         .modal {
@@ -218,21 +218,21 @@
         }
 
         .modal-content {
-            background: var(--bg-secondary);
+            background: var(--md-surface-container-low);
             margin: 50px auto;
             padding: 0;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--md-outline-variant);
             border-radius: 12px;
             width: 90%;
             max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            box-shadow: var(--md-elevation-3);
         }
 
         .modal-header {
             padding: 20px 25px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--md-outline-variant);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -240,13 +240,15 @@
 
         .modal-header h2 {
             margin: 0;
+            font-size: 1.5em;
+            color: var(--md-on-surface);
         }
 
         .modal-close {
             background: transparent;
             border: none;
             font-size: 28px;
-            color: var(--text-tertiary);
+            color: var(--md-on-surface-variant);
             cursor: pointer;
             width: 32px;
             height: 32px;
@@ -257,8 +259,8 @@
         }
 
         .modal-close:hover {
-            background: var(--bg-tertiary);
-            color: var(--error-text);
+            background: var(--md-surface-container-highest);
+            color: var(--md-error);
         }
 
         .modal-body {
@@ -273,25 +275,65 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: var(--text-primary);
-            font-size: 0.95em;
+            color: var(--md-on-surface);
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
             padding: 12px;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
+            background: var(--md-surface-container-highest);
+            border: 1px solid var(--md-outline);
             border-radius: 6px;
-            color: var(--text-primary);
+            color: var(--md-on-surface);
             font-size: 1em;
         }
 
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: var(--input-focus);
+            border-color: var(--md-primary);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+        }
+
+        .btn-secondary {
+            background: var(--md-surface-container-high);
+            color: var(--md-on-surface);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--md-surface-container-highest);
+        }
+
+        .btn-primary:disabled,
+        .btn-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .conditional {
@@ -377,7 +419,7 @@
                         <label for="password" data-i18n="password">Password</label>
                         <div style="position: relative;">
                             <input type="password" id="password" name="password" placeholder="Enter password">
-                            <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; color: var(--text-secondary);" aria-label="Toggle password visibility">
+                            <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; color: var(--md-on-surface-variant);" aria-label="Toggle password visibility">
                                 <span class="material-symbols-rounded" id="passwordToggleIcon" style="font-size: 20px;">visibility</span>
                             </button>
                         </div>
@@ -388,7 +430,11 @@
                             <option value="">Select SSH Key...</option>
                         </select>
                     </div>
-                    <button type="submit" data-i18n="addPlatform">+ Add Platform</button>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Save</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -705,9 +751,7 @@
             const platformId = document.getElementById('platformId').value;
             const isEditing = platformId !== '';
             
-            submitBtn.innerHTML = isEditing 
-                ? '<span class="material-symbols-rounded" aria-hidden="true">progress_activity</span><span>Updating...</span>'
-                : '<span class="material-symbols-rounded" aria-hidden="true">progress_activity</span><span>Testing connection...</span>';
+            submitBtn.textContent = isEditing ? 'Updating...' : 'Testing connection...';
 
             const formData = {
                 name: document.getElementById('name').value,
