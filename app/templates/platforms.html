@@ -5,76 +5,75 @@
 
 {% block extra_styles %}
     <style>
-        /* Floating Action Button (FAB) */
-        .fab {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            background: var(--accent-primary);
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-        }
-
-        .fab:hover {
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .fab .material-symbols-rounded {
-            font-size: 28px;
-        }
-
         /* Toolbar container */
         .toolbar-container {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 4px;
-            background: var(--surface-variant, #3d3d4f);
-            padding: 4px 8px;
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
+            gap: 6px;
+            padding: 6px;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--md-surface-container-highest) 92%, white);
+            box-shadow: 0 16px 30px rgba(17, 24, 39, 0.2);
+            border: 1px solid color-mix(in srgb, var(--md-outline-variant) 60%, transparent);
+            backdrop-filter: blur(12px);
         }
 
         /* Icon buttons in toolbar */
         .toolbar-icon-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: transparent;
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
             border: none;
-            color: var(--text-primary);
+            background: transparent;
+            color: var(--md-on-surface-variant);
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .toolbar-icon-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .toolbar-icon-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
+            transition: all 0.25s ease;
+            position: relative;
         }
 
         .toolbar-icon-btn .material-symbols-rounded {
             font-size: 24px;
         }
 
+        .toolbar-icon-btn:hover:not(:disabled),
+        .toolbar-icon-btn:focus-visible:not(:disabled) {
+            background: color-mix(in srgb, var(--md-primary) 12%, transparent);
+            color: var(--md-on-surface);
+            transform: translateY(-1px);
+        }
+
+        .toolbar-icon-btn:focus-visible {
+            outline: 3px solid color-mix(in srgb, var(--md-primary) 40%, transparent);
+            outline-offset: 2px;
+        }
+
+        .toolbar-icon-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .toolbar-icon-btn.primary {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            box-shadow: 0 8px 20px color-mix(in srgb, var(--md-primary) 40%, transparent);
+        }
+
+        .toolbar-icon-btn.primary:hover:not(:disabled),
+        .toolbar-icon-btn.primary:focus-visible:not(:disabled) {
+            background: color-mix(in srgb, var(--md-primary) 92%, white);
+            color: var(--md-on-primary);
+            box-shadow: 0 12px 24px color-mix(in srgb, var(--md-primary) 45%, transparent);
+        }
+
         /* Toolbar divider */
         .toolbar-divider {
             width: 1px;
-            height: 20px;
-            background: var(--border-color);
-            margin: 0 8px;
+            height: 24px;
+            background: color-mix(in srgb, var(--md-outline-variant) 80%, transparent);
+            margin: 0 4px;
         }
 
         .message > div {
@@ -408,37 +407,37 @@
         </h1>
         
         <div style="display: flex; gap: 16px; align-items: center;">
-            <div class="toolbar-container">
+            <div class="toolbar-container" role="toolbar" aria-label="Platform actions">
                 <button class="toolbar-icon-btn" onclick="toggleSelectAll()" title="Select all platforms" id="selectAllBtn" style="display: none;" aria-label="Select all">
                     <span class="material-symbols-rounded" aria-hidden="true">select_all</span>
                 </button>
-                
+
                 <button class="toolbar-icon-btn" onclick="bulkDeployKeys()" title="Deploy keys to selected" id="bulkDeployBtnTop" disabled style="display: none;" aria-label="Deploy keys">
                     <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
                 </button>
-                
+
                 <button class="toolbar-icon-btn" onclick="bulkRunCommand()" title="Run command on selected" id="bulkRunBtnTop" disabled style="display: none;" aria-label="Run command">
                     <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
                 </button>
-                
+
                 <button class="toolbar-icon-btn" onclick="bulkEditPlatforms()" title="Edit selected platform" id="bulkEditBtnTop" disabled style="display: none;" aria-label="Edit platform">
                     <span class="material-symbols-rounded" aria-hidden="true">edit</span>
                 </button>
-                
+
                 <button class="toolbar-icon-btn" onclick="bulkDeletePlatforms()" title="Delete selected platforms" id="bulkDeleteBtnTop" disabled style="display: none;" aria-label="Delete platforms">
                     <span class="material-symbols-rounded" aria-hidden="true">delete</span>
                 </button>
-                
+
+                <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
+                    <span class="material-symbols-rounded" aria-hidden="true">add</span>
+                </button>
+
                 <div class="toolbar-divider" id="toolbarDivider2" style="display: none;" aria-hidden="true"></div>
-                
+
                 <button class="toolbar-icon-btn" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn" aria-label="Refresh">
                     <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
                 </button>
             </div>
-            
-            <button class="fab" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
-                <span class="material-symbols-rounded" aria-hidden="true">add</span>
-            </button>
         </div>
     </div>
 
