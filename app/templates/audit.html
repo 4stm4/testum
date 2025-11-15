@@ -1,0 +1,449 @@
+{% extends "layout.html" %}
+{% set active_page = 'audit' %}
+
+{% block title %}Audit Logs - Testum{% endblock %}
+
+{% block extra_styles %}
+    <style>
+        .filters-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 0.85em;
+            color: var(--md-on-surface-variant);
+            font-weight: 500;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            background: var(--md-surface-container-highest);
+            border: 1px solid var(--md-outline);
+            border-radius: 6px;
+            color: var(--md-on-surface);
+            font-size: 0.95em;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--md-primary);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .btn-filter {
+            padding: 8px 16px;
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s;
+        }
+
+        .btn-filter:hover {
+            opacity: 0.9;
+        }
+
+        .btn-clear {
+            padding: 8px 16px;
+            background: var(--md-surface-container-high);
+            color: var(--md-on-surface);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .audit-table th,
+        .audit-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--md-outline-variant);
+        }
+
+        .audit-table th {
+            background: var(--md-surface-container-high);
+            font-weight: 600;
+            color: var(--md-on-surface-variant);
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+
+        .audit-table tr:hover {
+            background: var(--md-surface-container-highest);
+        }
+
+        .action-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .action-create {
+            background: var(--md-tertiary-container);
+            color: var(--md-on-tertiary-container);
+        }
+
+        .action-update {
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+        }
+
+        .action-delete {
+            background: var(--md-error-container);
+            color: var(--md-on-error-container);
+        }
+
+        .action-login {
+            background: var(--md-success-container);
+            color: var(--md-on-success-container);
+        }
+
+        .action-other {
+            background: var(--md-surface-container-highest);
+            color: var(--md-on-surface-variant);
+        }
+
+        .timestamp {
+            font-size: 0.9em;
+            color: var(--md-on-surface-variant);
+        }
+
+        .details {
+            font-size: 0.85em;
+            color: var(--md-on-surface-variant);
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--md-surface-container-low);
+            border-radius: 8px;
+        }
+
+        .pagination-info {
+            font-size: 0.9em;
+            color: var(--md-on-surface-variant);
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pagination-controls button {
+            padding: 8px 16px;
+            background: var(--md-surface-container-high);
+            color: var(--md-on-surface);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .pagination-controls button:hover:not(:disabled) {
+            background: var(--md-surface-container-highest);
+        }
+
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--md-on-surface-variant);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--md-surface-container-low);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--md-outline-variant);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--md-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: var(--md-on-surface-variant);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title title-with-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">history</span>
+            <span data-i18n="auditLogs">Audit Logs</span>
+        </h1>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid" id="statsContainer" style="display: none;">
+        <div class="stat-card">
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-label">Total Actions (Last 7 Days)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statCreates">—</div>
+            <div class="stat-label">Creates</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statUpdates">—</div>
+            <div class="stat-label">Updates</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statDeletes">—</div>
+            <div class="stat-label">Deletes</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+        <h2 style="margin-bottom: 16px;">Filters</h2>
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label for="filterUser">User</label>
+                <input type="text" id="filterUser" placeholder="Username...">
+            </div>
+            <div class="filter-group">
+                <label for="filterAction">Action</label>
+                <input type="text" id="filterAction" placeholder="create, update, delete...">
+            </div>
+            <div class="filter-group">
+                <label for="filterResourceType">Resource Type</label>
+                <input type="text" id="filterResourceType" placeholder="platform, key, user...">
+            </div>
+            <div class="filter-group">
+                <label for="filterDays">Last N Days</label>
+                <select id="filterDays">
+                    <option value="7">7 days</option>
+                    <option value="14">14 days</option>
+                    <option value="30" selected>30 days</option>
+                    <option value="90">90 days</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button class="btn-filter" onclick="applyFilters()">Apply</button>
+                <button class="btn-clear" onclick="clearFilters()">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div class="card">
+        <table class="audit-table" id="auditTable">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Resource Type</th>
+                    <th>Resource ID</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody id="auditTableBody">
+                <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <div class="pagination-info" id="paginationInfo">—</div>
+            <div class="pagination-controls">
+                <button id="prevPage" onclick="prevPage()">Previous</button>
+                <button id="nextPage" onclick="nextPage()">Next</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const API_BASE = '/api/audit';
+        let currentOffset = 0;
+        const limit = 50;
+        let totalCount = 0;
+
+        function getActionBadgeClass(action) {
+            const lower = action.toLowerCase();
+            if (lower.includes('create')) return 'action-create';
+            if (lower.includes('update') || lower.includes('edit')) return 'action-update';
+            if (lower.includes('delete') || lower.includes('remove')) return 'action-delete';
+            if (lower.includes('login')) return 'action-login';
+            return 'action-other';
+        }
+
+        async function loadAuditLogs() {
+            const tbody = document.getElementById('auditTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading...</td></tr>';
+
+            // Build query params
+            const params = new URLSearchParams();
+            params.append('limit', limit);
+            params.append('offset', currentOffset);
+
+            const user = document.getElementById('filterUser').value.trim();
+            const action = document.getElementById('filterAction').value.trim();
+            const resourceType = document.getElementById('filterResourceType').value.trim();
+            const days = document.getElementById('filterDays').value;
+
+            if (user) params.append('user', user);
+            if (action) params.append('action', action);
+            if (resourceType) params.append('resource_type', resourceType);
+            if (days) params.append('days', days);
+
+            try {
+                const response = await fetch(`${API_BASE}/?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch audit logs');
+                }
+
+                const logs = await response.json();
+                totalCount = parseInt(response.headers.get('X-Total-Count') || '0');
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No audit logs found</td></tr>';
+                } else {
+                    tbody.innerHTML = logs.map(log => {
+                        const timestamp = new Date(log.timestamp).toLocaleString();
+                        const actionClass = getActionBadgeClass(log.action);
+                        
+                        return `
+                            <tr>
+                                <td class="timestamp">${timestamp}</td>
+                                <td><strong>${escapeHtml(log.user || '—')}</strong></td>
+                                <td><span class="action-badge ${actionClass}">${escapeHtml(log.action)}</span></td>
+                                <td>${escapeHtml(log.resource_type || '—')}</td>
+                                <td><code>${escapeHtml(log.resource_id || '—')}</code></td>
+                                <td class="details" title="${escapeHtml(log.details || '')}">${escapeHtml(log.details || '—')}</td>
+                                <td>${escapeHtml(log.ip_address || '—')}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                updatePaginationInfo();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Error: ${escapeHtml(error.message)}</td></tr>`;
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const days = document.getElementById('filterDays').value;
+                const response = await fetch(`${API_BASE}/stats?days=${days}`);
+                
+                if (!response.ok) return;
+
+                const stats = await response.json();
+                
+                document.getElementById('statTotal').textContent = stats.total_actions || 0;
+                document.getElementById('statCreates').textContent = stats.actions_by_type.create || 0;
+                document.getElementById('statUpdates').textContent = stats.actions_by_type.update || 0;
+                document.getElementById('statDeletes').textContent = stats.actions_by_type.delete || 0;
+                
+                document.getElementById('statsContainer').style.display = 'grid';
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        function updatePaginationInfo() {
+            const start = currentOffset + 1;
+            const end = Math.min(currentOffset + limit, totalCount);
+            document.getElementById('paginationInfo').textContent = 
+                `Showing ${start}-${end} of ${totalCount}`;
+            
+            document.getElementById('prevPage').disabled = currentOffset === 0;
+            document.getElementById('nextPage').disabled = currentOffset + limit >= totalCount;
+        }
+
+        function prevPage() {
+            if (currentOffset > 0) {
+                currentOffset = Math.max(0, currentOffset - limit);
+                loadAuditLogs();
+            }
+        }
+
+        function nextPage() {
+            if (currentOffset + limit < totalCount) {
+                currentOffset += limit;
+                loadAuditLogs();
+            }
+        }
+
+        function applyFilters() {
+            currentOffset = 0;
+            loadAuditLogs();
+            loadStats();
+        }
+
+        function clearFilters() {
+            document.getElementById('filterUser').value = '';
+            document.getElementById('filterAction').value = '';
+            document.getElementById('filterResourceType').value = '';
+            document.getElementById('filterDays').value = '30';
+            currentOffset = 0;
+            loadAuditLogs();
+            loadStats();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load on page ready
+        loadAuditLogs();
+        loadStats();
+    </script>
+{% endblock %}

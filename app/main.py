@@ -10,15 +10,17 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
-from starlette.routing import Mount, Route  # WebSocketRoute removed (Redis dependency)
+from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
 from app.api.automations import automations_router
+from app.api.audit import audit_router
 from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
 from app.api.scripts import scripts_router
 from app.api.users import users_router
+from app.ws_taskiq import task_stream_websocket
 from app.auth import AuthMiddleware
 from app.config import config
 from app import db as app_db
@@ -225,6 +227,17 @@ async def users_page(request: Request):
     
     return templates.TemplateResponse(
         "users.html", build_template_context(request, "users")
+    )
+
+
+async def audit_page(request: Request):
+    """Audit logs page (admin/operator only)."""
+    user = get_request_user(request)
+    if not user or user.role == UserRole.VIEWER:
+        return JSONResponse({"error": "Admin or Operator access required"}, status_code=403)
+    
+    return templates.TemplateResponse(
+        "audit.html", build_template_context(request, "audit")
     )
 
 
@@ -470,6 +483,7 @@ routes = [
     Route("/automations", automations_page),
     Route("/jobs", jobs_page),
     Route("/jobs/{task_id}", job_detail_page),
+    Route("/audit", audit_page),
     Route("/users", users_page),
     Route("/settings", settings_page),
     Route("/tasks/{task_id}", task_page),
@@ -487,8 +501,9 @@ routes = [
     Mount("/api/users", users_router),
     Mount("/api/automations", automations_router),
     Mount("/api/tasks", tasks_router),
+    Mount("/api/audit", audit_router),
     Mount("/static", StaticFiles(directory="app/static"), name="static"),
-    # WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),  # TODO: Migrate to Taskiq events
+    WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),
 ]
 
 app = Starlette(
