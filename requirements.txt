@@ -10,7 +10,7 @@ psycopg2-binary==2.9.10
 asyncpg==0.30.0
 
 # Async & Background tasks
-taskiq==0.11.7
+taskiq==0.11.18
 taskiq-postgres==0.6.0
 
 # SSH & Crypto

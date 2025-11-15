@@ -185,7 +185,6 @@ services:
         python -m pip install --no-cache-dir --upgrade pip setuptools wheel
         python -m pip install --no-cache-dir -r /app/requirements.txt
         python -m pip install --no-cache-dir "uvicorn[standard]==0.32.1"
-        python -m pip install --no-cache-dir "taskiq==0.11.7"
         
         echo 'Checking installed packages...'
         python - <<'PY'
