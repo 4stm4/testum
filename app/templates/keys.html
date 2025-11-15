@@ -5,187 +5,119 @@
 
 {% block extra_styles %}
     <style>
-        .message > div {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid;
-            font-size: 0.9em;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
+        .key-form {
+            display: grid;
+            gap: 16px;
         }
 
-        .message > div .material-symbols-rounded {
-            font-size: 22px;
-            margin-top: 2px;
-        }
-
-        .message .success {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border-color: var(--success-border);
-        }
-
-        .message .error {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border-color: var(--error-border);
-        }
-
-        .message-text {
-            flex: 1;
-            white-space: pre-line;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--text-primary);
-            font-size: 0.95em;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 1em;
-            transition: border-color 0.2s;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 120px;
-            font-family: "Courier New", monospace;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--input-focus);
-        }
-
-        button[type="submit"] {
-            background: var(--accent-primary);
-            color: var(--accent-primary-contrast);
-            padding: 12px 24px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: transform 0.2s;
-        }
-
-        button[type="submit"]:hover {
-            transform: translateY(-1px);
+        .key-list {
+            display: grid;
+            gap: 16px;
         }
 
         .key-item {
-            background: var(--bg-secondary);
-            padding: 20px;
-            border-radius: 6px;
-            margin-bottom: 15px;
             display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-start;
             justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border-color);
-            transition: border-color 0.2s;
-            gap: 20px;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--md-outline-variant);
+            background: var(--md-surface-container);
+            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
         }
 
         .key-item:hover {
-            border-color: var(--accent-primary);
+            border-color: var(--md-primary);
+            box-shadow: var(--md-elevation-1);
         }
 
-        .key-info h3 {
-            color: var(--text-primary);
-            margin-bottom: 8px;
-            font-size: 1.1em;
+        .key-meta {
+            display: grid;
+            gap: 8px;
+            flex: 1;
+            min-width: 220px;
         }
 
-        .key-info p {
-            color: var(--text-secondary);
-            font-size: 0.9em;
-            font-family: "Courier New", monospace;
-            margin-bottom: 5px;
+        .key-meta h3 {
+            margin: 0;
+            font: var(--md-title-medium);
+            color: var(--md-on-surface);
         }
 
-        .key-info small {
-            color: var(--text-tertiary);
+        .key-snippet {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85em;
+            color: var(--md-on-surface-variant);
+            word-break: break-all;
         }
 
-        .delete-btn {
-            background: transparent;
-            color: var(--error-text);
-            border: 1px solid var(--error-border);
-            border-radius: 6px;
-            padding: 8px 14px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s, color 0.2s;
+        .key-meta small {
+            color: var(--md-on-surface-variant);
+            font: var(--md-label-medium);
         }
 
-        .delete-btn:hover {
-            background: var(--error-border);
-            color: var(--bg-primary);
+        .key-actions {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 30px;
-            color: var(--text-secondary);
-            font-size: 0.95em;
+        .key-actions .btn-danger {
+            padding: 10px 16px;
         }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="page-header">
-        <h1 class="page-title title-with-icon">
-            <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
-            <span data-i18n="sshKeysTitle">SSH Keys</span>
-        </h1>
+        <div>
+            <h1 class="page-title">
+                <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
+                <span data-i18n="sshKeysTitle">SSH Keys</span>
+            </h1>
+            <p class="page-subtitle" data-i18n="sshKeysSubtitle">Manage public and private key pairs used to connect to your platforms.</p>
+        </div>
     </div>
 
-    <div id="message" class="message"></div>
+    <div id="message" class="message" aria-live="polite"></div>
 
-    <div class="card">
-        <h2 class="card-title" data-i18n="addNewKey">Add New Key</h2>
-        <form id="keyForm">
-            <div class="form-group">
-                <label for="name" data-i18n="keyName">Key Name</label>
-                <input type="text" id="name" name="name" required placeholder="e.g., production-key">
+    <section class="page-section">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title" data-i18n="addNewKey">Add New Key</h2>
             </div>
-            <div class="form-group">
-                <label for="public_key" data-i18n="publicKey">Public Key</label>
-                <textarea id="public_key" name="public_key" required placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..."></textarea>
-            </div>
-            <div class="form-group">
-                <label for="private_key" data-i18n="privateKeyOptional">Private Key (Optional, for platform authentication)</label>
-                <textarea id="private_key" name="private_key" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>
-                <small style="color: var(--text-secondary);" data-i18n="privateKeyNote">If provided, this key can be used to authenticate to platforms</small>
-            </div>
-            <button type="submit">
-                <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                <span data-i18n="addKey">Add Key</span>
-            </button>
-        </form>
-    </div>
+            <form id="keyForm" class="key-form">
+                <div class="form-group">
+                    <label for="name" data-i18n="keyName">Key Name</label>
+                    <input type="text" id="name" name="name" required placeholder="e.g., production-key">
+                </div>
+                <div class="form-group">
+                    <label for="public_key" data-i18n="publicKey">Public Key</label>
+                    <textarea id="public_key" name="public_key" required placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="private_key" data-i18n="privateKeyOptional">Private Key (Optional, for platform authentication)</label>
+                    <textarea id="private_key" name="private_key" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>
+                    <span class="form-helper" data-i18n="privateKeyNote">If provided, this key can be used to authenticate to platforms</span>
+                </div>
+                <div class="page-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-symbols-rounded" aria-hidden="true">add</span>
+                        <span data-i18n="addKey">Add Key</span>
+                    </button>
+                </div>
+            </form>
+        </div>
 
-    <div class="card">
-        <h2 class="card-title" data-i18n="existingKeys">Existing Keys</h2>
-        <div id="keysList"></div>
-    </div>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title" data-i18n="existingKeys">Existing Keys</h2>
+            </div>
+            <div id="keysList" class="key-list"></div>
+        </div>
+    </section>
 {% endblock %}
 
 {% block scripts %}
@@ -197,19 +129,19 @@
             msg.innerHTML = '';
 
             const container = document.createElement('div');
-            container.className = type;
+            container.classList.add('message-item');
 
-            const iconMap = {
-                success: 'check_circle',
-                error: 'error',
-                info: 'info'
-            };
-            const iconName = iconMap[type] || iconMap.info;
+            const variantClass = {
+                success: 'alert-success',
+                error: 'alert-error',
+                info: 'alert-info'
+            }[type] || 'alert-info';
+            container.classList.add(variantClass);
 
             const icon = document.createElement('span');
             icon.className = 'material-symbols-rounded';
             icon.setAttribute('aria-hidden', 'true');
-            icon.textContent = iconName;
+            icon.textContent = type === 'error' ? 'error' : type === 'success' ? 'check_circle' : 'info';
 
             const textSpan = document.createElement('span');
             textSpan.className = 'message-text';
@@ -241,15 +173,20 @@
 
                 container.innerHTML = keys.map(key => `
                     <div class="key-item">
-                        <div class="key-info">
-                            <h3>${key.name}</h3>
-                            <p>${key.public_key.substring(0, 80)}...</p>
+                        <div class="key-meta">
+                            <h3 class="title-with-icon">
+                                <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
+                                <span>${key.name}</span>
+                            </h3>
+                            <div class="key-snippet">${key.public_key.substring(0, 80)}...</div>
                             <small><span data-i18n="created">Created:</span> ${new Date(key.created_at).toLocaleString()}</small>
                         </div>
-                        <button class="delete-btn" onclick="deleteKey('${key.id}')">
-                            <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-                            <span data-i18n="delete">Delete</span>
-                        </button>
+                        <div class="key-actions">
+                            <button class="btn btn-danger" onclick="deleteKey('${key.id}')">
+                                <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                                <span data-i18n="delete">Delete</span>
+                            </button>
+                        </div>
                     </div>
                 `).join('');
                 if (typeof applyTranslations === 'function') {

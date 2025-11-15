@@ -27,6 +27,44 @@ a {
   font-size: 40px;
 }
 
+/* Page level structure */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.page-header .page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-header .page-title .material-symbols-rounded {
+  font-size: 32px;
+}
+
+.page-header .page-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: var(--md-on-surface-variant);
+}
+
+.page-section {
+  margin-bottom: 32px;
+  display: grid;
+  gap: 20px;
+}
+
 /* Form Elements */
 input,
 select,
@@ -151,6 +189,18 @@ button:disabled {
   box-shadow: var(--md-elevation-2);
 }
 
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-header .card-title {
+  margin: 0;
+}
+
 /* Form Fields */
 .form-field,
 .form-group {
@@ -230,49 +280,99 @@ button:disabled {
   color: var(--md-on-tertiary-container);
 }
 
+.status-chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font: var(--md-label-small);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-chip.pending {
+  background: color-mix(in srgb, var(--md-tertiary) 20%, transparent);
+  color: var(--md-tertiary);
+}
+
+.status-chip.running {
+  background: color-mix(in srgb, var(--md-primary) 20%, transparent);
+  color: var(--md-primary);
+}
+
+.status-chip.success {
+  background: color-mix(in srgb, var(--md-success) 20%, transparent);
+  color: var(--md-success);
+}
+
+.status-chip.failed {
+  background: color-mix(in srgb, var(--md-error) 20%, transparent);
+  color: var(--md-error);
+}
+
+.status-chip.inactive {
+  background: var(--md-surface-container-highest);
+  color: var(--md-on-surface-variant);
+}
+
 .status-info {
   background: var(--md-primary-container);
   color: var(--md-on-primary-container);
 }
 
 /* Tables */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--md-surface-container-low);
-  border-radius: 12px;
+.table-card {
+  padding: 0;
   overflow: hidden;
 }
 
-thead {
-  background: var(--md-surface-container);
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
 }
 
-th {
-  font: var(--md-label-large);
-  color: var(--md-on-surface-variant);
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.data-table thead {
+  background: var(--md-surface-container-high);
+}
+
+.data-table th,
+.data-table td {
+  padding: 14px 18px;
   text-align: left;
-  padding: 16px;
   border-bottom: 1px solid var(--md-outline-variant);
-}
-
-td {
   font: var(--md-body-medium);
-  color: var(--md-on-surface);
-  padding: 16px;
-  border-bottom: 1px solid var(--md-outline-variant);
 }
 
-tr:last-child td {
-  border-bottom: none;
+.data-table th {
+  color: var(--md-on-surface-variant);
+  font: var(--md-label-large);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
 }
 
-tr:hover {
-  background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
+.data-table tbody tr:hover {
+  background: var(--md-surface-container-highest);
+}
+
+.data-table .table-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.table-empty-state {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--md-on-surface-variant);
 }
 
 /* Messages & Alerts */
-.message,
 .alert {
   padding: 16px;
   border-radius: 12px;
@@ -283,25 +383,21 @@ tr:hover {
   margin-bottom: 16px;
 }
 
-.message.error,
 .alert-error {
   background: var(--md-error-container);
   color: var(--md-on-error-container);
 }
 
-.message.success,
 .alert-success {
   background: var(--md-success-container);
   color: var(--md-on-success-container);
 }
 
-.message.warning,
 .alert-warning {
   background: var(--md-tertiary-container);
   color: var(--md-on-tertiary-container);
 }
 
-.message.info,
 .alert-info {
   background: var(--md-primary-container);
   color: var(--md-on-primary-container);
@@ -380,6 +476,107 @@ pre {
 
 .bg-container {
   background: var(--md-surface-container);
+}
+
+/* Toolbars */
+.toolbar,
+.filters-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbar {
+  justify-content: space-between;
+  width: 100%;
+}
+
+.filters-inline select,
+.filters-inline input {
+  background: var(--md-surface-container-highest);
+  border: 1px solid var(--md-outline-variant);
+  color: var(--md-on-surface);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: var(--md-body-medium);
+  min-width: 160px;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.icon-button:hover {
+  background: color-mix(in srgb, var(--md-primary) 8%, transparent);
+  color: var(--md-primary);
+}
+
+.icon-button.danger:hover {
+  background: color-mix(in srgb, var(--md-error) 12%, transparent);
+  color: var(--md-error);
+}
+
+.toolbar .btn,
+.toolbar button {
+  height: 40px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.pagination button {
+  background: var(--md-surface-container-highest);
+  border: 1px solid var(--md-outline-variant);
+  color: var(--md-on-surface);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: var(--md-label-medium);
+}
+
+.pagination button:hover {
+  background: color-mix(in srgb, var(--md-primary) 15%, transparent);
+  color: var(--md-primary);
+}
+
+/* Message helpers */
+.message {
+  display: grid;
+  gap: 12px;
+}
+
+.message .message-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--md-outline-variant);
+  background: var(--md-surface-container);
+}
+
+.message .message-item .material-symbols-rounded {
+  font-size: 22px;
+}
+
+.message .message-text {
+  flex: 1;
+  font: var(--md-body-medium);
 }
 
 /* Loading spinner */

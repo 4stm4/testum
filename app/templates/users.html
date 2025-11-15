@@ -5,175 +5,76 @@
 
 {% block extra_styles %}
     <style>
-        .users-header {
+        .users-table-actions {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-            margin-bottom: 24px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .add-user-btn {
-            background: var(--md-primary);
-            color: var(--md-on-primary);
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .add-user-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .users-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .users-table th,
-        .users-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--md-outline-variant);
-        }
-
-        .users-table th {
-            background: var(--md-surface-container-high);
-            font-weight: 600;
-            color: var(--md-on-surface-variant);
-            text-transform: uppercase;
-            font-size: 0.85em;
-        }
-
-        .users-table tr:hover {
-            background: var(--md-surface-container-highest);
-        }
-
-        .role-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .role-admin {
+        .role-chip.admin {
             background: var(--md-error-container);
             color: var(--md-on-error-container);
         }
 
-        .role-operator {
+        .role-chip.operator {
             background: var(--md-primary-container);
             color: var(--md-on-primary-container);
         }
 
-        .role-viewer {
+        .role-chip.viewer {
             background: var(--md-surface-container-highest);
             color: var(--md-on-surface-variant);
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .status-active {
-            background: var(--md-success-container);
-            color: var(--md-on-success-container);
-        }
-
-        .status-inactive {
-            background: var(--md-surface-container-highest);
-            color: var(--md-on-surface-variant);
-        }
-
-        .user-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-icon {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 6px;
-            color: var(--md-on-surface-variant);
-            transition: all 0.2s;
-        }
-
-        .btn-icon:hover {
-            background: var(--md-surface-container-highest);
-        }
-
-        .btn-delete:hover {
-            background: var(--md-error-container);
-            color: var(--md-on-error-container);
         }
 
         .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
             inset: 0;
+            z-index: 1000;
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(4px);
         }
-        
+
         .modal.active {
             display: block;
         }
 
         .modal-content {
             background: var(--md-surface-container-low);
-            margin: 50px auto;
-            padding: 0;
             border: 1px solid var(--md-outline-variant);
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
+            border-radius: 16px;
+            width: min(520px, 90vw);
+            margin: 60px auto;
+            overflow: hidden;
             box-shadow: var(--md-elevation-3);
-            position: relative;
-            z-index: 1001;
         }
 
         .modal-header {
-            padding: 20px 25px;
-            border-bottom: 1px solid var(--md-outline-variant);
+            padding: 24px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--md-outline-variant);
         }
 
         .modal-header h2 {
             margin: 0;
-            font-size: 1.5em;
+            font: var(--md-headline-small);
         }
 
         .modal-close {
-            background: transparent;
             border: none;
-            font-size: 28px;
+            background: transparent;
             color: var(--md-on-surface-variant);
+            font-size: 28px;
             cursor: pointer;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
         }
 
         .modal-close:hover {
@@ -182,132 +83,71 @@
         }
 
         .modal-body {
-            padding: 25px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--md-on-surface);
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            background: var(--md-surface-container-highest);
-            border: 1px solid var(--md-outline);
-            border-radius: 6px;
-            color: var(--md-on-surface);
-            font-size: 1em;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--md-primary);
+            padding: 24px;
+            display: grid;
+            gap: 16px;
         }
 
         .form-actions {
             display: flex;
-            gap: 12px;
             justify-content: flex-end;
-            margin-top: 24px;
+            gap: 12px;
+            margin-top: 8px;
         }
 
-        .btn-primary,
-        .btn-secondary {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: var(--md-primary);
-            color: var(--md-on-primary);
-        }
-
-        .btn-secondary {
-            background: var(--md-surface-container-high);
-            color: var(--md-on-surface);
-        }
-
-        .btn-primary:hover {
-            opacity: 0.9;
-        }
-
-        .btn-secondary:hover {
-            background: var(--md-surface-container-highest);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--md-on-surface-variant);
-        }
-
-        .message {
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 24px;
+        .message-banner {
             display: none;
         }
 
-        .message.success {
-            background: var(--md-success-container);
-            color: var(--md-on-success-container);
-        }
-
-        .message.error {
-            background: var(--md-error-container);
-            color: var(--md-on-error-container);
+        .message-banner.visible {
+            display: block;
         }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="page-header">
-        <h1 class="page-title title-with-icon">
-            <span class="material-symbols-rounded" aria-hidden="true">group</span>
-            <span>User Management</span>
-        </h1>
+        <div>
+            <h1 class="page-title">
+                <span class="material-symbols-rounded" aria-hidden="true">group</span>
+                <span>User Management</span>
+            </h1>
+            <p class="page-subtitle">Invite teammates, assign roles, and control access to Testum.</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-primary" onclick="openUserModal()">
+                <span class="material-symbols-rounded" aria-hidden="true">person_add</span>
+                <span>Add User</span>
+            </button>
+        </div>
     </div>
 
-    <div id="message" class="message"></div>
+    <div id="message" class="message-banner" aria-live="polite"></div>
 
-    <div class="users-header">
-        <h2>System Users</h2>
-        <button class="add-user-btn" onclick="openUserModal()">
-            <span class="material-symbols-rounded" aria-hidden="true">person_add</span>
-            <span>Add User</span>
-        </button>
-    </div>
-
-    <div class="card">
-        <table class="users-table" id="usersTable">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Last Login</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="usersTableBody">
-                <!-- Users will be loaded here -->
-            </tbody>
-        </table>
+    <div class="card table-card">
+        <div class="card-header">
+            <h2 class="card-title">System Users</h2>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Last Login</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="7" class="table-empty-state">Loading users…</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- User Modal -->
@@ -353,8 +193,8 @@
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="closeUserModal()">Cancel</button>
-                        <button type="submit" class="btn-primary">Save</button>
+                        <button type="button" class="btn btn-ghost" onclick="closeUserModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
                     </div>
                 </form>
             </div>
@@ -368,10 +208,32 @@
 
         function showMessage(text, type = 'success') {
             const msg = document.getElementById('message');
-            msg.textContent = text;
-            msg.className = `message ${type}`;
-            msg.style.display = 'block';
-            setTimeout(() => { msg.style.display = 'none'; }, 5000);
+            msg.className = 'message-banner visible';
+
+            const iconName = type === 'error' ? 'error' : type === 'success' ? 'check_circle' : 'info';
+            const variantClass = {
+                success: 'alert-success',
+                error: 'alert-error',
+                info: 'alert-info'
+            }[type] || 'alert-info';
+
+            msg.innerHTML = `
+                <div class="message-item ${variantClass}">
+                    <span class="material-symbols-rounded" aria-hidden="true">${iconName}</span>
+                    <span class="message-text">${text}</span>
+                </div>
+            `;
+
+            if (msg.dataset.timeoutId) {
+                clearTimeout(Number(msg.dataset.timeoutId));
+            }
+
+            const timeoutId = window.setTimeout(() => {
+                msg.classList.remove('visible');
+                msg.innerHTML = '';
+                delete msg.dataset.timeoutId;
+            }, 5000);
+            msg.dataset.timeoutId = timeoutId;
         }
 
         function openUserModal(user = null) {
@@ -412,18 +274,18 @@
 
         async function loadUsers() {
             try {
-                const response = await fetch(API_BASE + '/');
+                const response = await fetch(`${API_BASE}/`);
                 const data = await response.json();
                 const tbody = document.getElementById('usersTableBody');
 
                 if (!data.items || data.items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No users found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="table-empty-state">No users found</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = data.items.map(user => {
-                    const roleClass = `role-${user.role}`;
-                    const statusClass = user.is_active ? 'status-active' : 'status-inactive';
+                    const roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+                    const statusClass = user.is_active ? 'status-chip success' : 'status-chip inactive';
                     const statusText = user.is_active ? 'Active' : 'Inactive';
                     const createdDate = new Date(user.created_at).toLocaleDateString();
                     const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
@@ -432,17 +294,21 @@
                         <tr>
                             <td><strong>${user.username}</strong></td>
                             <td>${user.email || '—'}</td>
-                            <td><span class="role-badge ${roleClass}">${user.role.toUpperCase()}</span></td>
-                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td><span class="chip role-chip ${user.role}">${roleLabel}</span></td>
+                            <td><span class="${statusClass}">${statusText}</span></td>
                             <td>${createdDate}</td>
                             <td>${lastLogin}</td>
-                            <td class="user-actions">
-                                <button class="btn-icon" onclick='editUser(${JSON.stringify(user)})' title="Edit">
-                                    <span class="material-symbols-rounded">edit</span>
-                                </button>
-                                <button class="btn-icon btn-delete" onclick="deleteUser('${user.id}', '${user.username}')" title="Delete">
-                                    <span class="material-symbols-rounded">delete</span>
-                                </button>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="icon-button" onclick='editUser(${JSON.stringify(user)})' title="Edit">
+                                        <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                                        <span class="visually-hidden">Edit ${user.username}</span>
+                                    </button>
+                                    <button class="icon-button danger" onclick="deleteUser('${user.id}', '${user.username}')" title="Delete">
+                                        <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                                        <span class="visually-hidden">Delete ${user.username}</span>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
