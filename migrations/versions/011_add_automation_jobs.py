@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """add automation jobs tables
 
 Revision ID: 011

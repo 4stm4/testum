@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Audit logging helper."""
 import json
 import logging

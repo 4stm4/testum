@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """create scripts table
 
 Revision ID: 009_add_scripts_table

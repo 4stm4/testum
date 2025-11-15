@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Platforms API endpoints."""
 import logging
 import uuid

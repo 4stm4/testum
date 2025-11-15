@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Celery application factory."""
 from celery import Celery
 from app.config import config

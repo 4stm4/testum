@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Cryptography helpers using Fernet for symmetric encryption."""
 from cryptography.fernet import Fernet
 from app.config import config

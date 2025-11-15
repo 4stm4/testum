@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """GitHub updater module for checking and applying updates."""
 import logging
 import subprocess

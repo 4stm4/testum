@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Add encrypted_private_key to ssh_keys
 
 Revision ID: 005

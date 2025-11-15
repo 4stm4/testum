@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """SQLAlchemy database models."""
 import uuid
 from datetime import datetime

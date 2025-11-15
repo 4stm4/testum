@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Role-based access control helpers."""
 from dataclasses import dataclass
 from functools import wraps

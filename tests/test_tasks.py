@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Task and crypto tests."""
 import pytest
 from app.crypto import CryptoHelper

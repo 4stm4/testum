@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Pydantic schemas for request and response validation."""
 from datetime import datetime
 from typing import Any, Dict, List, Optional

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Application configuration loaded from environment variables."""
 import os
 from typing import Optional

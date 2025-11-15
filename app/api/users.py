@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """User management API endpoints with RBAC enforcement."""
 import logging
 import uuid

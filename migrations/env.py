@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Alembic environment configuration."""
 from logging.config import fileConfig
 

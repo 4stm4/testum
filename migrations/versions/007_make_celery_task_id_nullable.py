@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """make celery_task_id nullable
 
 Revision ID: 007_make_celery_task_id_nullable

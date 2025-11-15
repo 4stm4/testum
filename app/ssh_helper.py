@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Asynchronous SSH helper built on top of asyncssh."""
 import asyncio
 import hashlib

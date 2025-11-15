@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Pagination helper utilities."""
 from typing import Tuple
 

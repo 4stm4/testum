@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """API endpoint tests."""
 import pytest
 from starlette.testclient import TestClient

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """add system_info to platforms
 
 Revision ID: 008_add_platform_system_info

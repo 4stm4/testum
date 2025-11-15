@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Simple in-memory rate limiting middleware."""
 import asyncio
 import time

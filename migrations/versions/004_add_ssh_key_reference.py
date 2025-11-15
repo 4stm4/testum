@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Add ssh_key_id reference to platforms
 
 Revision ID: 004

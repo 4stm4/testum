@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Authentication middleware and utilities."""
 import logging
 from typing import Optional

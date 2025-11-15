@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Automation jobs API endpoints."""
 import uuid
 from typing import List, Optional

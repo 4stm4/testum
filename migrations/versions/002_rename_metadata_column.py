@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Rename metadata to task_metadata in task_runs table
 
 Revision ID: 002

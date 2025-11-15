@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Initial migration
 
 Revision ID: 001

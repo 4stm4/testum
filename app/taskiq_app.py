@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Taskiq broker and scheduler configuration."""
 from taskiq import TaskiqScheduler
 from taskiq_postgres import PostgresAsyncResultBackend, PostgresBroker

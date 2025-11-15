@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Add users table for authentication
 
 Revision ID: 003

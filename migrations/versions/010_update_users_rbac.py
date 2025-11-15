@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Update users table for RBAC roles
 
 Revision ID: 010

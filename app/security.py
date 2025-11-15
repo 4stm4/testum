@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Security utilities for password hashing and verification."""
 import base64
 import hashlib

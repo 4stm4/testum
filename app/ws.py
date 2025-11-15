@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """WebSocket endpoint for streaming task output."""
 import asyncio
 import json

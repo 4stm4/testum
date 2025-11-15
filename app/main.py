@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Main Starlette application."""
 import logging
 import uuid

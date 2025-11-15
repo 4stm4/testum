@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Taskiq tasks for SSH operations."""
 import asyncio
 import json

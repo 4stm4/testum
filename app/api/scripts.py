@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Reusable automation scripts API endpoints."""
 import uuid
 from datetime import datetime

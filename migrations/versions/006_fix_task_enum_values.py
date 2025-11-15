@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Fix task enum values to use lowercase
 
 Revision ID: 006

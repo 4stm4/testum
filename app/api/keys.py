@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """SSH Keys API endpoints."""
 import uuid
 from typing import List
