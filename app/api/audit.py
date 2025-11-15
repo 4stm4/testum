@@ -20,7 +20,7 @@ from app.rbac import require_roles
 ALL_ROLES = [UserRole.ADMIN, UserRole.OPERATOR, UserRole.VIEWER]
 
 
-@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.VIEWER)
 async def list_audit_logs(request: Request):
     """List audit logs with pagination and filtering."""
     db: Session = next(get_db())
@@ -33,7 +33,7 @@ async def list_audit_logs(request: Request):
         # Filters
         user_filter = request.query_params.get("user")
         action_filter = request.query_params.get("action")
-        resource_type_filter = request.query_params.get("resource_type")
+        object_type_filter = request.query_params.get("object_type")
         days = request.query_params.get("days", "30")  # Default last 30 days
 
         try:
@@ -54,8 +54,8 @@ async def list_audit_logs(request: Request):
         if action_filter:
             query = query.filter(AuditLog.action.ilike(f"%{action_filter}%"))
         
-        if resource_type_filter:
-            query = query.filter(AuditLog.resource_type.ilike(f"%{resource_type_filter}%"))
+        if object_type_filter:
+            query = query.filter(AuditLog.object_type.ilike(f"%{object_type_filter}%"))
 
         total = query.count()
         logs = query.order_by(desc(AuditLog.timestamp)).offset(offset).limit(limit).all()
@@ -66,11 +66,9 @@ async def list_audit_logs(request: Request):
                 "id": str(log.id),
                 "user": log.user,
                 "action": log.action,
-                "resource_type": log.resource_type,
-                "resource_id": log.resource_id,
-                "details": log.details,
-                "ip_address": log.ip_address,
-                "user_agent": log.user_agent,
+                "object_type": log.object_type,
+                "object_id": log.object_id,
+                "meta": log.meta,
                 "timestamp": log.timestamp.isoformat() if log.timestamp else None,
             })
 
@@ -136,7 +134,7 @@ async def export_audit_logs(request: Request):
         export_format = request.query_params.get("format", "json").lower()
         user_filter = request.query_params.get("user")
         action_filter = request.query_params.get("action")
-        resource_type_filter = request.query_params.get("resource_type")
+        object_type_filter = request.query_params.get("object_type")
         days = request.query_params.get("days", "30")
 
         try:
@@ -157,8 +155,8 @@ async def export_audit_logs(request: Request):
         if action_filter:
             query = query.filter(AuditLog.action.ilike(f"%{action_filter}%"))
         
-        if resource_type_filter:
-            query = query.filter(AuditLog.resource_type.ilike(f"%{resource_type_filter}%"))
+        if object_type_filter:
+            query = query.filter(AuditLog.object_type.ilike(f"%{object_type_filter}%"))
 
         logs = query.order_by(desc(AuditLog.timestamp)).all()
 
@@ -170,11 +168,9 @@ async def export_audit_logs(request: Request):
                     "id": str(log.id),
                     "user": log.user,
                     "action": log.action,
-                    "resource_type": log.resource_type,
-                    "resource_id": log.resource_id,
-                    "details": log.details,
-                    "ip_address": log.ip_address,
-                    "user_agent": log.user_agent,
+                    "object_type": log.object_type,
+                    "object_id": log.object_id,
+                    "meta": log.meta,
                     "timestamp": log.timestamp.isoformat() if log.timestamp else None,
                 })
             
@@ -194,8 +190,8 @@ async def export_audit_logs(request: Request):
             
             # Header
             writer.writerow([
-                "ID", "User", "Action", "Resource Type", "Resource ID", 
-                "Details", "IP Address", "User Agent", "Timestamp"
+                "ID", "User", "Action", "Object Type", "Object ID", 
+                "Meta", "Timestamp"
             ])
             
             # Data
@@ -204,11 +200,9 @@ async def export_audit_logs(request: Request):
                     str(log.id),
                     log.user or "",
                     log.action or "",
-                    log.resource_type or "",
-                    log.resource_id or "",
-                    log.details or "",
-                    log.ip_address or "",
-                    log.user_agent or "",
+                    log.object_type or "",
+                    log.object_id or "",
+                    json.dumps(log.meta) if log.meta else "",
                     log.timestamp.isoformat() if log.timestamp else "",
                 ])
             
