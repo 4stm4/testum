@@ -1,4 +1,4 @@
-"""Celery tasks for SSH operations."""
+"""Taskiq tasks for SSH operations."""
 import asyncio
 import json
 import logging
@@ -6,11 +6,10 @@ from datetime import datetime
 from typing import List, Optional
 
 import boto3
-import redis
 from botocore.client import Config
-from celery import Task
+from redis import asyncio as aioredis
 
-from app.celery_app import celery_app
+from app.taskiq_app import broker, task
 from app.config import config
 from app.db import SessionLocal
 from app.models import Platform, SSHKey, TaskRun, TaskStatusEnum
@@ -19,8 +18,16 @@ from app.ssh_helper import AsyncSSHClient
 
 logger = logging.getLogger(__name__)
 
-# Redis client for pub/sub
-redis_client = redis.from_url(config.REDIS_URL)
+# Async Redis client for pub/sub
+redis_client = None
+
+
+async def get_redis_client():
+    """Get or create async Redis client."""
+    global redis_client
+    if redis_client is None:
+        redis_client = await aioredis.from_url(config.REDIS_URL)
+    return redis_client
 
 # MinIO/S3 client
 s3_client = boto3.client(

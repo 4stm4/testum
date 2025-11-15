@@ -207,9 +207,9 @@ services:
       exec uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
-  celery_worker:
+  taskiq_worker:
     image: python:3.12-slim
-    container_name: testum_celery
+    container_name: testum_taskiq
     restart: unless-stopped
     working_dir: /app
     environment:
@@ -217,8 +217,6 @@ services:
       FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
       DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
       REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
@@ -253,8 +251,8 @@ services:
       echo 'Installing Python packages...' &&
       pip install --no-cache-dir --upgrade pip setuptools wheel &&
       pip install --no-cache-dir -r /app/requirements.txt && 
-      echo 'Starting Celery worker...' &&
-      exec celery -A app.celery_app worker --loglevel=info --concurrency=2
+      echo 'Starting Taskiq worker...' &&
+      exec taskiq worker app.tasks_new:broker --fs-discover
       "
 
 networks:

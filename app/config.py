@@ -20,14 +20,8 @@ class Config:
         "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/ocultum"
     )
 
-    # Redis
+    # Redis (for Taskiq broker and pub/sub)
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-
-    # Celery
-    CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-    CELERY_RESULT_BACKEND: str = os.getenv(
-        "CELERY_RESULT_BACKEND", "redis://localhost:6379/0"
-    )
 
     # MinIO S3
     MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "localhost:9000")
