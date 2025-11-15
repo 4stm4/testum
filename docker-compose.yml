@@ -194,6 +194,25 @@ services:
       echo \"Taskiq worker started with PID: $TASKIQ_PID\" &&
       trap \"kill $TASKIQ_PID 2>/dev/null\" EXIT INT TERM &&
       echo 'Starting application...' &&
+      python - <<'PY'
+from importlib.util import find_spec
+from subprocess import check_call
+from sys import executable
+
+if find_spec('uvicorn') is None:
+    print('uvicorn not installed; installing runtime dependency...')
+    check_call(
+        [
+            executable,
+            '-m',
+            'pip',
+            'install',
+            '--no-cache-dir',
+            'uvicorn[standard]==0.32.1',
+        ]
+    )
+PY
+      &&
       python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
       "
 
