@@ -17,6 +17,7 @@ from starlette.templating import Jinja2Templates
 from app.api.automations import automations_router
 from app.api.audit import audit_router
 from app.api.backup import backup_router
+from app.api.gitops import gitops_router
 from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
 from app.api.scripts import scripts_router
@@ -504,6 +505,7 @@ routes = [
     Mount("/api/tasks", tasks_router),
     Mount("/api/audit", audit_router),
     Mount("/api/backup", backup_router),
+    Mount("/api/gitops", gitops_router),
     Mount("/static", StaticFiles(directory="app/static"), name="static"),
     WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),
 ]

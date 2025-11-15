@@ -368,6 +368,46 @@
             </div>
         </div>
 
+        <!-- GitOps Import -->
+        <div class="card">
+            <h2 class="card-title">🔀 GitOps Import</h2>
+            <div class="card-description">Import configuration from Git repository</div>
+            <div class="form-group">
+                <label for="gitUrl">Git Repository URL</label>
+                <input type="text" id="gitUrl" placeholder="https://github.com/user/repo.git" required>
+                <small class="note">HTTPS or SSH URL to Git repository</small>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="gitBranch">Branch</label>
+                    <input type="text" id="gitBranch" value="main" placeholder="main">
+                </div>
+                <div class="form-group">
+                    <label for="configPath">Config Path</label>
+                    <input type="text" id="configPath" value="testum-config.yaml" placeholder="testum-config.yaml">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="gitUsername">Username (optional)</label>
+                    <input type="text" id="gitUsername" placeholder="git username">
+                </div>
+                <div class="form-group">
+                    <label for="gitToken">Token/Password (optional)</label>
+                    <input type="password" id="gitToken" placeholder="git token or password">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="dryRun" checked>
+                    Dry Run (preview without importing)
+                </label>
+            </div>
+            <button type="button" onclick="gitopsImport()" class="btn-primary">
+                🚀 Import from Git
+            </button>
+        </div>
+
         <div class="split-columns">
             <div class="card">
                 <h2 class="card-title" data-i18n="changeUsername">Username</h2>
@@ -608,5 +648,80 @@
         }
 
         fetchSettings();
+
+        // GitOps Import function
+        async function gitopsImport() {
+            const gitUrl = document.getElementById('gitUrl').value.trim();
+            const gitBranch = document.getElementById('gitBranch').value.trim() || 'main';
+            const configPath = document.getElementById('configPath').value.trim() || 'testum-config.yaml';
+            const gitUsername = document.getElementById('gitUsername').value.trim();
+            const gitToken = document.getElementById('gitToken').value.trim();
+            const dryRun = document.getElementById('dryRun').checked;
+
+            if (!gitUrl) {
+                showMessage('Git URL is required', 'error');
+                return;
+            }
+
+            if (!confirm(`Import from Git repository?\n\nURL: ${gitUrl}\nBranch: ${gitBranch}\nConfig: ${configPath}\nDry Run: ${dryRun ? 'Yes' : 'No (will import)'}`)) {
+                return;
+            }
+
+            try {
+                showMessage('Cloning Git repository...', 'info');
+
+                const payload = {
+                    git_url: gitUrl,
+                    branch: gitBranch,
+                    config_path: configPath,
+                    dry_run: dryRun
+                };
+
+                if (gitUsername) {
+                    payload.username = gitUsername;
+                }
+                if (gitToken) {
+                    payload.token = gitToken;
+                }
+
+                const response = await fetch('/api/gitops/import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'GitOps import failed');
+                }
+
+                let message = `GitOps Import ${dryRun ? '(Dry Run)' : 'Completed'}!\n\n`;
+                message += `Repository: ${result.git_url}\n`;
+                message += `Branch: ${result.branch}\n`;
+                message += `Config: ${result.config_file}\n\n`;
+                message += `Platforms: ${result.platforms_imported} imported, ${result.platforms_skipped} skipped\n`;
+                message += `SSH Keys: ${result.ssh_keys_imported} imported, ${result.ssh_keys_skipped} skipped\n`;
+
+                if (result.errors && result.errors.length > 0) {
+                    message += `\nErrors:\n${result.errors.join('\n')}`;
+                }
+
+                alert(message);
+                showMessage(dryRun ? 'Dry run completed - no changes made' : 'GitOps import successful', 'success');
+
+                // Clear sensitive fields
+                document.getElementById('gitToken').value = '';
+
+                // Reload if not dry run
+                if (!dryRun) {
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (error) {
+                showMessage('GitOps import failed: ' + error.message, 'error');
+            }
+        }
     </script>
 {% endblock %}

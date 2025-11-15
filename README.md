@@ -269,6 +269,70 @@ curl -X POST http://localhost:8000/api/backup/import \
 - SSH ключи (без приватных ключей)
 - Пользователи (только список, без паролей)
 
+## 🔀 GitOps Import
+
+Импорт конфигурации из Git репозитория.
+
+### API
+
+```bash
+curl -X POST http://localhost:8000/api/gitops/import \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "git_url": "https://github.com/user/repo.git",
+    "branch": "main",
+    "config_path": "testum-config.yaml",
+    "username": "git_username",
+    "token": "git_token",
+    "dry_run": true
+  }'
+```
+
+### Формат конфигурации
+
+Создайте `testum-config.yaml` в Git репозитории:
+
+```yaml
+ssh_keys:
+  - name: prod-key
+    public_key: "ssh-rsa AAAA..."
+    description: Production SSH key
+
+platforms:
+  - name: web-server-01
+    host: 192.168.1.100
+    port: 22
+    username: ubuntu
+    auth_method: key
+    ssh_key_name: prod-key  # Ссылка на SSH ключ по имени
+    description: Production web server
+  
+  - name: db-server-01
+    host: 192.168.1.101
+    port: 22
+    username: postgres
+    auth_method: password
+    description: Production database server
+```
+
+### Альтернативные пути
+
+GitOps автоматически ищет конфигурацию в:
+- `testum-config.yaml` (по умолчанию)
+- `testum.yaml`
+- `testum-config.yml`
+- `config/testum.yaml`
+- `.testum/config.yaml`
+
+### Dry Run
+
+Используйте `"dry_run": true` для проверки без импорта:
+- Проверяет доступность репозитория
+- Валидирует формат конфигурации
+- Показывает, что будет импортировано
+- Не вносит изменения в БД
+
 **Примечание**: WebSocket работает через polling БД (без Redis)
   } else if (msg.type === 'status') {
     console.log(`Status: ${msg.status}`);
@@ -322,6 +386,8 @@ app/
 │   ├── keys.py
 │   ├── platforms.py
 │   ├── audit.py         # Audit logs API
+│   ├── backup.py        # Backup/Restore API
+│   ├── gitops.py        # GitOps Import API
 │   └── users.py         # User management
 └── templates/           # Jinja2 шаблоны
     ├── audit.html       # Audit logs UI
@@ -370,7 +436,7 @@ make migrate                           # Применить
 
 ## 🚧 Ограничения и планы
 
-### Реализовано (78.8% готово)
+### Реализовано (100% MVP готово) 🎉
 - ✅ Multi-user с RBAC (Admin/Operator/Viewer)
 - ✅ Async SSH (asyncssh)
 - ✅ Taskiq вместо Celery (PostgreSQL broker, без Redis)
@@ -381,12 +447,14 @@ make migrate                           # Применить
 - ✅ Экспорт audit-логов (JSON/CSV)
 - ✅ Backup/Restore конфигурации (YAML)
 - ✅ CLI-клиент testumctl
+- ✅ GitOps Import (импорт из Git репозитория)
 
-### Планы
-- 🔮 GitOps Import (импорт платформ/ключей из Git)
-- 🔮 Нативные контейнеры
+### Планы (v2.0)
+- 🔮 Нативные контейнеры (Docker API)
 - 🔮 VM управление (libvirt + KVM + QEMU)
 - 🔮 HashiCorp Vault интеграция
+- 🔮 Scheduled tasks (cron-like)
+- 🔮 Webhooks и интеграции
 
 ## 📝 Лицензия
 
