@@ -131,6 +131,10 @@
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(4px);
         }
+        
+        .modal.active {
+            display: block;
+        }
 
         .modal-content {
             background: var(--md-surface-container-low);
@@ -141,6 +145,8 @@
             width: 90%;
             max-width: 500px;
             box-shadow: var(--md-elevation-3);
+            position: relative;
+            z-index: 1001;
         }
 
         .modal-header {
@@ -392,11 +398,16 @@
                 document.getElementById('password').required = true;
             }
 
+            modal.classList.add('active');
             modal.style.display = 'block';
+            document.body.classList.add('modal-open');
         }
 
         function closeUserModal() {
-            document.getElementById('userModal').style.display = 'none';
+            const modal = document.getElementById('userModal');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
         }
 
         async function loadUsers() {

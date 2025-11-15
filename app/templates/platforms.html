@@ -216,6 +216,10 @@
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(4px);
         }
+        
+        .modal.active {
+            display: block;
+        }
 
         .modal-content {
             background: var(--md-surface-container-low);
@@ -228,6 +232,8 @@
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: var(--md-elevation-3);
+            position: relative;
+            z-index: 1001;
         }
 
         .modal-header {
@@ -517,14 +523,18 @@
             document.getElementById('platformId').value = '';
             document.querySelector('#platformModal .modal-header h2').textContent = 'Add New Platform';
             
-            document.getElementById('platformModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
+            const modal = document.getElementById('platformModal');
+            modal.classList.add('active');
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
             toggleAuthFields();
         }
 
         function closeModal() {
-            document.getElementById('platformModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
+            const modal = document.getElementById('platformModal');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
             document.getElementById('platformForm').reset();
             document.getElementById('platformId').value = '';
         }
@@ -667,8 +677,10 @@
             document.querySelector('#platformModal .modal-header h2').textContent = 'Edit Platform';
             
             // Open modal
-            document.getElementById('platformModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
+            const modal = document.getElementById('platformModal');
+            modal.classList.add('active');
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
         }
 
         // Refresh button handler
