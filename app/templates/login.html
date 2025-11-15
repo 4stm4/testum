@@ -23,12 +23,58 @@
     <link rel="stylesheet" href="/static/material.css">
     <link rel="stylesheet" href="/static/app.css">
     <style>
+        /* Fallback colors in case CSS doesn't load */
+        :root {
+            --md-surface: #141218;
+            --md-on-surface: #E6E0E9;
+            --md-primary: #D0BCFF;
+            --md-on-primary: #381E72;
+            --md-surface-container-low: #1D1B20;
+            --md-surface-container-high: #2B2930;
+            --md-surface-container-highest: #36343B;
+            --md-outline: #938F99;
+            --md-on-surface-variant: #CAC4D0;
+            --md-error-container: #8C1D18;
+            --md-on-error-container: #F9DEDC;
+            --md-elevation-1: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+            --md-elevation-2: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+            --md-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3);
+            --md-display-small: 400 36px/44px 'Roboto', sans-serif;
+            --md-headline-medium: 400 28px/36px 'Roboto', sans-serif;
+            --md-body-large: 400 16px/24px 'Roboto', sans-serif;
+            --md-body-medium: 400 14px/20px 'Roboto', sans-serif;
+            --md-body-small: 400 12px/16px 'Roboto', sans-serif;
+            --md-label-large: 500 14px/20px 'Roboto', sans-serif;
+            --md-label-medium: 500 12px/16px 'Roboto', sans-serif;
+            --md-primary-container: #4F378B;
+            --md-on-primary-container: #EADDFF;
+        }
+        
+        [data-theme="light"] {
+            --md-surface: #FEF7FF;
+            --md-on-surface: #1D1B20;
+            --md-primary: #6750A4;
+            --md-on-primary: #FFFFFF;
+            --md-surface-container-low: #F7F2FA;
+            --md-surface-container-high: #ECE6F0;
+            --md-surface-container-highest: #E6E0E9;
+            --md-outline: #79747E;
+            --md-on-surface-variant: #49454F;
+            --md-error-container: #F9DEDC;
+            --md-on-error-container: #410E0B;
+            --md-primary-container: #EADDFF;
+            --md-on-primary-container: #21005D;
+        }
+        
         body {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
+            background: var(--md-surface);
+            color: var(--md-on-surface);
+            font-family: 'Roboto', sans-serif;
         }
         .login-container {
             width: 100%;
