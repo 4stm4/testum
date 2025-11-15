@@ -10,7 +10,7 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
-from starlette.routing import Mount, Route, WebSocketRoute
+from starlette.routing import Mount, Route  # WebSocketRoute removed (Redis dependency)
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
@@ -27,8 +27,6 @@ from app.rate_limiter import RateLimiterMiddleware
 from app.rbac import get_request_user
 from app.security import hash_password, verify_password
 from app.updater import UpdateError, get_update_info, perform_update
-from app.ws import task_stream_websocket
-from app.updater import get_update_info, perform_update, UpdateError
 from app.db import SessionLocal
 from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
 
@@ -403,9 +401,6 @@ async def get_settings_endpoint(request: Request):
         else None,
         "default_admin_username": config.ADMIN_USERNAME,
         "database_url": mask_connection_string(config.DATABASE_URL),
-        "redis_url": mask_connection_string(config.REDIS_URL),
-        "celery_broker_url": mask_connection_string(config.CELERY_BROKER_URL),
-        "celery_result_backend": mask_connection_string(config.CELERY_RESULT_BACKEND),
         "minio_endpoint": config.MINIO_ENDPOINT,
         "minio_bucket": config.MINIO_BUCKET,
         "minio_secure": config.MINIO_SECURE,
@@ -481,7 +476,7 @@ routes = [
     Mount("/api/automations", automations_router),
     Mount("/api/tasks", tasks_router),
     Mount("/static", StaticFiles(directory="app/static"), name="static"),
-    WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),
+    # WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),  # TODO: Migrate to Taskiq events
 ]
 
 app = Starlette(
