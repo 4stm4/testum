@@ -34,11 +34,11 @@
         .toolbar-container {
             display: flex;
             align-items: center;
-            gap: 12px;
-            background: var(--bg-secondary);
-            padding: 8px 12px;
-            border-radius: 28px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            gap: 4px;
+            background: var(--surface-variant, #3d3d4f);
+            padding: 4px 8px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
         }
 
         /* Icon buttons in toolbar */
@@ -57,7 +57,7 @@
         }
 
         .toolbar-icon-btn:hover:not(:disabled) {
-            background: var(--bg-tertiary);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .toolbar-icon-btn:disabled {
@@ -72,9 +72,9 @@
         /* Toolbar divider */
         .toolbar-divider {
             width: 1px;
-            height: 24px;
+            height: 20px;
             background: var(--border-color);
-            margin: 0 4px;
+            margin: 0 8px;
         }
 
         .message > div {
@@ -408,10 +408,6 @@
         </h1>
         
         <div style="display: flex; gap: 16px; align-items: center;">
-            <button class="fab" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
-                <span class="material-symbols-rounded" aria-hidden="true">add</span>
-            </button>
-            
             <div class="toolbar-container">
                 <button class="toolbar-icon-btn" onclick="toggleSelectAll()" title="Select all platforms" id="selectAllBtn" style="display: none;" aria-label="Select all">
                     <span class="material-symbols-rounded" aria-hidden="true">select_all</span>
@@ -439,6 +435,10 @@
                     <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
                 </button>
             </div>
+            
+            <button class="fab" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
+            </button>
         </div>
     </div>
 
