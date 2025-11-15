@@ -349,36 +349,39 @@
 {% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <h1 class="page-title title-with-icon">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h1 class="page-title title-with-icon" style="margin: 0;">
             <span class="material-symbols-rounded" aria-hidden="true">dns</span>
             <span data-i18n="platformsTitle">Platforms</span>
         </h1>
+        
+        <div class="page-actions" style="display: flex; gap: 12px;">
+            <button class="add-platform-btn" onclick="openModal()" title="Add new platform">
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
+                <span data-i18n="addPlatform">Add Platform</span>
+            </button>
+            
+            <button class="action-btn" onclick="toggleSelectAll()" title="Select all platforms" id="selectAllBtn" style="display: none;">
+                <span class="material-symbols-rounded" aria-hidden="true">select_all</span>
+            </button>
+            
+            <button class="action-btn" onclick="bulkDeployKeys()" title="Deploy keys to selected" id="bulkDeployBtnTop" disabled style="display: none;">
+                <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
+            </button>
+            
+            <button class="action-btn" onclick="bulkRunCommand()" title="Run command on selected" id="bulkRunBtnTop" disabled style="display: none;">
+                <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+            </button>
+            
+            <button class="action-btn" onclick="refreshPlatforms()" title="Refresh list">
+                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+            </button>
+        </div>
     </div>
 
     <div id="message" class="message"></div>
 
-    <button class="add-platform-btn" onclick="openModal()">
-        <span class="material-symbols-rounded" aria-hidden="true">add</span>
-        <span data-i18n="addPlatform">Add Platform</span>
-    </button>
-
     <div class="card">
-        <h2 class="card-title" data-i18n="existingPlatforms">Existing Platforms</h2>
-
-        <div id="bulkActionsPanel" class="bulk-actions" style="display: none;">
-            <span class="bulk-actions-label">Selected: <strong id="selectedCount">0</strong></span>
-            <button class="select-all-btn" onclick="toggleSelectAll()">Select All / None</button>
-            <button class="deploy-btn" onclick="bulkDeployKeys()" id="bulkDeployBtn" disabled>
-                <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
-                <span data-i18n="deployKeys">Deploy Keys</span>
-            </button>
-            <button class="deploy-btn" onclick="bulkRunCommand()" id="bulkRunBtn" disabled>
-                <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
-                <span data-i18n="runCommand">Run Command</span>
-            </button>
-        </div>
-
         <div id="platformsList"></div>
     </div>
 
@@ -576,11 +579,11 @@
 
                 if (platforms.length === 0) {
                     container.innerHTML = '<div class="empty-state">No platforms found. Add your first platform above.</div>';
-                    document.getElementById('bulkActionsPanel').style.display = 'none';
+                    hideToolbarButtons();
                     return;
                 }
 
-                document.getElementById('bulkActionsPanel').style.display = 'flex';
+                showToolbarButtons();
 
                 container.innerHTML = platforms.map((p) => {
                     const info = p.system_info || {};
@@ -665,9 +668,29 @@
         function updateBulkActions() {
             const selected = getSelectedPlatforms();
             const count = selected.length;
-            document.getElementById('selectedCount').textContent = count;
-            document.getElementById('bulkDeployBtn').disabled = count === 0;
-            document.getElementById('bulkRunBtn').disabled = count === 0;
+            const hasSelection = count > 0;
+            
+            document.getElementById('bulkDeployBtnTop').disabled = !hasSelection;
+            document.getElementById('bulkRunBtnTop').disabled = !hasSelection;
+            
+            // Update select all checkbox state
+            const checkboxes = document.querySelectorAll('.platform-checkbox');
+            const selectAllCb = document.getElementById('selectAllCheckbox');
+            if (selectAllCb) {
+                selectAllCb.checked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+            }
+        }
+
+        function showToolbarButtons() {
+            document.getElementById('selectAllBtn').style.display = 'flex';
+            document.getElementById('bulkDeployBtnTop').style.display = 'flex';
+            document.getElementById('bulkRunBtnTop').style.display = 'flex';
+        }
+
+        function hideToolbarButtons() {
+            document.getElementById('selectAllBtn').style.display = 'none';
+            document.getElementById('bulkDeployBtnTop').style.display = 'none';
+            document.getElementById('bulkRunBtnTop').style.display = 'none';
         }
 
         function toggleSelectAll() {
@@ -677,7 +700,7 @@
             updateBulkActions();
         }
 
-        async function bulkDeployKeys() {
+        async function bulkDeployKeys() {        async function bulkDeployKeys() {
             const platformIds = getSelectedPlatforms();
             if (platformIds.length === 0) return;
             if (!confirm(`Deploy all SSH keys to ${platformIds.length} selected platform(s)?`)) return;
