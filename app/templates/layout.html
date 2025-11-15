@@ -27,72 +27,69 @@
             min-height: 100vh;
         }
 
-        .header {
-            background: var(--md-surface-container);
-            border-bottom: 1px solid var(--md-outline-variant);
-            padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: var(--md-elevation-1);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font: var(--md-title-large);
-            color: var(--md-primary);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logout-btn {
-            background: var(--md-error-container);
-            color: var(--md-on-error-container);
-            padding: 8px 20px;
-            border-radius: 100px;
-            border: none;
-            cursor: pointer;
-            font: var(--md-label-large);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-        }
-
-        .logout-btn:hover {
-            background: color-mix(in srgb, var(--md-error) 20%, var(--md-error-container));
-            transform: translateY(-2px);
-            box-shadow: var(--md-elevation-2);
-        }
-
-        .version {
-            background: var(--md-surface-container-highest);
-            padding: 4px 12px;
-            border-radius: 100px;
-            font: var(--md-label-small);
-            color: var(--md-on-surface-variant);
-        }
-
         .main-layout {
             display: flex;
-            min-height: calc(100vh - 73px);
+            min-height: 100vh;
         }
 
         .sidebar {
             width: 280px;
             background: var(--md-surface-container-low);
             border-right: 1px solid var(--md-outline-variant);
-            padding: 16px 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--md-outline-variant);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font: var(--md-title-large);
+            color: var(--md-primary);
+            margin-bottom: 16px;
+        }
+
+        .sidebar-logo .material-symbols-rounded {
+            font-size: 28px;
+        }
+
+        .sidebar-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .md-icon-button {
+            background: var(--md-surface-container-high);
+            color: var(--md-on-surface);
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .md-icon-button:hover {
+            background: var(--md-primary-container);
+            transform: scale(1.1);
         }
 
         .sidebar-section {
-            margin-bottom: 24px;
+            padding: 16px 8px;
+            flex: 1;
+        }
+
+        .sidebar-section:last-of-type {
+            flex: 0;
         }
 
         .sidebar-title {
@@ -159,6 +156,45 @@
             color: var(--md-secondary-container);
         }
 
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--md-outline-variant);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .version {
+            background: var(--md-surface-container-highest);
+            padding: 6px 12px;
+            border-radius: 100px;
+            font: var(--md-label-small);
+            color: var(--md-on-surface-variant);
+            text-align: center;
+        }
+
+        .logout-btn {
+            background: var(--md-error-container);
+            color: var(--md-on-error-container);
+            padding: 10px 16px;
+            border-radius: 100px;
+            border: none;
+            cursor: pointer;
+            font: var(--md-label-large);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: color-mix(in srgb, var(--md-error) 20%, var(--md-error-container));
+            transform: translateY(-2px);
+            box-shadow: var(--md-elevation-2);
+        }
+
         .content {
             flex: 1;
             padding: 32px;
@@ -198,34 +234,43 @@
                 border-right: none;
                 border-bottom: 1px solid var(--md-outline-variant);
             }
+
+            .sidebar-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px;
+            }
+
+            .sidebar-logo {
+                margin-bottom: 0;
+            }
         }
     </style>
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
     {% set active_page = active_page | default('') %}
-    <div class="header">
-        <div class="logo">
-            <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
-            <span data-i18n="welcomeTitle">Testum</span>
-        </div>
-        <div class="header-right">
-            <button id="themeToggle" class="md-icon-button" title="Toggle Theme" aria-label="Toggle Theme">
-                <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
-            </button>
-            <button id="langToggle" class="md-icon-button" title="Toggle Language" aria-label="Toggle Language">
-                <span class="material-symbols-rounded" aria-hidden="true">translate</span>
-            </button>
-            <span class="version">v0.1.0</span>
-            <a href="/api/auth/logout" class="logout-btn">
-                <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-                <span data-i18n="logout">Logout</span>
-            </a>
-        </div>
-    </div>
-
+    
     <div class="main-layout">
         <nav class="sidebar">
+            <!-- Sidebar Header with Logo and Controls -->
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+                    <span data-i18n="welcomeTitle">Testum</span>
+                </div>
+                <div class="sidebar-controls">
+                    <button id="themeToggle" class="md-icon-button" title="Toggle Theme" aria-label="Toggle Theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
+                    </button>
+                    <button id="langToggle" class="md-icon-button" title="Toggle Language" aria-label="Toggle Language">
+                        <span class="material-symbols-rounded" aria-hidden="true">translate</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
             <div class="sidebar-section">
                 <div class="sidebar-title" data-i18n="resources">Resources</div>
                 <a href="/keys" class="sidebar-link{% if active_page == 'keys' %} active{% endif %}">
@@ -268,12 +313,25 @@
             <div class="sidebar-section">
                 <div class="sidebar-title" data-i18n="system">System</div>
                 <a href="/settings" class="sidebar-link{% if active_page == 'settings' %} active{% endif %}">
-                    <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">settings</span></span>
-                    <span data-i18n="settings">Settings</span>
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">settings</span></span>
+                        <span data-i18n="settings">Settings</span>
+                    </span>
                 </a>
                 <a href="/health" class="sidebar-link{% if active_page == 'health' %} active{% endif %}">
-                    <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span></span>
-                    <span data-i18n="healthCheck">Health Check</span>
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span></span>
+                        <span data-i18n="healthCheck">Health Check</span>
+                    </span>
+                </a>
+            </div>
+
+            <!-- Sidebar Footer with Logout -->
+            <div class="sidebar-footer">
+                <span class="version">v0.1.0</span>
+                <a href="/api/auth/logout" class="logout-btn">
+                    <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+                    <span data-i18n="logout">Logout</span>
                 </a>
             </div>
         </nav>
