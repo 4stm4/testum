@@ -3,6 +3,21 @@ set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+ensure_python_module() {
+  local module_name="$1"
+  local package_spec="${2:-$1}"
+
+  if ! python -c "import importlib, sys; importlib.import_module(sys.argv[1])" "${module_name}" >/dev/null 2>&1; then
+    if command -v python >/dev/null 2>&1 && python -m pip --version >/dev/null 2>&1; then
+      echo "Python module '$module_name' not found. Installing $package_spec..."
+      python -m pip install --no-cache-dir "$package_spec"
+    else
+      echo "Python module '$module_name' is missing and pip is unavailable to install $package_spec" >&2
+      exit 1
+    fi
+  fi
+}
+
 if [[ "${USE_RUNTIME_INSTALL:-0}" == "1" ]]; then
   RUNTIME_CACHE_DIR="${RUNTIME_CACHE_DIR:-/runtime-cache}"
   VENV_PATH="${VENV_PATH:-$RUNTIME_CACHE_DIR/venv}"
@@ -43,7 +58,13 @@ if [[ "${USE_RUNTIME_INSTALL:-0}" == "1" ]]; then
     echo "Virtual environment not found at $VENV_PATH" >&2
     exit 1
   fi
+
+  ensure_python_module "uvicorn" "uvicorn[standard]==0.32.1"
+  ensure_python_module "taskiq" "taskiq==0.11.7"
 fi
+
+ensure_python_module "uvicorn" "uvicorn[standard]==0.32.1"
+ensure_python_module "taskiq" "taskiq==0.11.7"
 
 if [ -z "${FERNET_KEY:-}" ]; then
   echo "FERNET_KEY environment variable is required"
