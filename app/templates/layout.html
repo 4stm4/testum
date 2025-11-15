@@ -49,9 +49,24 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            font: var(--md-title-large);
-            color: var(--md-primary);
             margin-bottom: 16px;
+        }
+
+        .sidebar-logo a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--md-primary);
+            font: var(--md-title-large);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: opacity 0.2s ease;
+        }
+
+        .sidebar-logo a:hover {
+            opacity: 0.8;
         }
 
         .sidebar-logo .material-symbols-rounded {
@@ -272,8 +287,10 @@
             <!-- Sidebar Header with Logo and Controls -->
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
-                    <span data-i18n="welcomeTitle">Testum</span>
+                    <a href="/">
+                        <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+                        <span data-i18n="welcomeTitle">Testum</span>
+                    </a>
                     <span class="version">v0.1.0</span>
                 </div>
                 <div class="sidebar-controls">
