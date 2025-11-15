@@ -70,7 +70,20 @@
         .sidebar-controls {
             display: flex;
             gap: 8px;
-            margin-bottom: 12px;
+            align-items: center;
+            margin-bottom: 0;
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .controls-divider {
+            width: 1px;
+            height: 32px;
+            background: var(--md-outline-variant);
+            margin: 0 4px;
         }
 
         .md-icon-button {
@@ -86,6 +99,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: 500;
+            font-family: 'Roboto', sans-serif;
         }
 
         .md-icon-button:hover {
@@ -174,18 +189,18 @@
         .logout-btn {
             background: var(--md-error-container);
             color: var(--md-on-error-container);
-            padding: 10px 16px;
+            padding: 8px 16px;
             border-radius: 100px;
             border: none;
             cursor: pointer;
-            font: var(--md-label-large);
+            font: var(--md-label-medium);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
             text-decoration: none;
-            width: 100%;
+            height: 40px;
         }
 
         .logout-btn:hover {
@@ -262,17 +277,20 @@
                     <span class="version">v0.1.0</span>
                 </div>
                 <div class="sidebar-controls">
-                    <button id="themeToggle" class="md-icon-button" title="Toggle Theme" aria-label="Toggle Theme">
-                        <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
-                    </button>
-                    <button id="langToggle" class="md-icon-button" title="Toggle Language" aria-label="Toggle Language">
-                        <span class="material-symbols-rounded" aria-hidden="true">translate</span>
-                    </button>
+                    <div class="controls-group">
+                        <button id="themeToggle" class="md-icon-button" title="Toggle Theme" aria-label="Toggle Theme">
+                            <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
+                        </button>
+                        <button id="langToggle" class="md-icon-button" title="Toggle Language" aria-label="Toggle Language">
+                            <span aria-hidden="true">EN</span>
+                        </button>
+                    </div>
+                    <div class="controls-divider"></div>
+                    <a href="/api/auth/logout" class="logout-btn">
+                        <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+                        <span data-i18n="logout">Logout</span>
+                    </a>
                 </div>
-                <a href="/api/auth/logout" class="logout-btn">
-                    <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-                    <span data-i18n="logout">Logout</span>
-                </a>
             </div>
 
             <!-- Navigation Links -->
