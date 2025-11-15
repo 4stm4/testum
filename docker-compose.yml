@@ -205,25 +205,33 @@ services:
         alembic upgrade head
         
         echo 'Starting Taskiq worker in background...'
-        nohup python -m taskiq worker app.tasks_new:broker --fs-discover > /tmp/taskiq.log 2>&1 &
+        python -m taskiq worker app.tasks_new:broker --fs-discover > /tmp/taskiq.log 2>&1 &
         TASKIQ_PID=$!
         echo "Taskiq worker started with PID: ${TASKIQ_PID}"
         
-        # Wait for worker to initialize
+        # Wait for worker to spawn child processes
         echo 'Waiting for Taskiq worker to initialize...'
-        sleep 3
+        sleep 5
         
-        # Check if worker is still running
-        if ! kill -0 $TASKIQ_PID 2>/dev/null; then
-          echo "ERROR: Taskiq worker failed to start!"
+        # Check worker logs for errors
+        if grep -i "error\|exception\|failed" /tmp/taskiq.log > /dev/null 2>&1; then
+          echo "ERROR: Taskiq worker encountered errors during startup!"
           echo "=== Worker logs ==="
           cat /tmp/taskiq.log
           exit 1
         fi
-        echo "Taskiq worker is running"
         
-        # Cleanup on exit
-        trap "echo 'Stopping Taskiq worker...'; kill $TASKIQ_PID 2>/dev/null || true" EXIT INT TERM
+        # Check if worker processes are running
+        if pgrep -f "taskiq worker" > /dev/null 2>&1; then
+          echo "Taskiq worker processes are running"
+          pgrep -f "taskiq worker" | head -3
+        else
+          echo "WARNING: No taskiq worker processes found, checking logs..."
+          cat /tmp/taskiq.log
+        fi
+        
+        # Cleanup on exit - kill all taskiq processes
+        trap "echo 'Stopping Taskiq workers...'; pkill -f 'taskiq worker' 2>/dev/null || true" EXIT INT TERM
         
         echo 'Starting application...'
         exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
