@@ -5,6 +5,78 @@
 
 {% block extra_styles %}
     <style>
+        /* Floating Action Button (FAB) */
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: var(--accent-primary);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .fab:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .fab .material-symbols-rounded {
+            font-size: 28px;
+        }
+
+        /* Toolbar container */
+        .toolbar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-secondary);
+            padding: 8px 12px;
+            border-radius: 28px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Icon buttons in toolbar */
+        .toolbar-icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .toolbar-icon-btn:hover:not(:disabled) {
+            background: var(--bg-tertiary);
+        }
+
+        .toolbar-icon-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .toolbar-icon-btn .material-symbols-rounded {
+            font-size: 24px;
+        }
+
+        /* Toolbar divider */
+        .toolbar-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border-color);
+            margin: 0 4px;
+        }
+
         .message > div {
             padding: 15px 20px;
             border-radius: 6px;
@@ -335,38 +407,38 @@
             <span data-i18n="platformsTitle">Platforms</span>
         </h1>
         
-        <div class="page-actions" style="display: flex; gap: 8px; align-items: center;">
-            <button class="action-btn" onclick="openModal()" title="Add new platform">
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <button class="fab" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
                 <span class="material-symbols-rounded" aria-hidden="true">add</span>
             </button>
             
-            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 4px;" id="toolbarDivider" aria-hidden="true"></div>
-            
-            <button class="action-btn" onclick="toggleSelectAll()" title="Select all platforms" id="selectAllBtn" style="display: none;">
-                <span class="material-symbols-rounded" aria-hidden="true">select_all</span>
-            </button>
-            
-            <button class="action-btn" onclick="bulkDeployKeys()" title="Deploy keys to selected" id="bulkDeployBtnTop" disabled style="display: none;">
-                <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
-            </button>
-            
-            <button class="action-btn" onclick="bulkRunCommand()" title="Run command on selected" id="bulkRunBtnTop" disabled style="display: none;">
-                <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
-            </button>
-            
-            <button class="action-btn" onclick="bulkEditPlatforms()" title="Edit selected platforms" id="bulkEditBtnTop" disabled style="display: none;">
-                <span class="material-symbols-rounded" aria-hidden="true">edit</span>
-            </button>
-            
-            <button class="action-btn" onclick="bulkDeletePlatforms()" title="Delete selected platforms" id="bulkDeleteBtnTop" disabled style="display: none;">
-                <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-            </button>
-            
-            <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 4px;" id="toolbarDivider2" style="display: none;" aria-hidden="true"></div>
-            
-            <button class="action-btn" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn">
-                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-            </button>
+            <div class="toolbar-container">
+                <button class="toolbar-icon-btn" onclick="toggleSelectAll()" title="Select all platforms" id="selectAllBtn" style="display: none;" aria-label="Select all">
+                    <span class="material-symbols-rounded" aria-hidden="true">select_all</span>
+                </button>
+                
+                <button class="toolbar-icon-btn" onclick="bulkDeployKeys()" title="Deploy keys to selected" id="bulkDeployBtnTop" disabled style="display: none;" aria-label="Deploy keys">
+                    <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
+                </button>
+                
+                <button class="toolbar-icon-btn" onclick="bulkRunCommand()" title="Run command on selected" id="bulkRunBtnTop" disabled style="display: none;" aria-label="Run command">
+                    <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
+                </button>
+                
+                <button class="toolbar-icon-btn" onclick="bulkEditPlatforms()" title="Edit selected platform" id="bulkEditBtnTop" disabled style="display: none;" aria-label="Edit platform">
+                    <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                </button>
+                
+                <button class="toolbar-icon-btn" onclick="bulkDeletePlatforms()" title="Delete selected platforms" id="bulkDeleteBtnTop" disabled style="display: none;" aria-label="Delete platforms">
+                    <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                </button>
+                
+                <div class="toolbar-divider" id="toolbarDivider2" style="display: none;" aria-hidden="true"></div>
+                
+                <button class="toolbar-icon-btn" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn" aria-label="Refresh">
+                    <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+                </button>
+            </div>
         </div>
     </div>
 
