@@ -3,14 +3,12 @@ import logging
 import uuid
 from typing import List
 
-from celery.result import AsyncResult
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Router
 
 from app.audit import log_audit
-from app.celery_app import celery_app
 from app.config import config
 from app.crypto import crypto
 from app.db import get_db
@@ -31,7 +29,7 @@ from app.schemas import (
     RunCommandRequest,
     TaskStatusResponse,
 )
-from app.tasks import deploy_keys_task, run_command_task
+from app.tasks_new import deploy_keys_task, run_command_task
 
 logger = logging.getLogger(__name__)
 
@@ -384,11 +382,8 @@ async def get_task_status(request: Request):
             return JSONResponse({"error": "Task not found"}, status_code=404)
 
         payload = TaskStatusResponse.model_validate(task_run).model_dump(mode="json")
-        try:
-            async_result = AsyncResult(task_id, app=celery_app)
-            payload["celery_state"] = async_result.state
-        except Exception:
-            payload["celery_state"] = "unknown"
+        # TODO: Implement Taskiq result backend status check
+        payload["celery_state"] = task_run.status.value if task_run.status else "unknown"
 
         return JSONResponse(payload)
     finally:
@@ -578,8 +573,8 @@ async def revoke_task(request: Request):
                 status_code=400
             )
         
-        # Revoke the Celery task with terminate=True to kill the worker process
-        celery_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
+        # TODO: Implement Taskiq task cancellation via result backend
+        # For now, just mark as failed in database
         
         # Update task status in database
         task.status = TaskStatusEnum.failed
