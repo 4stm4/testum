@@ -354,6 +354,14 @@
                 <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
             </button>
             
+            <button class="action-btn" onclick="bulkEditPlatforms()" title="Edit selected platforms" id="bulkEditBtnTop" disabled style="display: none;">
+                <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+            </button>
+            
+            <button class="action-btn" onclick="bulkDeletePlatforms()" title="Delete selected platforms" id="bulkDeleteBtnTop" disabled style="display: none;">
+                <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+            </button>
+            
             <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 4px;" id="toolbarDivider2" style="display: none;" aria-hidden="true"></div>
             
             <button class="action-btn" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn">
@@ -652,9 +660,12 @@
             const selected = getSelectedPlatforms();
             const count = selected.length;
             const hasSelection = count > 0;
+            const singleSelection = count === 1;
             
             document.getElementById('bulkDeployBtnTop').disabled = !hasSelection;
             document.getElementById('bulkRunBtnTop').disabled = !hasSelection;
+            document.getElementById('bulkEditBtnTop').disabled = !singleSelection;
+            document.getElementById('bulkDeleteBtnTop').disabled = !hasSelection;
             
             // Update select all checkbox state
             const checkboxes = document.querySelectorAll('.platform-checkbox');
@@ -668,6 +679,8 @@
             document.getElementById('selectAllBtn').style.display = 'flex';
             document.getElementById('bulkDeployBtnTop').style.display = 'flex';
             document.getElementById('bulkRunBtnTop').style.display = 'flex';
+            document.getElementById('bulkEditBtnTop').style.display = 'flex';
+            document.getElementById('bulkDeleteBtnTop').style.display = 'flex';
             document.getElementById('toolbarDivider2').style.display = 'block';
         }
 
@@ -675,6 +688,8 @@
             document.getElementById('selectAllBtn').style.display = 'none';
             document.getElementById('bulkDeployBtnTop').style.display = 'none';
             document.getElementById('bulkRunBtnTop').style.display = 'none';
+            document.getElementById('bulkEditBtnTop').style.display = 'none';
+            document.getElementById('bulkDeleteBtnTop').style.display = 'none';
             document.getElementById('toolbarDivider2').style.display = 'none';
         }
 
@@ -757,6 +772,77 @@
             }
 
             showMessage(`Command execution started: ${successCount} successful, ${failCount} failed. Check Jobs page for all results.`);
+        }
+
+        async function bulkEditPlatforms() {
+            const platformIds = getSelectedPlatforms();
+            if (platformIds.length !== 1) {
+                showMessage('Please select exactly one platform to edit', 'error');
+                return;
+            }
+            
+            // Get platform data and open modal for editing
+            try {
+                const response = await fetch(`${API_BASE}/${platformIds[0]}`);
+                const platform = await response.json();
+                
+                if (response.ok) {
+                    // Populate form with existing data
+                    document.getElementById('platformId').value = platform.id;
+                    document.getElementById('name').value = platform.name;
+                    document.getElementById('host').value = platform.host;
+                    document.getElementById('port').value = platform.port;
+                    document.getElementById('user').value = platform.user;
+                    document.getElementById('auth_method').value = platform.auth_method;
+                    
+                    // Show password field if auth method is password
+                    if (platform.auth_method === 'password') {
+                        document.getElementById('passwordField').style.display = 'block';
+                        document.getElementById('privateKeyField').style.display = 'none';
+                    } else {
+                        document.getElementById('passwordField').style.display = 'none';
+                        document.getElementById('privateKeyField').style.display = 'block';
+                    }
+                    
+                    // Change modal title
+                    document.querySelector('#platformModal .modal-header h2').textContent = 'Edit Platform';
+                    
+                    // Open modal
+                    document.getElementById('platformModal').style.display = 'block';
+                } else {
+                    showMessage('Failed to load platform data', 'error');
+                }
+            } catch (error) {
+                showMessage(`Error loading platform: ${error.message}`, 'error');
+            }
+        }
+
+        async function bulkDeletePlatforms() {
+            const platformIds = getSelectedPlatforms();
+            if (platformIds.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${platformIds.length} selected platform(s)?`)) return;
+
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const platformId of platformIds) {
+                try {
+                    const response = await fetch(`${API_BASE}/${platformId}`, { method: 'DELETE' });
+                    
+                    if (response.ok) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    failCount++;
+                }
+            }
+
+            showMessage(`Deleted ${successCount} platform(s). ${failCount > 0 ? `Failed: ${failCount}` : ''}`);
+            await fetchPlatforms();
+            updateSidebarCount();
         }
 
         async function deletePlatform(id) {
