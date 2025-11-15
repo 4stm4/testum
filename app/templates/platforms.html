@@ -384,6 +384,7 @@
             </div>
             <div class="modal-body">
                 <form id="platformForm">
+                    <input type="hidden" id="platformId" name="platformId" value="">
                     <div class="form-group">
                         <label for="name" data-i18n="platformName">Platform Name</label>
                         <input type="text" id="name" name="name" required placeholder="e.g., production-server">
@@ -500,6 +501,11 @@
         }
 
         function openModal() {
+            // Reset form and modal title for new platform
+            document.getElementById('platformForm').reset();
+            document.getElementById('platformId').value = '';
+            document.querySelector('#platformModal .modal-header h2').textContent = 'Add New Platform';
+            
             document.getElementById('platformModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             toggleAuthFields();
@@ -509,6 +515,7 @@
             document.getElementById('platformModal').style.display = 'none';
             document.body.style.overflow = 'auto';
             document.getElementById('platformForm').reset();
+            document.getElementById('platformId').value = '';
         }
 
         window.addEventListener('click', (event) => {
@@ -792,23 +799,17 @@
                     document.getElementById('name').value = platform.name;
                     document.getElementById('host').value = platform.host;
                     document.getElementById('port').value = platform.port;
-                    document.getElementById('user').value = platform.user;
+                    document.getElementById('username').value = platform.user;
                     document.getElementById('auth_method').value = platform.auth_method;
                     
-                    // Show password field if auth method is password
-                    if (platform.auth_method === 'password') {
-                        document.getElementById('passwordField').style.display = 'block';
-                        document.getElementById('privateKeyField').style.display = 'none';
-                    } else {
-                        document.getElementById('passwordField').style.display = 'none';
-                        document.getElementById('privateKeyField').style.display = 'block';
-                    }
+                    // Toggle auth fields based on method
+                    toggleAuthFields();
                     
                     // Change modal title
                     document.querySelector('#platformModal .modal-header h2').textContent = 'Edit Platform';
                     
                     // Open modal
-                    document.getElementById('platformModal').style.display = 'block';
+                    openModal();
                 } else {
                     showMessage('Failed to load platform data', 'error');
                 }
@@ -915,7 +916,13 @@
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const originalContent = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">progress_activity</span><span>Testing connection...</span>';
+            
+            const platformId = document.getElementById('platformId').value;
+            const isEditing = platformId !== '';
+            
+            submitBtn.innerHTML = isEditing 
+                ? '<span class="material-symbols-rounded" aria-hidden="true">progress_activity</span><span>Updating...</span>'
+                : '<span class="material-symbols-rounded" aria-hidden="true">progress_activity</span><span>Testing connection...</span>';
 
             const formData = {
                 name: document.getElementById('name').value,
@@ -932,8 +939,11 @@
             }
 
             try {
-                const response = await fetch(API_BASE + '/', {
-                    method: 'POST',
+                const url = isEditing ? `${API_BASE}/${platformId}` : `${API_BASE}/`;
+                const method = isEditing ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData),
                 });
@@ -941,9 +951,11 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    let successMsg = 'Platform added successfully! Connection test passed.';
+                    let successMsg = isEditing 
+                        ? 'Platform updated successfully!' 
+                        : 'Platform added successfully! Connection test passed.';
 
-                    if (result.system_info) {
+                    if (!isEditing && result.system_info) {
                         const info = result.system_info;
                         successMsg += '\n\nSystem Information:';
                         if (info.os_release) {
