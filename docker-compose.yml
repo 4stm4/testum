@@ -184,13 +184,12 @@ services:
         . /app/.venv/bin/activate
         python -m pip install --no-cache-dir --upgrade pip setuptools wheel
         python -m pip install --no-cache-dir -r /app/requirements.txt
-        python -m pip install --no-cache-dir "uvicorn[standard]==0.32.1"
         
         echo 'Checking installed packages...'
         python - <<'PY'
         import importlib
         missing = []
-        for module_name in ("uvicorn", "taskiq"):
+        for module_name in ("uvicorn", "taskiq", "taskiq_postgres"):
             try:
                 module = importlib.import_module(module_name)
                 print(f"{module_name} available at {module.__file__}")
