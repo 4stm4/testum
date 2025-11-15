@@ -761,6 +761,7 @@
                 if (response.ok) {
                     showMessage('Platform deleted successfully');
                     loadPlatforms();
+                    updateSidebarCount();
                 } else {
                     showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
                 }
@@ -865,6 +866,9 @@
                     e.target.reset();
                     closeModal();
                     loadPlatforms();
+                    
+                    // Update sidebar counter
+                    updateSidebarCount();
                 } else {
                     let errorMsg = result.error || 'Unknown error';
                     if (result.details) {
@@ -879,6 +883,22 @@
                 submitBtn.innerHTML = originalContent;
             }
         });
+
+        function updateSidebarCount() {
+            // Update platforms count in sidebar
+            const sidebarLink = document.querySelector('a[href="/platforms"]');
+            if (sidebarLink) {
+                const countElement = sidebarLink.querySelector('.sidebar-count');
+                if (countElement) {
+                    fetch(API_BASE + '/')
+                        .then(r => r.json())
+                        .then(platforms => {
+                            countElement.textContent = platforms.length;
+                        })
+                        .catch(() => {});
+                }
+            }
+        }
 
         loadSSHKeys();
         loadPlatforms();
