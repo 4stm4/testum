@@ -91,54 +91,56 @@ async def create_platform(request: Request):
         user = get_request_user(request)
 
         if config.APP_ENV != "testing":
-            from app.ssh_helper import SSHHelper
+            from app.ssh_helper import AsyncSSHClient
 
-            ssh = SSHHelper(
-                host=platform_data.host,
-                port=platform_data.port,
-                username=platform_data.username,
-            )
+            # Prepare SSH credentials
+            password = platform_data.password if platform_data.auth_method == "password" else None
+            private_key_str = None
+            
+            if platform_data.auth_method == "private_key":
+                ssh_key = db.query(SSHKey).filter(SSHKey.id == platform_data.ssh_key_id).first()
+                if not ssh_key:
+                    return JSONResponse({"error": "SSH Key not found"}, status_code=400)
+                if not ssh_key.encrypted_private_key:
+                    return JSONResponse({"error": "SSH Key has no private key for authentication"}, status_code=400)
+                private_key_str = crypto.decrypt_string(ssh_key.encrypted_private_key)
 
             try:
-                if platform_data.auth_method == "password":
-                    ssh.connect_with_password(platform_data.password)
-                else:
-                    ssh_key = db.query(SSHKey).filter(SSHKey.id == platform_data.ssh_key_id).first()
-                    if not ssh_key:
-                        return JSONResponse({"error": "SSH Key not found"}, status_code=400)
+                async with AsyncSSHClient(
+                    host=platform_data.host,
+                    port=platform_data.port,
+                    username=platform_data.username,
+                    password=password,
+                    private_key=private_key_str,
+                ) as ssh:
+                    # Test connection
+                    exit_code, stdout, stderr = await ssh.execute_command("echo 'Connection test successful'")
+                    if exit_code != 0:
+                        raise Exception(f"Test command failed with exit code {exit_code}: {stderr}")
+                    logger.info("Connection test successful: %s", stdout.strip())
 
-                    if not ssh_key.encrypted_private_key:
-                        return JSONResponse({"error": "SSH Key has no private key for authentication"}, status_code=400)
+                    # Gather system info
+                    system_info = {}
+                    try:
+                        _, os_release, _ = await ssh.execute_command("cat /etc/os-release 2>/dev/null || echo 'N/A'")
+                        system_info["os_release"] = os_release.strip()
 
-                    private_key_str = crypto.decrypt_string(ssh_key.encrypted_private_key)
-                    ssh.connect_with_key(private_key_str)
+                        _, kernel, _ = await ssh.execute_command("uname -r")
+                        system_info["kernel"] = kernel.strip()
 
-                exit_code, stdout, stderr = ssh.execute_command("echo 'Connection test successful'")
-                if exit_code != 0:
-                    raise Exception(f"Test command failed with exit code {exit_code}: {stderr}")
-                logger.info("Connection test successful: %s", stdout.strip())
+                        _, cpu_model, _ = await ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
+                        _, cpu_cores, _ = await ssh.execute_command("nproc")
+                        system_info["cpu"] = f"{cpu_model.strip()} ({cpu_cores.strip()} cores)"
 
-                system_info = {}
-                try:
-                    _, os_release, _ = ssh.execute_command("cat /etc/os-release 2>/dev/null || echo 'N/A'")
-                    system_info["os_release"] = os_release.strip()
+                        _, memory, _ = await ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used\"}'")
+                        system_info["memory"] = memory.strip()
 
-                    _, kernel, _ = ssh.execute_command("uname -r")
-                    system_info["kernel"] = kernel.strip()
+                        _, uptime, _ = await ssh.execute_command("uptime -p 2>/dev/null || uptime")
+                        system_info["uptime"] = uptime.strip()
 
-                    _, cpu_model, _ = ssh.execute_command("lscpu | grep 'Model name' | cut -d':' -f2 | xargs")
-                    _, cpu_cores, _ = ssh.execute_command("nproc")
-                    system_info["cpu"] = f"{cpu_model.strip()} ({cpu_cores.strip()} cores)"
-
-                    _, memory, _ = ssh.execute_command("free -h | grep Mem | awk '{print $2\" total, \"$3\" used\"}'")
-                    system_info["memory"] = memory.strip()
-
-                    _, uptime, _ = ssh.execute_command("uptime -p 2>/dev/null || uptime")
-                    system_info["uptime"] = uptime.strip()
-
-                    logger.info("System info gathered: %s", system_info)
-                except Exception as info_err:
-                    logger.warning("Failed to gather some system info: %s", info_err)
+                        logger.info("System info gathered: %s", system_info)
+                    except Exception as info_err:
+                        logger.warning("Failed to gather some system info: %s", info_err)
 
             except Exception as conn_err:
                 logger.error("Connection test failed: %s", conn_err)
@@ -146,8 +148,6 @@ async def create_platform(request: Request):
                     {"error": "Connection test failed", "details": str(conn_err)},
                     status_code=400,
                 )
-            finally:
-                ssh.close()
 
         # Encrypt password if provided
         encrypted_password = None
@@ -272,7 +272,7 @@ async def deploy_keys(request: Request):
         # Create task run record
         task_run = TaskRun(
             id=uuid.uuid4(),
-            celery_task_id=None,  # Will be updated after Celery task starts
+            celery_task_id=None,  # Will be updated with Taskiq task ID
             type=TaskTypeEnum.DEPLOY,
             platform_id=platform_id,
             status=TaskStatusEnum.PENDING,
@@ -282,11 +282,11 @@ async def deploy_keys(request: Request):
         db.commit()
         db.refresh(task_run)
 
-        # Start Celery task
-        celery_task = deploy_keys_task.delay(str(task_run.id), platform_id, key_ids_str)
+        # Start Taskiq task
+        taskiq_result = await deploy_keys_task.kiq(str(task_run.id), platform_id, key_ids_str)
 
-        # Update task_run with celery task ID
-        task_run.celery_task_id = celery_task.id
+        # Update task_run with task ID
+        task_run.celery_task_id = taskiq_result.task_id
         db.commit()
 
         # Audit log
@@ -297,11 +297,11 @@ async def deploy_keys(request: Request):
             action="deploy_keys",
             object_type="platform",
             object_id=str(platform.id),
-            meta={"task_id": celery_task.id},
+            meta={"task_id": taskiq_result.task_id},
         )
 
         return JSONResponse({
-            "task_id": celery_task.id,
+            "task_id": taskiq_result.task_id,
             "status": "pending",
             "message": "Key deployment task started",
         })
@@ -329,7 +329,7 @@ async def run_command(request: Request):
         # Create task run record
         task_run = TaskRun(
             id=uuid.uuid4(),
-            celery_task_id=None,  # Will be updated after Celery task starts
+            celery_task_id=None,  # Will be updated with Taskiq task ID
             type=TaskTypeEnum.RUN_COMMAND,
             platform_id=platform_id,
             status=TaskStatusEnum.PENDING,
@@ -339,16 +339,16 @@ async def run_command(request: Request):
         db.commit()
         db.refresh(task_run)
 
-        # Start Celery task
-        celery_task = run_command_task.delay(
+        # Start Taskiq task
+        taskiq_result = await run_command_task.kiq(
             str(task_run.id),
             platform_id,
             command_request.command,
             command_request.timeout,
         )
 
-        # Update task_run with celery task ID
-        task_run.celery_task_id = celery_task.id
+        # Update task_run with task ID
+        task_run.celery_task_id = taskiq_result.task_id
         db.commit()
 
         # Audit log
@@ -359,11 +359,11 @@ async def run_command(request: Request):
             action="run_command",
             object_type="platform",
             object_id=str(platform.id),
-            meta={"task_id": celery_task.id, "command": command_request.command},
+            meta={"task_id": taskiq_result.task_id, "command": command_request.command},
         )
 
         return JSONResponse({
-            "task_id": celery_task.id,
+            "task_id": taskiq_result.task_id,
             "status": "pending",
             "message": "Command execution task started",
         })
