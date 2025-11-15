@@ -5,7 +5,7 @@ import io
 import json
 from datetime import datetime, timedelta
 
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -100,7 +100,7 @@ async def get_audit_stats(request: Request):
         # Actions by type
         actions_query = db.query(
             AuditLog.action,
-            db.func.count(AuditLog.id).label('count')
+            func.count(AuditLog.id).label('count')
         ).filter(
             AuditLog.timestamp >= since_date
         ).group_by(AuditLog.action).all()
@@ -110,7 +110,7 @@ async def get_audit_stats(request: Request):
         # Top users
         users_query = db.query(
             AuditLog.user,
-            db.func.count(AuditLog.id).label('count')
+            func.count(AuditLog.id).label('count')
         ).filter(
             AuditLog.timestamp >= since_date
         ).group_by(AuditLog.user).order_by(desc('count')).limit(10).all()
