@@ -101,197 +101,105 @@
             border-color: var(--error-border);
         }
 
-        .bulk-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            padding: 12px 15px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+        .platforms-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .bulk-actions-label {
-            font-size: 0.9em;
-            color: var(--text-secondary);
+        .platforms-table th,
+        .platforms-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--md-outline-variant);
         }
 
-        .select-all-btn {
-            background: transparent;
-            border: 1px solid var(--accent-primary);
-            color: var(--accent-primary);
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
+        .platforms-table th {
+            background: var(--md-surface-container-high);
+            font-weight: 600;
+            color: var(--md-on-surface-variant);
+            text-transform: uppercase;
             font-size: 0.85em;
         }
 
-        .platform-item {
-            background: var(--bg-secondary);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-            transition: border-color 0.2s, box-shadow 0.2s;
+        .platforms-table tr:hover {
+            background: var(--md-surface-container-highest);
+        }
+
+        .platform-name {
+            font-weight: 600;
+            color: var(--md-on-surface);
+        }
+
+        .platform-host {
             display: flex;
-            align-items: flex-start;
-            gap: 16px;
-        }
-
-        .platform-item:hover {
-            border-color: var(--accent-primary);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-        }
-
-        .platform-checkbox {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: var(--accent-primary);
-            margin-top: 2px;
-        }
-
-        .platform-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .platform-header {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: flex-start;
-        }
-
-        .platform-title {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .platform-title h3 {
-            color: var(--text-primary);
-            margin: 0;
-            font-size: 1.15em;
-        }
-
-        .platform-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            font-size: 0.85em;
-            color: var(--text-secondary);
-        }
-
-        .platform-meta .meta-chip {
-            display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: var(--bg-tertiary);
-            padding: 6px 10px;
-            border-radius: 999px;
+            font-size: 0.9em;
+            color: var(--md-on-surface-variant);
         }
 
-        .platform-meta .meta-chip .material-symbols-rounded {
+        .platform-host .material-symbols-rounded {
             font-size: 18px;
         }
 
-        .platform-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .platform-badge {
-            display: inline-flex;
-            align-items: center;
+        .auth-badge {
+            display: inline-block;
             padding: 4px 10px;
             border-radius: 999px;
-            background: rgba(96, 165, 250, 0.2);
-            color: var(--accent-primary);
-            font-size: 0.75em;
+            font-size: 0.85em;
             font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
         }
 
-        .platform-created {
-            font-size: 0.8em;
-            color: var(--text-tertiary);
+        .auth-password {
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
         }
 
-        .platform-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .auth-key {
+            background: var(--md-tertiary-container);
+            color: var(--md-on-tertiary-container);
         }
 
-        .platform-stats li {
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-height: 70px;
-        }
-
-        .platform-stats .label {
-            font-size: 0.75em;
-            text-transform: uppercase;
-            color: var(--text-tertiary);
-            letter-spacing: 0.05em;
-        }
-
-        .platform-stats .value {
-            font-size: 0.95em;
-            color: var(--text-primary);
-            font-weight: 600;
+        .platform-info {
+            font-size: 0.85em;
+            color: var(--md-on-surface-variant);
             line-height: 1.4;
         }
 
         .platform-actions {
-            margin-top: auto;
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
+            gap: 8px;
         }
 
-        .deploy-btn {
-            background: var(--accent-primary);
-            color: var(--accent-primary-contrast);
-            padding: 10px 18px;
-            border-radius: 6px;
+        .btn-icon {
+            background: transparent;
             border: none;
-            font-size: 0.95em;
             cursor: pointer;
-        }
-
-        .deploy-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .delete-btn {
-            background: var(--error-border);
-            color: var(--error-text);
-            padding: 10px 18px;
+            padding: 8px;
             border-radius: 6px;
-            border: none;
-            font-size: 0.95em;
-            cursor: pointer;
+            color: var(--md-on-surface-variant);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .delete-btn:hover {
-            filter: brightness(1.1);
+        .btn-icon:hover {
+            background: var(--md-surface-container-highest);
+        }
+
+        .btn-icon.btn-primary:hover {
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+        }
+
+        .btn-icon.btn-delete:hover {
+            background: var(--md-error-container);
+            color: var(--md-on-error-container);
+        }
+
+        .btn-icon .material-symbols-rounded {
+            font-size: 20px;
         }
 
         .empty-state {
@@ -405,14 +313,6 @@
                     <span class="material-symbols-rounded" aria-hidden="true">add</span>
                 </button>
                 
-                <button class="toolbar-icon-btn" onclick="bulkEditPlatforms()" title="Edit selected platform" id="editBtn" disabled aria-label="Edit platform">
-                    <span class="material-symbols-rounded" aria-hidden="true">edit</span>
-                </button>
-                
-                <button class="toolbar-icon-btn" onclick="bulkDeletePlatforms()" title="Delete selected platforms" id="deleteBtn" disabled aria-label="Delete platforms">
-                    <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-                </button>
-
                 <button class="toolbar-icon-btn" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn" aria-label="Refresh">
                     <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
                 </button>
@@ -423,7 +323,22 @@
     <div id="message" class="message"></div>
 
     <div class="card">
-        <div id="platformsList"></div>
+        <table class="platforms-table" id="platformsTable">
+            <thead>
+                <tr>
+                    <th>Platform Name</th>
+                    <th>Host</th>
+                    <th>Username</th>
+                    <th>Auth Method</th>
+                    <th>System Info</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="platformsTableBody">
+                <!-- Platforms will be loaded here -->
+            </tbody>
+        </table>
     </div>
 
     <div id="platformModal" class="modal">
@@ -623,267 +538,96 @@
             try {
                 const response = await fetch(API_BASE + '/');
                 const platforms = await response.json();
-                const container = document.getElementById('platformsList');
+                const tbody = document.getElementById('platformsTableBody');
 
                 if (platforms.length === 0) {
-                    container.innerHTML = '<div class="empty-state">No platforms found. Add your first platform above.</div>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No platforms found. Add your first platform.</td></tr>';
                     return;
                 }
 
-                container.innerHTML = platforms.map((p) => {
+                tbody.innerHTML = platforms.map((p) => {
                     const info = p.system_info || {};
-                    const stats = [
-                        { key: 'platformOs', fallback: 'OS', value: formatOSRelease(info.os_release) },
-                        { key: 'platformKernel', fallback: 'Kernel', value: info.kernel },
-                        { key: 'platformCpu', fallback: 'CPU', value: info.cpu },
-                        { key: 'platformMemory', fallback: 'Memory', value: info.memory },
-                        { key: 'platformUptime', fallback: 'Uptime', value: info.uptime },
-                    ];
-                    const statsMarkup = stats.map(({ key, fallback, value }) => `
-                        <li>
-                            <span class="label" data-i18n="${key}">${fallback}</span>
-                            <span class="value">${value ? formatValue(value) : NOT_AVAILABLE_VALUE}</span>
-                        </li>
-                    `).join('');
+                    
+                    // Format system info
+                    const osRelease = formatOSRelease(info.os_release);
+                    const systemInfoParts = [];
+                    if (osRelease) systemInfoParts.push(`OS: ${osRelease}`);
+                    if (info.kernel) systemInfoParts.push(`Kernel: ${info.kernel}`);
+                    if (info.cpu) systemInfoParts.push(`CPU: ${info.cpu}`);
+                    if (info.memory) systemInfoParts.push(`Memory: ${info.memory}`);
+                    if (info.uptime) systemInfoParts.push(`Uptime: ${info.uptime}`);
+                    
+                    const systemInfo = systemInfoParts.length > 0 
+                        ? systemInfoParts.join('<br>') 
+                        : '<span style="color: var(--md-on-surface-variant);">Not available</span>';
 
-                    const authKey = p.auth_method === 'private_key' ? 'platformAuthKey' : 'platformAuthPassword';
-                    const authFallback = p.auth_method === 'private_key' ? 'SSH Key' : 'Password';
-                    const createdAt = escapeHtml(new Date(p.created_at).toLocaleString());
+                    const authClass = p.auth_method === 'private_key' ? 'auth-key' : 'auth-password';
+                    const authText = p.auth_method === 'private_key' ? 'SSH Key' : 'Password';
+                    const createdDate = new Date(p.created_at).toLocaleDateString();
 
                     return `
-                        <div class="platform-item">
-                            <input type="checkbox" class="platform-checkbox" data-platform-id="${escapeHtml(p.id)}" onchange="updateBulkActions()">
-                            <div class="platform-content">
-                                <div class="platform-header">
-                                    <div class="platform-title">
-                                        <h3>${escapeHtml(p.name)}</h3>
-                                        <div class="platform-meta">
-                                            <span class="meta-chip">
-                                                <span class="material-symbols-rounded" aria-hidden="true">router</span>
-                                                <span>${escapeHtml(p.host)}:${p.port}</span>
-                                            </span>
-                                            <span class="meta-chip">
-                                                <span class="material-symbols-rounded" aria-hidden="true">person</span>
-                                                <span>${escapeHtml(p.username)}</span>
-                                            </span>
-                                        </div>
-                                        <div class="platform-badges">
-                                            <span class="platform-badge" data-i18n="${authKey}">${authFallback}</span>
-                                        </div>
-                                    </div>
-                                    <div class="platform-created"><span data-i18n="created">Created</span> ${createdAt}</div>
+                        <tr>
+                            <td><strong class="platform-name">${escapeHtml(p.name)}</strong></td>
+                            <td>
+                                <div class="platform-host">
+                                    <span class="material-symbols-rounded">router</span>
+                                    <span>${escapeHtml(p.host)}:${p.port}</span>
                                 </div>
-                                <ul class="platform-stats">
-                                    ${statsMarkup}
-                                </ul>
-                                <div class="platform-actions">
-                                    <button class="deploy-btn" onclick="deployKeys('${p.id}')">
-                                        <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
-                                        <span data-i18n="deployKeys">Deploy Keys</span>
-                                    </button>
-                                    <button class="deploy-btn" onclick="runCommand('${p.id}')">
-                                        <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
-                                        <span data-i18n="runCommand">Run Command</span>
-                                    </button>
-                                    <button class="delete-btn" onclick="deletePlatform('${p.id}')">
-                                        <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-                                        <span data-i18n="delete">Delete</span>
-                                    </button>
+                            </td>
+                            <td>
+                                <div class="platform-host">
+                                    <span class="material-symbols-rounded">person</span>
+                                    <span>${escapeHtml(p.username)}</span>
                                 </div>
-                            </div>
-                        </div>
+                            </td>
+                            <td><span class="auth-badge ${authClass}">${authText}</span></td>
+                            <td><div class="platform-info">${systemInfo}</div></td>
+                            <td>${createdDate}</td>
+                            <td class="platform-actions">
+                                <button class="btn-icon btn-primary" onclick="deployKeys('${p.id}')" title="Deploy Keys">
+                                    <span class="material-symbols-rounded">vpn_key</span>
+                                </button>
+                                <button class="btn-icon btn-primary" onclick="runCommand('${p.id}')" title="Run Command">
+                                    <span class="material-symbols-rounded">terminal</span>
+                                </button>
+                                <button class="btn-icon" onclick='editPlatform(${JSON.stringify(p)})' title="Edit">
+                                    <span class="material-symbols-rounded">edit</span>
+                                </button>
+                                <button class="btn-icon btn-delete" onclick="deletePlatform('${p.id}')" title="Delete">
+                                    <span class="material-symbols-rounded">delete</span>
+                                </button>
+                            </td>
+                        </tr>
                     `;
                 }).join('');
-
-                if (typeof applyTranslations === 'function') {
-                    applyTranslations();
-                }
-
-                updateBulkActions();
             } catch (error) {
                 showMessage('Failed to load platforms: ' + error.message, 'error');
             }
         }
 
-        function getSelectedPlatforms() {
-            const checkboxes = document.querySelectorAll('.platform-checkbox:checked');
-            return Array.from(checkboxes).map(cb => cb.dataset.platformId);
+        function editPlatform(platform) {
+            // Populate form with existing data
+            document.getElementById('platformId').value = platform.id;
+            document.getElementById('name').value = platform.name;
+            document.getElementById('host').value = platform.host;
+            document.getElementById('port').value = platform.port;
+            document.getElementById('username').value = platform.username;
+            document.getElementById('auth_method').value = platform.auth_method;
+            
+            // Toggle auth fields based on method
+            toggleAuthFields();
+            
+            // Change modal title
+            document.querySelector('#platformModal .modal-header h2').textContent = 'Edit Platform';
+            
+            // Open modal
+            document.getElementById('platformModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
         }
 
-        function updateBulkActions() {
-            const selected = getSelectedPlatforms();
-            const count = selected.length;
-            const hasSelection = count > 0;
-            const singleSelection = count === 1;
-            
-            const editBtn = document.getElementById('editBtn');
-            const deleteBtn = document.getElementById('deleteBtn');
-            
-            if (editBtn) editBtn.disabled = !singleSelection;
-            if (deleteBtn) deleteBtn.disabled = !hasSelection;
-            
-            // Update select all checkbox state
-            const checkboxes = document.querySelectorAll('.platform-checkbox');
-            const selectAllCb = document.getElementById('selectAllCheckbox');
-            if (selectAllCb) {
-                selectAllCb.checked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
-            }
-        }
-
-        function toggleSelectAll() {
-            const checkboxes = document.querySelectorAll('.platform-checkbox');
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            checkboxes.forEach(cb => { cb.checked = !allChecked; });
-            updateBulkActions();
-        }
-        
-        // Alias for loadPlatforms
-        async function fetchPlatforms() {
-            await loadPlatforms();
-        }
-        
         // Refresh button handler
         async function refreshPlatforms() {
             await loadPlatforms();
-            updateSidebarCount();
-        }
-
-        async function bulkDeployKeys() {
-            const platformIds = getSelectedPlatforms();
-            if (platformIds.length === 0) return;
-            if (!confirm(`Deploy all SSH keys to ${platformIds.length} selected platform(s)?`)) return;
-
-            showMessage(`Starting deployment to ${platformIds.length} platform(s)...`, 'info');
-            let successCount = 0;
-            let failCount = 0;
-
-            for (const platformId of platformIds) {
-                try {
-                    const response = await fetch(`${API_BASE}/${platformId}/deploy_keys`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({}),
-                    });
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        successCount++;
-                        if (successCount === 1) {
-                            window.open(`/tasks/${result.task_id}`, '_blank');
-                        }
-                    } else {
-                        failCount++;
-                    }
-                } catch (error) {
-                    failCount++;
-                }
-            }
-
-            showMessage(`Deployment started: ${successCount} successful, ${failCount} failed`);
-        }
-
-        async function bulkRunCommand() {
-            const platformIds = getSelectedPlatforms();
-            if (platformIds.length === 0) return;
-
-            const command = prompt(`Enter command to execute on ${platformIds.length} selected platform(s):`);
-            if (!command) return;
-
-            const timeoutStr = prompt('Timeout in seconds (default: 60):', '60');
-            const timeout = parseInt(timeoutStr) || 60;
-
-            showMessage(`Starting command execution on ${platformIds.length} platform(s)...`, 'info');
-
-            let successCount = 0;
-            let failCount = 0;
-
-            for (const platformId of platformIds) {
-                try {
-                    const response = await fetch(`${API_BASE}/${platformId}/run_command`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ command, timeout }),
-                    });
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        successCount++;
-                        if (successCount === 1) {
-                            window.open(`/tasks/${result.task_id}`, '_blank');
-                        }
-                    } else {
-                        failCount++;
-                    }
-                } catch (error) {
-                    failCount++;
-                }
-            }
-
-            showMessage(`Command execution started: ${successCount} successful, ${failCount} failed. Check Jobs page for all results.`);
-        }
-
-        async function bulkEditPlatforms() {
-            const platformIds = getSelectedPlatforms();
-            if (platformIds.length !== 1) {
-                showMessage('Please select exactly one platform to edit', 'error');
-                return;
-            }
-            
-            // Get platform data and open modal for editing
-            try {
-                const response = await fetch(`${API_BASE}/${platformIds[0]}`);
-                const platform = await response.json();
-                
-                if (response.ok) {
-                    // Populate form with existing data
-                    document.getElementById('platformId').value = platform.id;
-                    document.getElementById('name').value = platform.name;
-                    document.getElementById('host').value = platform.host;
-                    document.getElementById('port').value = platform.port;
-                    document.getElementById('username').value = platform.user;
-                    document.getElementById('auth_method').value = platform.auth_method;
-                    
-                    // Toggle auth fields based on method
-                    toggleAuthFields();
-                    
-                    // Change modal title
-                    document.querySelector('#platformModal .modal-header h2').textContent = 'Edit Platform';
-                    
-                    // Open modal
-                    openModal();
-                } else {
-                    showMessage('Failed to load platform data', 'error');
-                }
-            } catch (error) {
-                showMessage(`Error loading platform: ${error.message}`, 'error');
-            }
-        }
-
-        async function bulkDeletePlatforms() {
-            const platformIds = getSelectedPlatforms();
-            if (platformIds.length === 0) return;
-            
-            if (!confirm(`Are you sure you want to delete ${platformIds.length} selected platform(s)?`)) return;
-
-            let successCount = 0;
-            let failCount = 0;
-
-            for (const platformId of platformIds) {
-                try {
-                    const response = await fetch(`${API_BASE}/${platformId}`, { method: 'DELETE' });
-                    
-                    if (response.ok) {
-                        successCount++;
-                    } else {
-                        failCount++;
-                    }
-                } catch (error) {
-                    failCount++;
-                }
-            }
-
-            showMessage(`Deleted ${successCount} platform(s). ${failCount > 0 ? `Failed: ${failCount}` : ''}`);
-            await fetchPlatforms();
             updateSidebarCount();
         }
 
