@@ -420,7 +420,7 @@ async def health_check(request: Request):
     wants_html = "text/html" in accept_header and "application/json" not in accept_header
 
     if wants_html:
-        context = {"request": request, "active_page": "health", "health": health_data}
+        context = build_template_context(request, "health", health=health_data)
         return templates.TemplateResponse("health.html", context)
 
     return JSONResponse(health_data)
