@@ -14,7 +14,6 @@ taskiq==0.11.18
 taskiq-postgres==0.6.0
 
 # SSH & Crypto
-paramiko==3.5.0
 asyncssh==2.17.0
 cryptography==44.0.0
 
