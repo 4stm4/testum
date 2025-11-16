@@ -30,7 +30,7 @@ from app.schemas import (
     RunCommandRequest,
     TaskStatusResponse,
 )
-from app.tasks_new import deploy_keys_task, run_command_task
+from app.taskiq_app import engine
 
 logger = logging.getLogger(__name__)
 
@@ -282,11 +282,16 @@ async def deploy_keys(request: Request):
         db.commit()
         db.refresh(task_run)
 
-        # Start Taskiq task
-        taskiq_result = await deploy_keys_task.kiq(str(task_run.id), platform_id, key_ids_str)
-
-        # Update task_run with task ID
-        task_run.celery_task_id = taskiq_result.task_id
+        # Запуск задачи через pyjobkit
+        job_id = await engine.enqueue(
+            kind="deploy_keys",
+            payload={
+                "task_run_id": str(task_run.id),
+                "platform_id": platform_id,
+                "key_ids": key_ids_str
+            }
+        )
+        task_run.celery_task_id = job_id
         db.commit()
 
         # Audit log
@@ -297,11 +302,11 @@ async def deploy_keys(request: Request):
             action="deploy_keys",
             object_type="platform",
             object_id=str(platform.id),
-            meta={"task_id": taskiq_result.task_id},
+            meta={"task_id": job_id},
         )
 
         return JSONResponse({
-            "task_id": taskiq_result.task_id,
+            "task_id": job_id,
             "status": "pending",
             "message": "Key deployment task started",
         })
@@ -339,25 +344,24 @@ async def run_command(request: Request):
         db.commit()
         db.refresh(task_run)
 
-        # Start Taskiq task
+        # Запуск задачи через pyjobkit
         try:
-            taskiq_result = await run_command_task.kiq(
-                str(task_run.id),
-                platform_id,
-                command_request.command,
-                command_request.timeout,
+            job_id = await engine.enqueue(
+                kind="run_command",
+                payload={
+                    "task_run_id": str(task_run.id),
+                    "platform_id": platform_id,
+                    "command": command_request.command
+                }
             )
-            
-            # Update task_run with task ID
-            task_run.celery_task_id = taskiq_result.task_id
+            task_run.celery_task_id = job_id
             db.commit()
         except Exception as task_error:
-            # Update task status to failed
             task_run.status = TaskStatusEnum.FAILED
             task_run.error_message = f"Failed to queue task: {str(task_error)}"
             db.commit()
             return JSONResponse({
-                "error": "Failed to queue task. Taskiq worker may not be running.",
+                "error": "Failed to queue task. Worker may not be running.",
                 "details": str(task_error),
                 "task_id": str(task_run.id)
             }, status_code=500)
@@ -370,11 +374,11 @@ async def run_command(request: Request):
             action="run_command",
             object_type="platform",
             object_id=str(platform.id),
-            meta={"task_id": taskiq_result.task_id, "command": command_request.command},
+            meta={"task_id": job_id, "command": command_request.command},
         )
 
         return JSONResponse({
-            "task_id": taskiq_result.task_id,
+            "task_id": job_id,
             "status": "pending",
             "message": "Command execution task started",
         })
