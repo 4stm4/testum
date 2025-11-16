@@ -307,14 +307,14 @@
 
         <div class="card">
             <h2 class="card-title" data-i18n="taskQueueSettings">Task Queue</h2>
-            <div class="card-description" data-i18n="taskQueueSettingsDesc">Celery endpoints</div>
+            <div class="card-description" data-i18n="taskQueueSettingsDesc">Task queue endpoints</div>
             <div class="form-group">
                 <label data-i18n="brokerUrl">Broker URL</label>
-                <div class="current-value" id="celeryBroker">Loading...</div>
+                <div class="current-value" id="jobkitBroker">Loading...</div>
             </div>
             <div class="form-group">
                 <label data-i18n="resultBackend">Result Backend</label>
-                <div class="current-value" id="celeryBackend">Loading...</div>
+                <div class="current-value" id="jobkitBackend">Loading...</div>
             </div>
         </div>
 
@@ -493,8 +493,8 @@
                 document.getElementById('fernetKey').textContent = data.fernet_key ? '••••••••••••••••••••' : 'Not Set';
                 document.getElementById('databaseUrl').textContent = data.database_url || 'postgresql://...';
                 document.getElementById('redisUrl').textContent = data.redis_url || 'redis://...';
-                document.getElementById('celeryBroker').textContent = data.celery_broker_url || 'redis://...';
-                document.getElementById('celeryBackend').textContent = data.celery_result_backend || 'redis://...';
+                document.getElementById('jobkitBroker').textContent = data.jobkit_broker_url || 'redis://...';
+                document.getElementById('jobkitBackend').textContent = data.jobkit_result_backend || 'redis://...';
                 document.getElementById('minioEndpoint').textContent = data.minio_endpoint || 'minio:9000';
                 document.getElementById('minioBucket').textContent = data.minio_bucket || 'testum';
                 document.getElementById('minioAccessKey').textContent = data.minio_access_key ? '••••••••••' : 'Not Set';

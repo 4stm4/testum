@@ -220,8 +220,8 @@ const translations = {
         databaseUrl: 'Database URL',
         redisUrl: 'Redis URL',
         
-        taskQueueSettings: 'Task Queue Settings',
-        taskQueueSettingsDesc: 'Celery task queue configuration (read-only)',
+    taskQueueSettings: 'Task Queue Settings',
+    taskQueueSettingsDesc: 'Task queue configuration (read-only)',
         brokerUrl: 'Broker URL',
         resultBackend: 'Result Backend',
         
@@ -394,8 +394,8 @@ const translations = {
         databaseUrl: 'URL базы данных',
         redisUrl: 'URL Redis',
         
-        taskQueueSettings: 'Настройки очереди задач',
-        taskQueueSettingsDesc: 'Конфигурация очереди задач Celery (только чтение)',
+    taskQueueSettings: 'Настройки очереди задач',
+    taskQueueSettingsDesc: 'Конфигурация очереди задач (только чтение)',
         brokerUrl: 'URL брокера',
         resultBackend: 'Backend результатов',
         
