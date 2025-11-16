@@ -1,3 +1,4 @@
+from app.config import config
 from pyjobkit import Engine
 from pyjobkit.backends.sql import SQLBackend
 from sqlalchemy.ext.asyncio import create_async_engine
