@@ -168,66 +168,27 @@ services:
       - -c
       - |
         set -e
-        echo 'Installing system dependencies...'
         export DEBIAN_FRONTEND=noninteractive
         apt-get update -qq
         apt-get install -y -qq --no-install-recommends gcc libpq-dev postgresql-client git
         rm -rf /var/lib/apt/lists/*
-        
-        echo 'Cloning repository (forcing fresh clone)...'
         cd /tmp
         rm -rf testum
-        git clone --depth 1 --branch main https://github.com/4stm4/testum.git testum
+        git clone --depth 1 --branch main https://github.com/4stm4/testum.git testum > /dev/null 2>&1
         cd testum
-        git log -1 --oneline
         rm -rf /app/*
         mv * /app/ 2>/dev/null || true
         mv .* /app/ 2>/dev/null || true
         cd /app
-        
-        echo 'Installing Python packages...'
         rm -rf /app/.venv
         python3 -m venv /app/.venv
         . /app/.venv/bin/activate
         python -m pip install --no-cache-dir --upgrade pip setuptools wheel
         python -m pip install --no-cache-dir -r /app/requirements.txt
-        
-        echo 'Checking installed packages...'
-        
-        echo 'Waiting for database...'
         until pg_isready -h db -p 5432 -U postgres; do
-          echo 'Database unavailable - sleeping'
           sleep 2
         done
-        
-        echo 'Running migrations...'
-        alembic upgrade head
-        
-        
-        # Wait for worker to spawn child processes
-        echo 'Waiting for Taskiq worker to initialize...'
-        sleep 5
-        
-        # Check worker logs for errors
-        if grep -i "error\|exception\|failed" /tmp/taskiq.log > /dev/null 2>&1; then
-          echo "ERROR: Taskiq worker encountered errors during startup!"
-          echo "=== Worker logs ==="
-          cat /tmp/taskiq.log
-          exit 1
-        fi
-        
-        # Check if worker processes are running
-        if pgrep -f "taskiq worker" > /dev/null 2>&1; then
-          echo "Taskiq worker processes are running"
-          pgrep -f "taskiq worker" | head -3
-        else
-          echo "WARNING: No taskiq worker processes found, checking logs..."
-          cat /tmp/taskiq.log
-        fi
-        
-        # Cleanup on exit - kill all taskiq processes
-        
-        echo 'Starting application...'
+        # alembic upgrade head # ← включайте только после alembic init migrations
         exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 networks:
