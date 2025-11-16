@@ -48,7 +48,6 @@ def upgrade() -> None:
     op.create_table(
         'task_runs',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('celery_task_id', sa.String(255), nullable=False, unique=True, index=True),
         sa.Column('type', sa.Enum('deploy', 'run_command', name='tasktypeenum'), nullable=False, index=True),
         sa.Column('platform_id', UUID(as_uuid=True), sa.ForeignKey('platforms.id'), nullable=True),
         sa.Column('status', sa.Enum('pending', 'running', 'success', 'failed', name='taskstatusenum'), 

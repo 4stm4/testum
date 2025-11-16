@@ -61,10 +61,10 @@ if [[ "${USE_RUNTIME_INSTALL:-0}" == "1" ]]; then
 
   ensure_python_module "uvicorn" "uvicorn[standard]==0.32.1"
   ensure_python_module "taskiq" "taskiq==0.11.7"
+    ensure_python_module "pyjobkit" "pyjobkit"
 fi
 
 ensure_python_module "uvicorn" "uvicorn[standard]==0.32.1"
-ensure_python_module "taskiq" "taskiq==0.11.7"
 
 if [ -z "${FERNET_KEY:-}" ]; then
   echo "FERNET_KEY environment variable is required"

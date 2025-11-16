@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: MIT
-"""WebSocket endpoint for streaming task output via Taskiq state."""
 import asyncio
 import logging
 from datetime import datetime

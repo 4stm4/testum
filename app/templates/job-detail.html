@@ -182,10 +182,6 @@
                 <div class="info-value"><code id="taskId">{{ task_id }}</code></div>
             </div>
             <div class="info-item">
-                <div class="info-label">Celery Task ID</div>
-                <div class="info-value"><code id="celeryTaskId">—</code></div>
-            </div>
-            <div class="info-item">
                 <div class="info-label">Type</div>
                 <div class="info-value" id="taskType">—</div>
             </div>
@@ -288,7 +284,6 @@
                 const taskIcon = document.getElementById('taskIcon');
                 taskIcon.textContent = icons[data.type] || 'inventory_2';
 
-                document.getElementById('celeryTaskId').textContent = data.celery_task_id;
                 document.getElementById('taskType').textContent = data.type;
 
                 if (data.platform_id) {

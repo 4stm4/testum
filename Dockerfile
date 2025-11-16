@@ -17,7 +17,7 @@ RUN apt-get update \
 COPY requirements.txt ./
 COPY requirements.dev.txt ./
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -r requirements.txt pyjobkit \
     && if [ "$INSTALL_DEV" = "true" ]; then pip install --no-cache-dir -r requirements.dev.txt; fi
 
 # Copy application code

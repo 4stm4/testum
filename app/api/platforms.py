@@ -1,3 +1,4 @@
+from pyjobkit import submit_job
 # SPDX-License-Identifier: MIT
 """Platforms API endpoints."""
 import logging
@@ -30,7 +31,6 @@ from app.schemas import (
     RunCommandRequest,
     TaskStatusResponse,
 )
-from app.taskiq_app import engine
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +272,6 @@ async def deploy_keys(request: Request):
         # Create task run record
         task_run = TaskRun(
             id=uuid.uuid4(),
-            celery_task_id=None,  # Will be updated with Taskiq task ID
             type=TaskTypeEnum.DEPLOY,
             platform_id=platform_id,
             status=TaskStatusEnum.PENDING,
@@ -283,15 +282,15 @@ async def deploy_keys(request: Request):
         db.refresh(task_run)
 
         # Запуск задачи через pyjobkit
-        job_id = await engine.enqueue(
+        job = await submit_job(
             kind="deploy_keys",
             payload={
                 "task_run_id": str(task_run.id),
-                "platform_id": platform_id,
-                "key_ids": key_ids_str
-            }
+                "platform_id": str(platform_id),
+                "key_ids": key_ids_str,
+            },
         )
-        task_run.celery_task_id = job_id
+        job_id = job.id
         db.commit()
 
         # Audit log
@@ -334,7 +333,6 @@ async def run_command(request: Request):
         # Create task run record
         task_run = TaskRun(
             id=uuid.uuid4(),
-            celery_task_id=None,  # Will be updated with Taskiq task ID
             type=TaskTypeEnum.RUN_COMMAND,
             platform_id=platform_id,
             status=TaskStatusEnum.PENDING,
@@ -345,26 +343,16 @@ async def run_command(request: Request):
         db.refresh(task_run)
 
         # Запуск задачи через pyjobkit
-        try:
-            job_id = await engine.enqueue(
-                kind="run_command",
-                payload={
-                    "task_run_id": str(task_run.id),
-                    "platform_id": platform_id,
-                    "command": command_request.command
-                }
-            )
-            task_run.celery_task_id = job_id
-            db.commit()
-        except Exception as task_error:
-            task_run.status = TaskStatusEnum.FAILED
-            task_run.error_message = f"Failed to queue task: {str(task_error)}"
-            db.commit()
-            return JSONResponse({
-                "error": "Failed to queue task. Worker may not be running.",
-                "details": str(task_error),
-                "task_id": str(task_run.id)
-            }, status_code=500)
+        job = await submit_job(
+            kind="run_command",
+            payload={
+                "task_run_id": str(task_run.id),
+                "platform_id": str(platform_id),
+                "command": command_request.command,
+                "timeout": command_request.timeout,
+            },
+        )
+        job_id = job.id
 
         # Audit log
         user = get_request_user(request)
@@ -399,7 +387,6 @@ async def get_task_status(request: Request):
 
         payload = TaskStatusResponse.model_validate(task_run).model_dump(mode="json")
         # TODO: Implement Taskiq result backend status check
-        payload["celery_state"] = task_run.status.value if task_run.status else "unknown"
 
         return JSONResponse(payload)
     finally:
@@ -590,7 +577,6 @@ async def revoke_task(request: Request):
             )
         
         # TODO: Implement Taskiq task cancellation via result backend
-        # For now, just mark as failed in database
         
         # Update task status in database
         task.status = TaskStatusEnum.failed

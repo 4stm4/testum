@@ -134,8 +134,8 @@
             const shortId = t.id.substring(0, 8);
             const typeLabel = t.type.replace('_', ' ');
             return `<tr>
-                <td><a href="/jobs/${t.celery_task_id}" class="task-link" title="${t.id}">${shortId}…</a></td>
-                <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis;" title="${t.celery_task_id}"><code>${t.celery_task_id}</code></td>
+                <td><a href="/jobs/${t.id}" class="task-link" title="${t.id}">${shortId}…</a></td>
+                <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis;" title="${t.id}"><code>${t.id}</code></td>
                 <td><span class="chip job-type ${t.type}">${typeLabel}</span></td>
                 <td><span class="status-chip ${t.status}">${t.status.toUpperCase()}</span></td>
                 <td>${t.platform_name ? `<span class="platform-link" title="${t.platform_id}">${t.platform_name}</span>` : '—'}</td>
@@ -143,11 +143,11 @@
                 <td>${finished}</td>
                 <td>
                     <div class="table-actions">
-                        <a class="btn btn-ghost" href="/jobs/${t.celery_task_id}" title="View Details">
+                        <a class="btn btn-ghost" href="/jobs/${t.id}" title="View Details">
                             <span class="material-symbols-rounded" aria-hidden="true">description</span>
                             <span>Details</span>
                         </a>
-                        <a class="btn btn-ghost" href="/tasks/${t.celery_task_id}" target="_blank" title="Live Monitor">
+                        <a class="btn btn-ghost" href="/tasks/${t.id}" target="_blank" title="Live Monitor">
                             <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
                             <span>Monitor</span>
                         </a>

@@ -3,17 +3,15 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
-
 import jwt
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
-from starlette.routing import Mount, Route, WebSocketRoute
+from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-
 from app.api.automations import automations_router
 from app.api.audit import audit_router
 from app.api.backup import backup_router
@@ -22,7 +20,34 @@ from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
 from app.api.scripts import scripts_router
 from app.api.users import users_router
-from app.ws_taskiq import task_stream_websocket
+from app.auth import AuthMiddleware
+from app.config import config
+from app import db as app_db
+from app.models import User, UserRole
+from app.rate_limiter import RateLimiterMiddleware
+from app.rbac import get_request_user
+from app.security import hash_password, verify_password
+from app.updater import UpdateError, get_update_info, perform_update
+from app.db import SessionLocal
+from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
+from app.api.backup import backup_router
+from app.api.gitops import gitops_router
+from app.api.keys import keys_router
+from app.api.platforms import platforms_router, tasks_router
+from app.api.scripts import scripts_router
+from app.api.users import users_router
+from app.auth import AuthMiddleware
+from app.config import config
+from app import db as app_db
+from app.models import User, UserRole
+from app.rate_limiter import RateLimiterMiddleware
+from app.rbac import get_request_user
+from app.security import hash_password, verify_password
+from app.updater import UpdateError, get_update_info, perform_update
+from app.db import SessionLocal
+from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
+from app.api.scripts import scripts_router
+from app.api.users import users_router
 from app.auth import AuthMiddleware
 from app.config import config
 from app import db as app_db
@@ -507,7 +532,6 @@ routes = [
     Mount("/api/backup", backup_router),
     Mount("/api/gitops", gitops_router),
     Mount("/static", StaticFiles(directory="app/static"), name="static"),
-    WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),
 ]
 
 app = Starlette(

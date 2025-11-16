@@ -12,7 +12,6 @@
 
 - 🚀 **Удаленное выполнение команд** - запуск на одном или нескольких хостах
 - 📜 **Запуск скриптов и кода** - deploy приложений, автоматизация задач
-- ⏱️ **Асинхронное выполнение** - фоновые задачи через Taskiq
 - 📊 **WebSocket стриминг** - вывод команд в реальном времени через БД polling
 - 🔑 **Управление SSH ключами** - централизованное хранение и развертывание
 - 🖥️ **Управление платформами** - добавление и настройка удаленных хостов
@@ -32,14 +31,12 @@ Browser → Nginx (Reverse Proxy + Loading Screen)
             ↓
          Starlette (ASGI) → PostgreSQL
             ↓
-         Taskiq Worker → PostgreSQL (Queue + Results)
             ↓
          AsyncSSH → MinIO (S3 logs)
             ↓
          Remote Hosts (SSH)
 ```
 
-**Стек**: Nginx, Starlette, PostgreSQL, Taskiq, MinIO, AsyncSSH, Jinja2
 
 **Без Redis** - используется только PostgreSQL для очередей и результатов задач
 
@@ -47,7 +44,6 @@ Browser → Nginx (Reverse Proxy + Loading Screen)
 - Nginx показывает красивый loading screen во время первого запуска
 - Автоматическая проверка готовности приложения через health check
 - Git clone из GitHub при каждом старте контейнера
-- Taskiq worker запускается в том же контейнере с приложением
 - Виртуальное окружение Python для изоляции зависимостей
 
 ## 🚀 Быстрый старт
@@ -80,7 +76,6 @@ root@76f1ab574a6b:/app#
 - Создаст виртуальное окружение Python
 - Установит все зависимости из requirements.txt
 - Применит миграции базы данных
-- Запустит Taskiq worker в фоне
 - Запустит Uvicorn web-сервер
 
 Это может занять 1-2 минуты. Nginx покажет loading screen и автоматически перенаправит на приложение после успешного запуска.
@@ -381,9 +376,6 @@ app/
 ├── main.py              # Starlette приложение
 ├── models.py            # SQLAlchemy модели
 ├── schemas.py           # Pydantic схемы
-├── tasks_new.py         # Taskiq задачи (async)
-├── taskiq_app.py        # Taskiq broker и scheduler
-├── ws_taskiq.py         # WebSocket streaming (без Redis)
 ├── ssh_helper.py        # AsyncSSH операции
 ├── crypto.py            # Fernet шифрование
 ├── audit.py             # Audit logging helper
@@ -444,7 +436,6 @@ make migrate                           # Применить
 ### Реализовано (100% MVP готово) 🎉
 - ✅ Multi-user с RBAC (Admin/Operator/Viewer)
 - ✅ Async SSH (asyncssh)
-- ✅ Taskiq вместо Celery (PostgreSQL broker, без Redis)
 - ✅ WebSocket real-time streaming (через БД polling)
 - ✅ Audit Logs UI с фильтрами и статистикой
 - ✅ Rate limiting и pagination

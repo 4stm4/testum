@@ -302,7 +302,6 @@ class TaskResponse(BaseModel):
 class TaskStatusResponse(BaseModel):
     """Schema for task status response."""
     id: UUID
-    celery_task_id: Optional[str] = None
     type: str
     platform_id: Optional[UUID]
     status: str

@@ -193,7 +193,6 @@ services:
         python -m pip install --no-cache-dir -r /app/requirements.txt
         
         echo 'Checking installed packages...'
-        python -c "import uvicorn, taskiq; from taskiq_pg.asyncpg import AsyncpgBroker; print('All required modules imported successfully')"
         
         echo 'Waiting for database...'
         until pg_isready -h db -p 5432 -U postgres; do
@@ -204,10 +203,6 @@ services:
         echo 'Running migrations...'
         alembic upgrade head
         
-        echo 'Starting Taskiq worker in background...'
-        python -m taskiq worker app.tasks_new:broker --fs-discover > /tmp/taskiq.log 2>&1 &
-        TASKIQ_PID=$!
-        echo "Taskiq worker started with PID: ${TASKIQ_PID}"
         
         # Wait for worker to spawn child processes
         echo 'Waiting for Taskiq worker to initialize...'
@@ -231,7 +226,6 @@ services:
         fi
         
         # Cleanup on exit - kill all taskiq processes
-        trap "echo 'Stopping Taskiq workers...'; pkill -f 'taskiq worker' 2>/dev/null || true" EXIT INT TERM
         
         echo 'Starting application...'
         exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
