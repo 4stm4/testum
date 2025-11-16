@@ -14,20 +14,23 @@ depends_on = None
 
 
 def upgrade() -> None:
-    user_role_enum = sa.Enum("admin", "operator", "viewer", name="userrole")
-    auth_method_enum = sa.Enum("password", "private_key", name="authmethodenum")
-    task_type_enum = sa.Enum("deploy", "run_command", name="tasktypeenum")
-    task_status_enum = sa.Enum("pending", "running", "success", "failed", name="taskstatusenum")
-    automation_execution_enum = sa.Enum("command", "script", name="automationexecutionenum")
-    automation_trigger_enum = sa.Enum("manual", "cron", "github_push", "webhook", name="automationtriggerenum")
+    enums = {
+        "userrole": ("admin", "operator", "viewer"),
+        "authmethodenum": ("password", "private_key"),
+        "tasktypeenum": ("deploy", "run_command"),
+        "taskstatusenum": ("pending", "running", "success", "failed"),
+        "automationexecutionenum": ("command", "script"),
+        "automationtriggerenum": ("manual", "cron", "github_push", "webhook"),
+    }
 
-    bind = op.get_bind()
-    user_role_enum.create(bind, checkfirst=True)
-    auth_method_enum.create(bind, checkfirst=True)
-    task_type_enum.create(bind, checkfirst=True)
-    task_status_enum.create(bind, checkfirst=True)
-    automation_execution_enum.create(bind, checkfirst=True)
-    automation_trigger_enum.create(bind, checkfirst=True)
+    for name, values in enums.items():
+        quoted_values = ", ".join(f"'{v}'" for v in values)
+        op.execute(
+            sa.text(
+                f"DO $$ BEGIN CREATE TYPE {name} AS ENUM ({quoted_values}); "
+                "EXCEPTION WHEN duplicate_object THEN null; END $$;"
+            )
+        )
 
     op.create_table(
         "ssh_keys",
@@ -221,17 +224,12 @@ def downgrade() -> None:
     op.drop_index("ix_ssh_keys_name", table_name="ssh_keys")
     op.drop_table("ssh_keys")
 
-    automation_trigger_enum = sa.Enum("manual", "cron", "github_push", "webhook", name="automationtriggerenum")
-    automation_execution_enum = sa.Enum("command", "script", name="automationexecutionenum")
-    task_status_enum = sa.Enum("pending", "running", "success", "failed", name="taskstatusenum")
-    task_type_enum = sa.Enum("deploy", "run_command", name="tasktypeenum")
-    auth_method_enum = sa.Enum("password", "private_key", name="authmethodenum")
-    user_role_enum = sa.Enum("admin", "operator", "viewer", name="userrole")
-
-    bind = op.get_bind()
-    automation_trigger_enum.drop(bind, checkfirst=True)
-    automation_execution_enum.drop(bind, checkfirst=True)
-    task_status_enum.drop(bind, checkfirst=True)
-    task_type_enum.drop(bind, checkfirst=True)
-    auth_method_enum.drop(bind, checkfirst=True)
-    user_role_enum.drop(bind, checkfirst=True)
+    for name in (
+        "automationtriggerenum",
+        "automationexecutionenum",
+        "taskstatusenum",
+        "tasktypeenum",
+        "authmethodenum",
+        "userrole",
+    ):
+        op.execute(sa.text(f"DROP TYPE IF EXISTS {name} CASCADE"))
