@@ -5,11 +5,6 @@
 
 {% block extra_styles %}
     <style>
-        .key-form {
-            display: grid;
-            gap: 16px;
-        }
-
         .key-list {
             display: grid;
             gap: 16px;
@@ -67,6 +62,105 @@
         .key-actions .btn-danger {
             padding: 10px 16px;
         }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--md-surface-container);
+            border-radius: 28px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--md-elevation-3);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid var(--md-outline-variant);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font: var(--md-headline-small);
+            color: var(--md-on-surface);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: var(--md-on-surface-variant);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--md-surface-container-highest);
+            color: var(--md-on-surface);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toolbar-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 20px;
+            border: none;
+            font: var(--md-label-large);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toolbar-icon-btn.primary {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+        }
+
+        .toolbar-icon-btn.primary:hover {
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+            box-shadow: var(--md-elevation-1);
+        }
     </style>
 {% endblock %}
 
@@ -83,46 +177,94 @@
 
     <div id="message" class="message" aria-live="polite"></div>
 
+    <div class="toolbar">
+        <div class="toolbar-actions">
+            <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" title="Add new SSH key" aria-label="Add new SSH key">
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
+                <span>Add SSH Key</span>
+            </button>
+        </div>
+    </div>
+
     <section class="page-section">
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title" data-i18n="addNewKey">Add New Key</h2>
+                <h2 class="card-title" data-i18n="existingKeys">SSH Keys</h2>
             </div>
-            <form id="keyForm" class="key-form">
-                <div class="form-group">
-                    <label for="name" data-i18n="keyName">Key Name</label>
-                    <input type="text" id="name" name="name" required placeholder="e.g., production-key">
-                </div>
-                <div class="form-group">
-                    <label for="public_key" data-i18n="publicKey">Public Key</label>
-                    <textarea id="public_key" name="public_key" required placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="private_key" data-i18n="privateKeyOptional">Private Key (Optional, for platform authentication)</label>
-                    <textarea id="private_key" name="private_key" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>
-                    <span class="form-helper" data-i18n="privateKeyNote">If provided, this key can be used to authenticate to platforms</span>
-                </div>
-                <div class="page-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                        <span data-i18n="addKey">Add Key</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title" data-i18n="existingKeys">Existing Keys</h2>
+            <div id="keysList" class="key-list">
+                <!-- Keys will be loaded here -->
             </div>
-            <div id="keysList" class="key-list"></div>
         </div>
     </section>
+
+    <!-- Modal for adding/editing SSH key -->
+    <div id="keyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New SSH Key</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="keyForm">
+                    <div class="form-group">
+                        <label for="name" data-i18n="keyName">Key Name</label>
+                        <input type="text" id="name" name="name" required placeholder="e.g., production-key">
+                    </div>
+                    <div class="form-group">
+                        <label for="public_key" data-i18n="publicKey">Public Key</label>
+                        <textarea id="public_key" name="public_key" required placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..." rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="private_key" data-i18n="privateKeyOptional">Private Key (Optional)</label>
+                        <textarea id="private_key" name="private_key" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----" rows="6"></textarea>
+                        <span class="form-helper" data-i18n="privateKeyNote">If provided, this key can be used to authenticate to platforms</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description (Optional)</label>
+                        <textarea id="description" name="description" placeholder="e.g., Production SSH key for web servers" rows="2"></textarea>
+                    </div>
+                    <div class="page-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="material-symbols-rounded" aria-hidden="true">save</span>
+                            <span data-i18n="saveKey">Save Key</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
     <script>
         const API_BASE = '/api/keys';
+
+        function openModal() {
+            document.getElementById('keyForm').reset();
+            document.querySelector('#keyModal .modal-header h2').textContent = 'Add New SSH Key';
+            document.getElementById('keyModal').classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        function closeModal() {
+            document.getElementById('keyModal').classList.remove('active');
+            document.body.classList.remove('modal-open');
+        }
+
+        // Close modal on outside click
+        document.getElementById('keyModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('keyModal').classList.contains('active')) {
+                closeModal();
+            }
+        });
 
         function showMessage(text, type = 'success') {
             const msg = document.getElementById('message');
@@ -239,7 +381,7 @@
 
                 if (response.ok) {
                     showMessage('Key added successfully');
-                    e.target.reset();
+                    closeModal();
                     loadKeys();
                 } else {
                     showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
