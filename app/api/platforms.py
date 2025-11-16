@@ -1,5 +1,11 @@
-from pyjobkit import submit_job
-# SPDX-License-Identifier: MIT
+from pyjobkit import Engine
+from pyjobkit.backends.sql import SQLBackend
+from sqlalchemy.ext.asyncio import create_async_engine
+import asyncio
+DATABASE_URL = config.DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://')
+async_engine = create_async_engine(DATABASE_URL)
+backend = SQLBackend(async_engine)
+engine = Engine(backend=backend)
 """Platforms API endpoints."""
 import logging
 import uuid
@@ -282,7 +288,7 @@ async def deploy_keys(request: Request):
         db.refresh(task_run)
 
         # Запуск задачи через pyjobkit
-        job = await submit_job(
+        job_id = await engine.enqueue(
             kind="deploy_keys",
             payload={
                 "task_run_id": str(task_run.id),
@@ -290,7 +296,6 @@ async def deploy_keys(request: Request):
                 "key_ids": key_ids_str,
             },
         )
-        job_id = job.id
         db.commit()
 
         # Audit log
@@ -343,7 +348,7 @@ async def run_command(request: Request):
         db.refresh(task_run)
 
         # Запуск задачи через pyjobkit
-        job = await submit_job(
+        job_id = await engine.enqueue(
             kind="run_command",
             payload={
                 "task_run_id": str(task_run.id),
@@ -352,7 +357,6 @@ async def run_command(request: Request):
                 "timeout": command_request.timeout,
             },
         )
-        job_id = job.id
 
         # Audit log
         user = get_request_user(request)
