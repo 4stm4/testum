@@ -89,6 +89,25 @@ def upgrade() -> None:
         sa.UniqueConstraint("name"),
     )
 
+    # Lightweight job queue tables for pyjobkit
+    op.create_table(
+        "job_tasks",
+        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("scheduled_for", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("status", sa.String(), nullable=False),
+        sa.Column("max_attempts", sa.Integer(), nullable=False),
+        sa.Column("priority", sa.Integer(), nullable=False),
+        sa.Column("kind", sa.String(), nullable=False),
+        sa.Column("payload", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column("idempotency_key", sa.String(), nullable=True),
+        sa.Column("timeout_s", sa.Integer(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("idempotency_key"),
+    )
+    op.create_index("ix_job_tasks_status", "job_tasks", ["status"], unique=False)
+    op.create_index("ix_job_tasks_scheduled_for", "job_tasks", ["scheduled_for"], unique=False)
+
     op.create_table(
         "task_runs",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -223,6 +242,9 @@ def downgrade() -> None:
     op.drop_table("users")
     op.drop_index("ix_ssh_keys_name", table_name="ssh_keys")
     op.drop_table("ssh_keys")
+    op.drop_index("ix_job_tasks_status", table_name="job_tasks")
+    op.drop_index("ix_job_tasks_scheduled_for", table_name="job_tasks")
+    op.drop_table("job_tasks")
 
     for name in (
         "automationtriggerenum",
