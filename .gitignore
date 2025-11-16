@@ -48,6 +48,3 @@ Thumbs.db
 # Database
 *.db
 *.sqlite3
-
-# Fonts (download with download_fonts.sh)
-app/static/fonts/

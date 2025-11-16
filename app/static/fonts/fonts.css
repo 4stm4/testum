@@ -1,0 +1,53 @@
+/* Material Symbols Rounded - Variable Font */
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 100 700;
+  src: url('/static/fonts/MaterialSymbolsRounded[wght].woff2') format('woff2');
+  font-display: swap;
+}
+
+/* Roboto Regular */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/static/fonts/Roboto-Regular.woff2') format('woff2');
+  font-display: swap;
+}
+
+/* Roboto Medium */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 500;
+  src: url('/static/fonts/Roboto-Medium.woff2') format('woff2');
+  font-display: swap;
+}
+
+/* Roboto Bold */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/static/fonts/Roboto-Bold.woff2') format('woff2');
+  font-display: swap;
+}
+
+/* Roboto Mono Regular */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/static/fonts/RobotoMono-Regular.woff2') format('woff2');
+  font-display: swap;
+}
+
+/* Roboto Mono Medium */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  src: url('/static/fonts/RobotoMono-Medium.woff2') format('woff2');
+  font-display: swap;
+}
