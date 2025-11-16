@@ -137,7 +137,7 @@ services:
       retries: 3
 
   app:
-    image: python:3.12-slim
+    image: python:3.13-slim
     container_name: testum_app
     restart: unless-stopped
     working_dir: /app
