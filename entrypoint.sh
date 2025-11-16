@@ -60,7 +60,6 @@ if [[ "${USE_RUNTIME_INSTALL:-0}" == "1" ]]; then
   fi
 
   ensure_python_module "uvicorn" "uvicorn[standard]==0.32.1"
-  ensure_python_module "taskiq" "taskiq==0.11.7"
     ensure_python_module "pyjobkit" "pyjobkit"
 fi
 

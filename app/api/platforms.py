@@ -387,12 +387,11 @@ async def get_task_status(request: Request):
     task_id = request.path_params["task_id"]
     db: Session = next(get_db())
     try:
-        task_run = db.query(TaskRun).filter(TaskRun.celery_task_id == task_id).first()
+        task_run = db.query(TaskRun).filter(TaskRun.id == task_id).first()
         if not task_run:
             return JSONResponse({"error": "Task not found"}, status_code=404)
 
         payload = TaskStatusResponse.model_validate(task_run).model_dump(mode="json")
-        # TODO: Implement Taskiq result backend status check
 
         return JSONResponse(payload)
     finally:
@@ -571,24 +570,22 @@ async def revoke_task(request: Request):
     
     try:
         # Check if task exists in database
-        task = db.query(TaskRun).filter(TaskRun.celery_task_id == task_id).first()
+        task = db.query(TaskRun).filter(TaskRun.id == task_id).first()
         if not task:
             return JSONResponse({"error": "Task not found"}, status_code=404)
-        
+
         # Check if task is still running
         if task.status not in [TaskStatusEnum.pending, TaskStatusEnum.running]:
             return JSONResponse(
-                {"error": f"Cannot stop task with status: {task.status}"}, 
+                {"error": f"Cannot stop task with status: {task.status}"},
                 status_code=400
             )
-        
-        # TODO: Implement Taskiq task cancellation via result backend
-        
+
         # Update task status in database
         task.status = TaskStatusEnum.failed
         task.error_message = "Task stopped by user"
         db.commit()
-        
+
         # Audit log
         user = get_request_user(request)
         log_audit(
@@ -597,15 +594,15 @@ async def revoke_task(request: Request):
             action="revoke_task",
             object_type="task",
             object_id=str(task.id),
-            meta={"celery_task_id": task_id},
+            meta={"task_id": task_id},
         )
-        
+
         return JSONResponse({
             "message": "Task revoked successfully",
             "task_id": task_id,
             "status": "revoked"
         })
-        
+
     except Exception as e:
         logger.error(f"Error revoking task {task_id}: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)

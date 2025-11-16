@@ -76,6 +76,3 @@ def test_crypto_unicode():
     assert decrypted == original
 
 
-# Note: Celery task tests would require mocking SSH connections
-# and Redis pub/sub, which is beyond the basic test coverage.
-# For production, add integration tests with actual SSH server.
