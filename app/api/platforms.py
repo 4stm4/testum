@@ -1,4 +1,5 @@
 from app.config import config
+from app.tasks_new import DeployKeysExecutor, RunCommandExecutor
 from pyjobkit import Engine
 from pyjobkit.backends.sql import SQLBackend
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -6,7 +7,7 @@ import asyncio
 DATABASE_URL = config.DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://')
 async_engine = create_async_engine(DATABASE_URL)
 backend = SQLBackend(async_engine)
-engine = Engine(backend=backend)
+engine = Engine(backend=backend, executors=[DeployKeysExecutor(), RunCommandExecutor()])
 """Platforms API endpoints."""
 import logging
 import uuid
