@@ -1,7 +1,5 @@
-logger = logging.getLogger(__name__)
-
-
 import logging
+logger = logging.getLogger(__name__)
 from datetime import datetime
 import boto3
 from botocore.client import Config
