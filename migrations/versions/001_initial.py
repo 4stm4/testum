@@ -52,7 +52,7 @@ def upgrade() -> None:
         sa.Column("hashed_password", sa.String(length=255), nullable=False),
         sa.Column(
             "role",
-            sa.Enum("admin", "operator", "viewer", name="userrole", create_type=False),
+            postgresql.ENUM("admin", "operator", "viewer", name="userrole", create_type=False),
             nullable=False,
         ),
         sa.Column("is_active", sa.Boolean(), nullable=False),
@@ -75,7 +75,7 @@ def upgrade() -> None:
         sa.Column("username", sa.String(length=255), nullable=False),
         sa.Column(
             "auth_method",
-            sa.Enum("password", "private_key", name="authmethodenum", create_type=False),
+            postgresql.ENUM("password", "private_key", name="authmethodenum", create_type=False),
             nullable=False,
         ),
         sa.Column("encrypted_password", sa.LargeBinary(), nullable=True),
@@ -94,13 +94,13 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "type",
-            sa.Enum("deploy", "run_command", name="tasktypeenum", create_type=False),
+            postgresql.ENUM("deploy", "run_command", name="tasktypeenum", create_type=False),
             nullable=False,
         ),
         sa.Column("platform_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column(
             "status",
-            sa.Enum("pending", "running", "success", "failed", name="taskstatusenum", create_type=False),
+            postgresql.ENUM("pending", "running", "success", "failed", name="taskstatusenum", create_type=False),
             nullable=False,
         ),
         sa.Column("result_location", sa.String(length=512), nullable=True),
@@ -138,14 +138,14 @@ def upgrade() -> None:
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column(
             "execution_type",
-            sa.Enum("command", "script", name="automationexecutionenum", create_type=False),
+            postgresql.ENUM("command", "script", name="automationexecutionenum", create_type=False),
             nullable=False,
         ),
         sa.Column("command", sa.Text(), nullable=True),
         sa.Column("script_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column(
             "trigger_type",
-            sa.Enum("manual", "cron", "github_push", "webhook", name="automationtriggerenum", create_type=False),
+            postgresql.ENUM("manual", "cron", "github_push", "webhook", name="automationtriggerenum", create_type=False),
             nullable=False,
         ),
         sa.Column("cron_expression", sa.String(length=255), nullable=True),
