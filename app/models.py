@@ -128,6 +128,7 @@ class User(Base):
 
 class Platform(Base):
     """Platform (host) model."""
+
     __tablename__ = "platforms"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
