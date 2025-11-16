@@ -95,17 +95,22 @@ make generate-key
 cp .env.example .env
 # Добавьте FERNET_KEY из шага 1
 
-# 3. Запуск
+# 3. Скачать шрифты для оффлайн работы (опционально)
+./download_fonts.sh
+
+# 4. Запуск
 make build
 make up
 
-# 4. Доступ
+# 5. Доступ
 open http://localhost:8000
 ```
 
 **Доступы по умолчанию:**
 - Web UI: http://localhost:8000 (admin / admin123)
 - MinIO Console: http://localhost:9011 (minioadmin / minioadmin)
+
+**Примечание:** Шрифты Material Design 3 (Roboto, Material Symbols) скачиваются локально скриптом `download_fonts.sh` для работы без интернета. Если не запустить скрипт, шрифты не будут загружены, но приложение продолжит работать (используя системные шрифты).
 
 ## 🧪 Разработка и тестирование
 
