@@ -1,3 +1,10 @@
+
+# pyjobkit и executors — для инициализации Engine
+from app.tasks_new import DeployKeysExecutor, RunCommandExecutor
+from pyjobkit import Engine
+from pyjobkit.backends.sql import SQLBackend
+from sqlalchemy.ext.asyncio import create_async_engine
+
 # SPDX-License-Identifier: MIT
 """Main Starlette application."""
 import logging
@@ -18,34 +25,6 @@ from app.api.backup import backup_router
 from app.api.gitops import gitops_router
 from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
-from app.api.scripts import scripts_router
-from app.api.users import users_router
-from app.auth import AuthMiddleware
-from app.config import config
-from app import db as app_db
-from app.models import User, UserRole
-from app.rate_limiter import RateLimiterMiddleware
-from app.rbac import get_request_user
-from app.security import hash_password, verify_password
-from app.updater import UpdateError, get_update_info, perform_update
-from app.db import SessionLocal
-from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
-from app.api.backup import backup_router
-from app.api.gitops import gitops_router
-from app.api.keys import keys_router
-from app.api.platforms import platforms_router, tasks_router
-from app.api.scripts import scripts_router
-from app.api.users import users_router
-from app.auth import AuthMiddleware
-from app.config import config
-from app import db as app_db
-from app.models import User, UserRole
-from app.rate_limiter import RateLimiterMiddleware
-from app.rbac import get_request_user
-from app.security import hash_password, verify_password
-from app.updater import UpdateError, get_update_info, perform_update
-from app.db import SessionLocal
-from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
 from app.api.scripts import scripts_router
 from app.api.users import users_router
 from app.auth import AuthMiddleware
