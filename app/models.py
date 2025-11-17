@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 """SQLAlchemy database models."""
 import uuid
+import json
 from datetime import datetime
 from sqlalchemy import (
     Boolean,
@@ -57,6 +58,22 @@ class GUID(TypeDecorator):
         if value is None:
             return value
         return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value))
+
+
+class JSONString(TypeDecorator):
+    """JSON type that stringifies non-serializable values like UUID or datetime."""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        try:
+            return json.loads(json.dumps(value, default=str))
+        except Exception:
+            # Fallback: stringify everything
+            return json.loads(json.dumps(str(value)))
 
 
 class UserRole(str, enum.Enum):
@@ -306,7 +323,7 @@ class AuditLog(Base):
     action = Column(String(255), nullable=False, index=True)
     object_type = Column(String(100), nullable=False, index=True)
     object_id = Column(String(255), nullable=True, index=True)
-    meta = Column(JSON, nullable=True)
+    meta = Column(JSONString, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     def __repr__(self):

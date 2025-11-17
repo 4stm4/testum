@@ -575,14 +575,14 @@ async def revoke_task(request: Request):
             return JSONResponse({"error": "Task not found"}, status_code=404)
 
         # Check if task is still running
-        if task.status not in [TaskStatusEnum.pending, TaskStatusEnum.running]:
+        if task.status not in [TaskStatusEnum.PENDING, TaskStatusEnum.RUNNING]:
             return JSONResponse(
                 {"error": f"Cannot stop task with status: {task.status}"},
                 status_code=400
             )
 
         # Update task status in database
-        task.status = TaskStatusEnum.failed
+        task.status = TaskStatusEnum.FAILED
         task.error_message = "Task stopped by user"
         db.commit()
 
