@@ -34,12 +34,17 @@ def log_audit(
     Returns:
         Created AuditLog entry
     """
+    meta_serialized = None
+    if meta is not None:
+        # Ensure JSON-serializable payload (UUID, datetime, etc.)
+        meta_serialized = json.loads(json.dumps(meta, default=str))
+
     audit_entry = AuditLog(
         user=user,
         action=action,
         object_type=object_type,
         object_id=object_id,
-        meta=meta,
+        meta=meta_serialized,
         timestamp=datetime.utcnow(),
     )
     
@@ -54,10 +59,9 @@ def log_audit(
         "action": action,
         "object_type": object_type,
         "object_id": object_id,
-        "meta": meta,
+        "meta": meta_serialized,
     }
     logger.info(f"AUDIT: {json.dumps(log_data)}")
 
     return audit_entry
-
 
