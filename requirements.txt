@@ -1,5 +1,5 @@
 # Очередь задач
-git+https://github.com/4stm4/pyjobkit.git@main
+pyjobkit==0.2.0
 # Web framework
 starlette==0.41.3
 uvicorn[standard]==0.32.1
