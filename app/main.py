@@ -16,7 +16,7 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
-from starlette.routing import Mount, Route
+from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from app.api.automations import automations_router
@@ -37,6 +37,7 @@ from app.security import hash_password, verify_password
 from app.updater import UpdateError, get_update_info, perform_update
 from app.db import SessionLocal
 from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
+from app.ws_taskiq import task_stream_websocket
 
 
 # pyjobkit Engine init (аналогично app/api/platforms.py)
@@ -505,6 +506,7 @@ routes = [
     Route("/settings", settings_page),
     Route("/tasks/{task_id}", task_page),
     Route("/health", health_check),
+    WebSocketRoute("/ws/tasks/{task_id}", task_stream_websocket),
     Route("/api/auth/login", login_endpoint, methods=["POST"]),
     Route("/api/auth/logout", logout_endpoint, methods=["GET", "POST"]),
     Route("/api/auth/change-username", change_username_endpoint, methods=["POST"]),

@@ -31,12 +31,13 @@ async def task_stream_websocket(websocket: WebSocket):
     
     # Send initial connection message
     await websocket.send_json({
-        "type": "connected",
-        "task_id": task_id,
-        "timestamp": datetime.utcnow().isoformat(),
+        "type": "progress",
+        "payload": "Connected to task stream",
+        "ts": datetime.utcnow().isoformat(),
     })
 
-    last_output_length = 0
+    last_stdout_length = 0
+    last_stderr_length = 0
     last_status = None
     poll_interval = 0.5  # Poll every 500ms
     
@@ -70,33 +71,50 @@ async def task_stream_websocket(websocket: WebSocket):
                     })
                     break
                 
+                status_value = task.status.value if task.status else "unknown"
+                now_ts = datetime.utcnow().isoformat()
+
                 # Send status update if changed
                 if last_status != task.status:
                     await websocket.send_json({
-                        "type": "status",
-                        "status": task.status.value if task.status else "unknown",
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "type": "progress",
+                        "payload": f"Status: {status_value}",
+                        "ts": now_ts,
                     })
                     last_status = task.status
-                
-                # Send new output if available
-                current_output = task.output or ""
-                if len(current_output) > last_output_length:
-                    new_output = current_output[last_output_length:]
+
+                # Stream stdout/stderr increments
+                stdout_value = task.stdout or ""
+                if len(stdout_value) > last_stdout_length:
+                    new_stdout = stdout_value[last_stdout_length:]
                     await websocket.send_json({
-                        "type": "output",
-                        "data": new_output,
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "type": "stdout",
+                        "payload": new_stdout,
+                        "ts": now_ts,
                     })
-                    last_output_length = len(current_output)
-                
-                # If task is finished, send completion and close
-                if task.status in [TaskStatusEnum.COMPLETED, TaskStatusEnum.FAILED]:
+                    last_stdout_length = len(stdout_value)
+
+                stderr_value = task.stderr or ""
+                if len(stderr_value) > last_stderr_length:
+                    new_stderr = stderr_value[last_stderr_length:]
                     await websocket.send_json({
-                        "type": "done",
-                        "status": task.status.value,
-                        "exit_code": task.exit_code,
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "type": "stderr",
+                        "payload": new_stderr,
+                        "ts": now_ts,
+                    })
+                    last_stderr_length = len(stderr_value)
+
+                # If task is finished, send completion and close
+                if task.status in [TaskStatusEnum.SUCCESS, TaskStatusEnum.FAILED]:
+                    payload = (
+                        task.error_message or "Task completed successfully"
+                        if task.status == TaskStatusEnum.SUCCESS
+                        else task.error_message or "Task failed"
+                    )
+                    await websocket.send_json({
+                        "type": "done" if task.status == TaskStatusEnum.SUCCESS else "error",
+                        "payload": payload,
+                        "ts": now_ts,
                     })
                     break
                     

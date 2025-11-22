@@ -298,6 +298,7 @@ async def deploy_keys(request: Request):
                 "key_ids": key_ids_str,
             },
         )
+        job_id_str = str(job_id)
         db.commit()
 
         # Audit log
@@ -308,11 +309,11 @@ async def deploy_keys(request: Request):
             action="deploy_keys",
             object_type="platform",
             object_id=str(platform.id),
-            meta={"task_id": job_id},
+            meta={"task_id": job_id_str},
         )
 
         return JSONResponse({
-            "task_id": job_id,
+            "task_id": job_id_str,
             "status": "pending",
             "message": "Key deployment task started",
         })
@@ -359,6 +360,7 @@ async def run_command(request: Request):
                 "timeout": command_request.timeout,
             },
         )
+        job_id_str = str(job_id)
 
         # Audit log
         user = get_request_user(request)
@@ -368,11 +370,11 @@ async def run_command(request: Request):
             action="run_command",
             object_type="platform",
             object_id=str(platform.id),
-            meta={"task_id": job_id, "command": command_request.command},
+            meta={"task_id": job_id_str, "command": command_request.command},
         )
 
         return JSONResponse({
-            "task_id": job_id,
+            "task_id": job_id_str,
             "status": "pending",
             "message": "Command execution task started",
         })
