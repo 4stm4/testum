@@ -147,6 +147,7 @@ services:
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: admin123
       FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
+      PYJOBKIT_ENGINE: app.task_engine:engine
       DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
@@ -242,7 +243,7 @@ services:
           sleep 2
         done
         alembic upgrade head
-        exec python -m pyjobkit.worker --database-url "${DATABASE_URL}"
+        exec python -m pyjobkit.worker --engine "${PYJOBKIT_ENGINE}" --database-url "${DATABASE_URL}"
 
 networks:
   testum_network:

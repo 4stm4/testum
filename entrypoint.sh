@@ -70,6 +70,9 @@ if [ -z "${FERNET_KEY:-}" ]; then
   exit 1
 fi
 
+# Указываем путь к объекту движка pyjobkit, чтобы worker мог его обнаружить
+export PYJOBKIT_ENGINE="${PYJOBKIT_ENGINE:-app.task_engine:engine}"
+
 echo "Waiting for database..."
 until pg_isready -h db -p 5432 -U postgres; do
   echo "Database is unavailable - sleeping"

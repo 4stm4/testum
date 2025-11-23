@@ -56,16 +56,9 @@ Browser → Nginx (Reverse Proxy + Loading Screen)
    ```bash
    FERNET_KEY=<generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())">
    ADMIN_USERNAME=admin
-   ADMIN_PASSWORD=admin123root@76f1ab574a6b:/app# cat /app/app/api/platforms.py | grep -A 5 "auth_method=" | head -15
-            auth_method=platform_data.auth_method.lower(),
-            encrypted_password=encrypted_password,
-            ssh_key_id=platform_data.ssh_key_id,
-        )
-
-        db.add(new_platform)
-root@76f1ab574a6b:/app# 
-
+   ADMIN_PASSWORD=admin123
    SECRET_KEY=<random-string>
+   PYJOBKIT_ENGINE=app.task_engine:engine
    ```
 4. Deploy!
 5. Откройте http://your-server:8000
