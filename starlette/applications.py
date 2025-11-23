@@ -44,5 +44,11 @@ class Starlette:
 
     async def __call__(self, scope, receive, send):
         # ASGI compatibility placeholder
-        response = await self.handle_request(Request(scope.get("method", "GET"), scope.get("path", "/")))
-        await send(response)
+        method = scope.get("method", "GET")
+        path = scope.get("path", "/")
+        raw_headers = scope.get("headers") or []
+        headers = {k.decode(): v.decode() for k, v in raw_headers}
+
+        request = Request(method, path, headers=headers)
+        response = await self.handle_request(request)
+        await response(scope, receive, send)
