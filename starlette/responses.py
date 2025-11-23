@@ -20,6 +20,27 @@ class Response:
             self.cookies = {}
         self.cookies[key] = None
 
+    async def __call__(self, scope, receive, send):
+        headers = [(b"content-type", self.media_type.encode())]
+        for key, value in self.headers.items():
+            headers.append((str(key).encode(), str(value).encode()))
+
+        for cookie_key, cookie_value in getattr(self, "cookies", {}).items():
+            if cookie_value is None:
+                cookie_header = f"{cookie_key}=; Path=/; Max-Age=0"
+            else:
+                cookie_header = f"{cookie_key}={cookie_value}; Path=/"
+            headers.append((b"set-cookie", cookie_header.encode()))
+
+        await send({
+            "type": "http.response.start",
+            "status": self.status_code,
+            "headers": headers,
+        })
+
+        body = self.content if isinstance(self.content, (bytes, bytearray)) else str(self.content).encode()
+        await send({"type": "http.response.body", "body": body})
+
 
 class JSONResponse(Response):
     def __init__(self, content, status_code=200, headers=None):
