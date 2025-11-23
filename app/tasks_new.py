@@ -92,6 +92,7 @@ class DeployKeysExecutor(Executor):
     kind = "deploy_keys"
 
     async def run(self, *, job_id, payload, ctx: ExecContext):
+        logger.info(f"[DeployKeysExecutor] START run: job_id={job_id}, payload={payload}")
         task_run_id = payload["task_run_id"]
         platform_id = payload["platform_id"]
         key_ids = payload.get("key_ids")
@@ -103,10 +104,13 @@ class DeployKeysExecutor(Executor):
             started_at=datetime.utcnow(),
         )
 
+        logger.info(f"[DeployKeysExecutor] Status set to RUNNING for task_run_id={task_run_id}")
         await ctx.log("Starting key deployment...")
         platform = await asyncio.to_thread(_load_platform, platform_id)
+        logger.info(f"[DeployKeysExecutor] Platform loaded: {platform}")
         await ctx.log(f"Connecting to {platform.name}...")
         keys = await asyncio.to_thread(_load_keys, key_ids)
+        logger.info(f"[DeployKeysExecutor] Keys loaded: {keys}")
         if not keys:
             raise ValueError("No SSH keys found to deploy")
 
@@ -121,6 +125,7 @@ class DeployKeysExecutor(Executor):
         )
 
         try:
+            logger.info(f"[DeployKeysExecutor] Connecting to SSH...")
             success, error = await ssh_client.connect()
             if not success:
                 raise RuntimeError(error or "Failed to establish SSH connection")
@@ -136,6 +141,7 @@ class DeployKeysExecutor(Executor):
                     f"echo \"{key.public_key}\" >> ~/.ssh/authorized_keys && "
                     "chmod 600 ~/.ssh/authorized_keys"
                 )
+                logger.info(f"[DeployKeysExecutor] Executing command for key {key.name}")
                 exit_code, stdout, stderr = await ssh_client.execute_command(cmd)
                 if stderr:
                     output_lines.append(f"[{key.name}] stderr: {stderr}")
@@ -154,6 +160,7 @@ class DeployKeysExecutor(Executor):
 
             output_content = "\n".join(output_lines)
             s3_key = f"tasks/{task_run_id}/output.txt"
+            logger.info(f"[DeployKeysExecutor] Uploading output to S3: {s3_key}")
             upload_to_s3(s3_key, output_content)
 
             await asyncio.to_thread(
@@ -163,7 +170,9 @@ class DeployKeysExecutor(Executor):
                 finished_at=datetime.utcnow(),
                 result_location=s3_key,
             )
+            logger.info(f"[DeployKeysExecutor] Status set to SUCCESS for task_run_id={task_run_id}")
             await ctx.log(f"Deployed {deployed_count} keys successfully")
+            logger.info(f"[DeployKeysExecutor] END run: job_id={job_id}, task_run_id={task_run_id}")
             return {"task_id": job_id, "status": "success"}
         except Exception as e:
             logger.exception(f"Task {task_run_id} failed")
@@ -174,9 +183,11 @@ class DeployKeysExecutor(Executor):
                 finished_at=datetime.utcnow(),
                 error_message=str(e),
             )
+            logger.info(f"[DeployKeysExecutor] Status set to FAILED for task_run_id={task_run_id}")
             await ctx.log(f"error: {str(e)}")
             raise
         finally:
+            logger.info(f"[DeployKeysExecutor] Closing SSH client for task_run_id={task_run_id}")
             await ssh_client.close()
 
 # Executor для запуска команды
@@ -184,6 +195,7 @@ class RunCommandExecutor(Executor):
     kind = "run_command"
 
     async def run(self, *, job_id, payload, ctx: ExecContext):
+        logger.info(f"[RunCommandExecutor] START run: job_id={job_id}, payload={payload}")
         task_run_id = payload["task_run_id"]
         platform_id = payload["platform_id"]
         command = payload["command"]
@@ -195,9 +207,11 @@ class RunCommandExecutor(Executor):
             TaskStatusEnum.RUNNING,
             started_at=datetime.utcnow(),
         )
+        logger.info(f"[RunCommandExecutor] Status set to RUNNING for task_run_id={task_run_id}")
 
         await ctx.log("Starting command execution...")
         platform = await asyncio.to_thread(_load_platform, platform_id)
+        logger.info(f"[RunCommandExecutor] Platform loaded: {platform}")
         await ctx.log(f"Connecting to {platform.name}...")
 
         ssh_client = AsyncSSHClient(
@@ -209,12 +223,14 @@ class RunCommandExecutor(Executor):
         )
 
         try:
+            logger.info(f"[RunCommandExecutor] Connecting to SSH...")
             success, error = await ssh_client.connect()
             if not success:
                 raise RuntimeError(error or "Failed to establish SSH connection")
 
             await ctx.log("Connected, executing command...")
             await ctx.log(f"$ {command}\n")
+            logger.info(f"[RunCommandExecutor] Executing command: {command}")
             exit_code, stdout, stderr = await ssh_client.execute_command(
                 command, timeout=timeout or 60
             )
@@ -228,6 +244,7 @@ class RunCommandExecutor(Executor):
                 f"{stdout}\n\n=== STDERR ===\n{stderr}"
             )
             s3_key = f"tasks/{task_run_id}/output.txt"
+            logger.info(f"[RunCommandExecutor] Uploading output to S3: {s3_key}")
             upload_to_s3(s3_key, output_content)
 
             await asyncio.to_thread(
@@ -237,7 +254,9 @@ class RunCommandExecutor(Executor):
                 finished_at=datetime.utcnow(),
                 result_location=s3_key,
             )
+            logger.info(f"[RunCommandExecutor] Status set to SUCCESS for task_run_id={task_run_id}")
             await ctx.log("Command executed successfully")
+            logger.info(f"[RunCommandExecutor] END run: job_id={job_id}, task_run_id={task_run_id}")
             return {"task_id": job_id, "status": "success"}
         except Exception as e:
             logger.exception(f"Task {task_run_id} failed")
@@ -248,9 +267,11 @@ class RunCommandExecutor(Executor):
                 finished_at=datetime.utcnow(),
                 error_message=str(e),
             )
+            logger.info(f"[RunCommandExecutor] Status set to FAILED for task_run_id={task_run_id}")
             await ctx.log(f"error: {str(e)}")
             raise
         finally:
+            logger.info(f"[RunCommandExecutor] Closing SSH client for task_run_id={task_run_id}")
             await ssh_client.close()
 
 
