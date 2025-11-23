@@ -7,6 +7,10 @@ import sys
 from pathlib import Path
 
 import pytest
+sqlalchemy = pytest.importorskip("sqlalchemy", reason="SQLAlchemy dependency is required for tests")
+pytest.importorskip("starlette", reason="Starlette dependency is required for tests")
+pytest.importorskip("cryptography", reason="Cryptography dependency is required for tests")
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
