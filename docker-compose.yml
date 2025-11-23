@@ -191,6 +191,59 @@ services:
         alembic upgrade head
         exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
+  worker:
+    image: testum
+    container_name: testum_worker
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      APP_ENV: production
+      SECRET_KEY: test-secret-key-change-me-in-production
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: testum-artifacts
+      MINIO_SECURE: "false"
+      SSH_HOST_KEY_POLICY: auto_add
+    networks:
+      - testum_network
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qq
+        apt-get install -y -qq --no-install-recommends gcc libpq-dev postgresql-client git
+        rm -rf /var/lib/apt/lists/*
+        cd /tmp
+        rm -rf testum
+        git clone --depth 1 --branch main https://github.com/4stm4/testum.git testum > /dev/null 2>&1
+        cd testum
+        rm -rf /app/*
+        mv * /app/ 2>/dev/null || true
+        mv .* /app/ 2>/dev/null || true
+        cd /app
+        rm -rf /app/.venv
+        python3 -m venv /app/.venv
+        . /app/.venv/bin/activate
+        python -m pip install --no-cache-dir --upgrade pip setuptools wheel
+        python -m pip install --no-cache-dir -r /app/requirements.txt
+        until pg_isready -h db -p 5432 -U postgres; do
+          sleep 2
+        done
+        alembic upgrade head
+        exec python -m pyjobkit.worker --database-url "${DATABASE_URL}"
+
 networks:
   testum_network:
     driver: bridge
