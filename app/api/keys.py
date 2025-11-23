@@ -8,7 +8,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Router
 
-from app import crypto
+from app.crypto import crypto
 from app.audit import log_audit
 from app.db import get_db
 from app.models import SSHKey, UserRole
