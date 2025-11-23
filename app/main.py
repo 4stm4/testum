@@ -1,10 +1,8 @@
 
 # SPDX-License-Identifier: MIT
 """Main Starlette application."""
-import asyncio
 import logging
 import uuid
-from contextlib import suppress
 from datetime import datetime, timedelta
 import jwt
 from starlette.applications import Starlette
@@ -35,7 +33,6 @@ from app.db import SessionLocal
 from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
 from app.ws_taskiq import task_stream_websocket
 from app.task_engine import backend, engine
-from pyjobkit import Worker
 
 
 # Configure logging
@@ -522,45 +519,10 @@ app = Starlette(
 )
 
 
-worker = Worker(engine=engine)
-worker_task: asyncio.Task | None = None
-
-
-async def run_worker() -> None:
-    """Run the background worker using whichever entrypoint the library exposes."""
-
-    if hasattr(worker, "start"):
-        await worker.start()
-        return
-
-    if hasattr(worker, "run"):
-        await worker.run()
-        return
-
-    if hasattr(worker, "serve"):
-        await worker.serve()
-        return
-
-    logger.error("Worker instance has no start/run/serve method; cannot launch queue consumer")
-
-
-
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize application services."""
     ensure_default_admin_user()
-    global worker_task
-    worker_task = asyncio.create_task(run_worker())
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    """Cleanup application services."""
-    # Engine does not provide explicit shutdown hooks
-    if worker_task:
-        worker_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await worker_task
 
 
 logger.info(f"Application started in {config.APP_ENV} mode")
