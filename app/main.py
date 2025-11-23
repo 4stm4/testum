@@ -526,13 +526,31 @@ worker = Worker(engine=engine)
 worker_task: asyncio.Task | None = None
 
 
+async def run_worker() -> None:
+    """Run the background worker using whichever entrypoint the library exposes."""
+
+    if hasattr(worker, "start"):
+        await worker.start()
+        return
+
+    if hasattr(worker, "run"):
+        await worker.run()
+        return
+
+    if hasattr(worker, "serve"):
+        await worker.serve()
+        return
+
+    logger.error("Worker instance has no start/run/serve method; cannot launch queue consumer")
+
+
 
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize application services."""
     ensure_default_admin_user()
     global worker_task
-    worker_task = asyncio.create_task(worker.start())
+    worker_task = asyncio.create_task(run_worker())
 
 
 @app.on_event("shutdown")
