@@ -156,26 +156,26 @@ class DeployKeysExecutor(Executor):
             s3_key = f"tasks/{task_run_id}/output.txt"
             upload_to_s3(s3_key, output_content)
 
-            await asyncio.to_thread(
-                _update_task_status,
-                task_run_id,
-                TaskStatusEnum.SUCCESS,
-                completed_at=datetime.utcnow(),
-                output_s3_key=s3_key,
-            )
-            await ctx.log(f"Deployed {deployed_count} keys successfully")
-            return {"task_id": job_id, "status": "success"}
-        except Exception as e:
-            logger.exception(f"Task {task_run_id} failed")
-            await asyncio.to_thread(
-                _update_task_status,
-                task_run_id,
-                TaskStatusEnum.FAILED,
-                completed_at=datetime.utcnow(),
-                error=str(e),
-            )
-            await ctx.log(f"error: {str(e)}")
-            raise
+        await asyncio.to_thread(
+            _update_task_status,
+            task_run_id,
+            TaskStatusEnum.SUCCESS,
+            finished_at=datetime.utcnow(),
+            result_location=s3_key,
+        )
+        await ctx.log(f"Deployed {deployed_count} keys successfully")
+        return {"task_id": job_id, "status": "success"}
+    except Exception as e:
+        logger.exception(f"Task {task_run_id} failed")
+        await asyncio.to_thread(
+            _update_task_status,
+            task_run_id,
+            TaskStatusEnum.FAILED,
+            finished_at=datetime.utcnow(),
+            error_message=str(e),
+        )
+        await ctx.log(f"error: {str(e)}")
+        raise
         finally:
             await ssh_client.close()
 
@@ -230,26 +230,26 @@ class RunCommandExecutor(Executor):
             s3_key = f"tasks/{task_run_id}/output.txt"
             upload_to_s3(s3_key, output_content)
 
-            await asyncio.to_thread(
-                _update_task_status,
-                task_run_id,
-                TaskStatusEnum.SUCCESS,
-                completed_at=datetime.utcnow(),
-                output_s3_key=s3_key,
-            )
-            await ctx.log("Command executed successfully")
-            return {"task_id": job_id, "status": "success"}
-        except Exception as e:
-            logger.exception(f"Task {task_run_id} failed")
-            await asyncio.to_thread(
-                _update_task_status,
-                task_run_id,
-                TaskStatusEnum.FAILED,
-                completed_at=datetime.utcnow(),
-                error=str(e),
-            )
-            await ctx.log(f"error: {str(e)}")
-            raise
+        await asyncio.to_thread(
+            _update_task_status,
+            task_run_id,
+            TaskStatusEnum.SUCCESS,
+            finished_at=datetime.utcnow(),
+            result_location=s3_key,
+        )
+        await ctx.log("Command executed successfully")
+        return {"task_id": job_id, "status": "success"}
+    except Exception as e:
+        logger.exception(f"Task {task_run_id} failed")
+        await asyncio.to_thread(
+            _update_task_status,
+            task_run_id,
+            TaskStatusEnum.FAILED,
+            finished_at=datetime.utcnow(),
+            error_message=str(e),
+        )
+        await ctx.log(f"error: {str(e)}")
+        raise
         finally:
             await ssh_client.close()
 
