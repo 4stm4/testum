@@ -19,7 +19,6 @@ from app.api.backup import backup_router
 from app.api.gitops import gitops_router
 from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
-from app.task_engine import engine
 from app.api.scripts import scripts_router
 from app.api.users import users_router
 from app.auth import AuthMiddleware
@@ -524,13 +523,12 @@ app = Starlette(
 async def startup_event() -> None:
     """Initialize application services."""
     ensure_default_admin_user()
-    await engine.startup()
 
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
     """Cleanup application services."""
-    await engine.shutdown()
+    # Engine does not provide explicit shutdown hooks
 
 
 logger.info(f"Application started in {config.APP_ENV} mode")
