@@ -1,10 +1,4 @@
 
-# pyjobkit и executors — для инициализации Engine
-from app.tasks_new import DeployKeysExecutor, RunCommandExecutor
-from pyjobkit import Engine
-from pyjobkit.backends.sql import SQLBackend
-from sqlalchemy.ext.asyncio import create_async_engine
-
 # SPDX-License-Identifier: MIT
 """Main Starlette application."""
 import logging
@@ -25,6 +19,7 @@ from app.api.backup import backup_router
 from app.api.gitops import gitops_router
 from app.api.keys import keys_router
 from app.api.platforms import platforms_router, tasks_router
+from app.task_engine import engine
 from app.api.scripts import scripts_router
 from app.api.users import users_router
 from app.auth import AuthMiddleware
@@ -40,9 +35,6 @@ from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
 from app.ws_taskiq import task_stream_websocket
 
 
-# pyjobkit Engine init (аналогично app/api/platforms.py)
-
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -50,12 +42,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
-# pyjobkit engine setup
-DATABASE_URL = config.DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://')
-async_engine = create_async_engine(DATABASE_URL)
-backend = SQLBackend(async_engine)
-engine = Engine(backend=backend, executors=[DeployKeysExecutor(), RunCommandExecutor()])
 
 # Templates
 templates = Jinja2Templates(directory="app/templates")
@@ -534,28 +520,17 @@ app = Starlette(
 
 
 
-# pyjobkit Engine init (аналогично app/api/platforms.py)
-from app.tasks_new import DeployKeysExecutor, RunCommandExecutor
-from pyjobkit import Engine
-from pyjobkit.backends.sql import SQLBackend
-from sqlalchemy.ext.asyncio import create_async_engine
-
-DATABASE_URL = config.DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://')
-async_engine = create_async_engine(DATABASE_URL)
-backend = SQLBackend(async_engine)
-engine = Engine(backend=backend, executors=[DeployKeysExecutor(), RunCommandExecutor()])
-
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize application services."""
-    # Здесь можно добавить запуск engine, если потребуется (например, await engine.startup())
     ensure_default_admin_user()
+    await engine.startup()
 
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
     """Cleanup application services."""
-    # Здесь можно добавить остановку engine, если потребуется (например, await engine.shutdown())
+    await engine.shutdown()
 
 
 logger.info(f"Application started in {config.APP_ENV} mode")
