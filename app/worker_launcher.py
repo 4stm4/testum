@@ -42,6 +42,18 @@ def _database_url() -> str:
     return sync_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 
+def _asyncpg_url(url: str) -> str:
+    """Return a DSN compatible with asyncpg.connect.
+
+    pyjobkit workers use an async SQLAlchemy URL (``postgresql+asyncpg``),
+    but ``asyncpg.connect`` expects the plain ``postgresql`` scheme. This helper
+    normalizes the URL so the startup connectivity check can succeed while
+    preserving the original value for the worker itself.
+    """
+
+    return url.replace("postgresql+asyncpg://", "postgresql://", 1)
+
+
 async def _wait_for_db(url: str, attempts: int, delay: int) -> None:
     """Poll the database until a connection succeeds or attempts are exhausted."""
     last_error: Optional[BaseException] = None
@@ -49,7 +61,7 @@ async def _wait_for_db(url: str, attempts: int, delay: int) -> None:
 
     for attempt in range(1, attempts + 1):
         try:
-            conn = await asyncpg.connect(url)
+            conn = await asyncpg.connect(_asyncpg_url(url))
             await conn.close()
             _log("Database connection established")
             return
