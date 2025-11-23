@@ -247,8 +247,7 @@ services:
           sleep 2
         done
         alembic upgrade head
-        ASYNC_DATABASE_URL="$${PYJOBKIT_DATABASE_URL:-$${DATABASE_URL/postgresql:\/\//postgresql+asyncpg://}}"
-        exec python -m pyjobkit.worker --engine "${PYJOBKIT_ENGINE}" --database-url "${ASYNC_DATABASE_URL}"
+        exec python -m app.worker_launcher
 
 networks:
   testum_network:
