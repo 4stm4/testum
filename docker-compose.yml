@@ -192,7 +192,7 @@ services:
         exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   worker:
-    image: testum
+    image: python:3.13-slim
     container_name: testum_worker
     restart: unless-stopped
     working_dir: /app
