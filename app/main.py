@@ -522,7 +522,7 @@ app = Starlette(
 )
 
 
-worker = Worker(backend=backend, executors=engine.executors)
+worker = Worker(engine=engine)
 worker_task: asyncio.Task | None = None
 
 
