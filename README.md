@@ -59,6 +59,7 @@ Browser → Nginx (Reverse Proxy + Loading Screen)
    ADMIN_PASSWORD=admin123
    SECRET_KEY=<random-string>
    PYJOBKIT_ENGINE=app.task_engine:engine
+   PYJOBKIT_DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/testum
    ```
 4. Deploy!
 5. Откройте http://your-server:8000

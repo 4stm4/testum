@@ -203,6 +203,10 @@ services:
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: admin123
       FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
+      # Ensure the worker knows where to find the pyjobkit engine
+      PYJOBKIT_ENGINE: app.task_engine:engine
+      # Async URL is required for the SQL backend used by pyjobkit workers
+      PYJOBKIT_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/testum
       DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
@@ -243,7 +247,8 @@ services:
           sleep 2
         done
         alembic upgrade head
-        exec python -m pyjobkit.worker --engine "${PYJOBKIT_ENGINE}" --database-url "${DATABASE_URL}"
+        ASYNC_DATABASE_URL="${PYJOBKIT_DATABASE_URL:-${DATABASE_URL/postgresql:\/\//postgresql+asyncpg://}}"
+        exec python -m pyjobkit.worker --engine "${PYJOBKIT_ENGINE}" --database-url "${ASYNC_DATABASE_URL}"
 
 networks:
   testum_network:
