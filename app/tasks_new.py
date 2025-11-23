@@ -1,14 +1,91 @@
+import asyncio
 import logging
-logger = logging.getLogger(__name__)
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Iterable, List, Optional
+
 import boto3
 from botocore.client import Config
+
 from app.config import config
+from app.crypto import crypto
 from app.db import SessionLocal
 from app.models import Platform, SSHKey, TaskRun, TaskStatusEnum
-from app.crypto import crypto
 from app.ssh_helper import AsyncSSHClient
-from pyjobkit.contracts import Executor, ExecContext
+from pyjobkit.contracts import ExecContext, Executor
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class PlatformInfo:
+    id: int
+    name: str
+    host: str
+    port: int
+    username: str
+    auth_method: str
+    password: Optional[str]
+    private_key_data: Optional[str]
+
+
+@dataclass
+class SSHKeyInfo:
+    id: int
+    name: str
+    public_key: str
+
+
+def _load_platform(platform_id: int) -> PlatformInfo:
+    with SessionLocal() as db:
+        platform = db.query(Platform).filter(Platform.id == platform_id).first()
+        if not platform:
+            raise ValueError(f"Platform {platform_id} not found")
+
+        password: Optional[str] = None
+        private_key_data: Optional[str] = None
+
+        if platform.auth_method == "password":
+            password = crypto.decrypt(platform.password)
+        elif platform.ssh_key_id:
+            key = db.query(SSHKey).filter(SSHKey.id == platform.ssh_key_id).first()
+            if not key or not key.private_key:
+                raise ValueError("SSH key not found or has no private key")
+            private_key_data = crypto.decrypt(key.private_key)
+
+        return PlatformInfo(
+            id=platform.id,
+            name=platform.name,
+            host=platform.host,
+            port=platform.port,
+            username=platform.username,
+            auth_method=platform.auth_method,
+            password=password,
+            private_key_data=private_key_data,
+        )
+
+
+def _load_keys(key_ids: Optional[Iterable[int]] = None) -> List[SSHKeyInfo]:
+    with SessionLocal() as db:
+        query = db.query(SSHKey)
+        if key_ids:
+            query = query.filter(SSHKey.id.in_(key_ids))
+        keys = query.all()
+        return [
+            SSHKeyInfo(id=key.id, name=key.name, public_key=key.public_key)
+            for key in keys
+        ]
+
+
+def _update_task_status(task_run_id: str, status: TaskStatusEnum, **updates) -> None:
+    with SessionLocal() as db:
+        task_run = db.query(TaskRun).filter(TaskRun.id == task_run_id).first()
+        if not task_run:
+            raise ValueError(f"TaskRun {task_run_id} not found")
+        task_run.status = status
+        for key, value in updates.items():
+            setattr(task_run, key, value)
+        db.commit()
 
 # Executor для деплоя ключей
 class DeployKeysExecutor(Executor):
@@ -18,81 +95,89 @@ class DeployKeysExecutor(Executor):
         task_run_id = payload["task_run_id"]
         platform_id = payload["platform_id"]
         key_ids = payload.get("key_ids")
-        db = SessionLocal()
+
+        await asyncio.to_thread(
+            _update_task_status,
+            task_run_id,
+            TaskStatusEnum.RUNNING,
+            started_at=datetime.utcnow(),
+        )
+
+        await ctx.log("Starting key deployment...")
+        platform = await asyncio.to_thread(_load_platform, platform_id)
+        await ctx.log(f"Connecting to {platform.name}...")
+        keys = await asyncio.to_thread(_load_keys, key_ids)
+        if not keys:
+            raise ValueError("No SSH keys found to deploy")
+
+        await ctx.log(f"Found {len(keys)} keys to deploy")
+
+        ssh_client = AsyncSSHClient(
+            host=platform.host,
+            port=platform.port,
+            username=platform.username,
+            password=platform.password,
+            private_key=platform.private_key_data,
+        )
+
         try:
-            task_run = db.query(TaskRun).filter(TaskRun.id == task_run_id).first()
-            if not task_run:
-                raise ValueError(f"TaskRun {task_run_id} not found")
-            task_run.status = TaskStatusEnum.RUNNING
-            task_run.started_at = datetime.utcnow()
-            db.commit()
-            await ctx.log("Starting key deployment...")
-            platform = db.query(Platform).filter(Platform.id == platform_id).first()
-            if not platform:
-                raise ValueError(f"Platform {platform_id} not found")
-            await ctx.log(f"Connecting to {platform.name}...")
-            if key_ids:
-                keys = db.query(SSHKey).filter(SSHKey.id.in_(key_ids)).all()
-            else:
-                keys = db.query(SSHKey).all()
-            if not keys:
-                raise ValueError("No SSH keys found to deploy")
-            await ctx.log(f"Found {len(keys)} keys to deploy")
-            ssh_client = AsyncSSHClient()
-            if platform.auth_method == "password":
-                password = crypto.decrypt(platform.password)
-                await ssh_client.connect_with_password(
-                    host=platform.host,
-                    port=platform.port,
-                    username=platform.username,
-                    password=password
-                )
-            else:
-                key = db.query(SSHKey).filter(SSHKey.id == platform.ssh_key_id).first()
-                if not key or not key.private_key:
-                    raise ValueError("SSH key not found or has no private key")
-                private_key_data = crypto.decrypt(key.private_key)
-                await ssh_client.connect_with_key(
-                    host=platform.host,
-                    port=platform.port,
-                    username=platform.username,
-                    private_key_data=private_key_data
-                )
+            success, error = await ssh_client.connect()
+            if not success:
+                raise RuntimeError(error or "Failed to establish SSH connection")
+
             await ctx.log("Connected to platform")
             deployed_count = 0
-            output_lines = []
+            output_lines: List[str] = []
+
             for key in keys:
                 await ctx.log(f"Deploying key: {key.name}")
-                cmd = f'mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo "{key.public_key}" >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
-                stdout, stderr = await ssh_client.execute_command(cmd)
+                cmd = (
+                    "mkdir -p ~/.ssh && chmod 700 ~/.ssh && "
+                    f"echo \"{key.public_key}\" >> ~/.ssh/authorized_keys && "
+                    "chmod 600 ~/.ssh/authorized_keys"
+                )
+                exit_code, stdout, stderr = await ssh_client.execute_command(cmd)
                 if stderr:
                     output_lines.append(f"[{key.name}] stderr: {stderr}")
                     await ctx.log(f"[{key.name}] {stderr}")
+                if exit_code != 0:
+                    output_lines.append(
+                        f"[{key.name}] failed with code {exit_code}: {stderr or stdout}"
+                    )
+                    await ctx.log(
+                        f"[{key.name}] failed with code {exit_code}: {stderr or stdout}"
+                    )
+                    continue
                 output_lines.append(f"[{key.name}] Deployed successfully")
                 await ctx.log(f"[{key.name}] Deployed successfully")
                 deployed_count += 1
-            await ssh_client.close()
+
             output_content = "\n".join(output_lines)
             s3_key = f"tasks/{task_run_id}/output.txt"
             upload_to_s3(s3_key, output_content)
-            task_run.status = TaskStatusEnum.SUCCESS
-            task_run.completed_at = datetime.utcnow()
-            task_run.output_s3_key = s3_key
-            db.commit()
+
+            await asyncio.to_thread(
+                _update_task_status,
+                task_run_id,
+                TaskStatusEnum.SUCCESS,
+                completed_at=datetime.utcnow(),
+                output_s3_key=s3_key,
+            )
             await ctx.log(f"Deployed {deployed_count} keys successfully")
             return {"task_id": job_id, "status": "success"}
         except Exception as e:
             logger.exception(f"Task {task_run_id} failed")
-            task_run = db.query(TaskRun).filter(TaskRun.id == task_run_id).first()
-            if task_run:
-                task_run.status = TaskStatusEnum.FAILED
-                task_run.completed_at = datetime.utcnow()
-                task_run.error = str(e)
-                db.commit()
+            await asyncio.to_thread(
+                _update_task_status,
+                task_run_id,
+                TaskStatusEnum.FAILED,
+                completed_at=datetime.utcnow(),
+                error=str(e),
+            )
             await ctx.log(f"error: {str(e)}")
             raise
         finally:
-            db.close()
+            await ssh_client.close()
 
 # Executor для запуска команды
 class RunCommandExecutor(Executor):
@@ -102,69 +187,71 @@ class RunCommandExecutor(Executor):
         task_run_id = payload["task_run_id"]
         platform_id = payload["platform_id"]
         command = payload["command"]
-        db = SessionLocal()
+        timeout: Optional[int] = payload.get("timeout")
+
+        await asyncio.to_thread(
+            _update_task_status,
+            task_run_id,
+            TaskStatusEnum.RUNNING,
+            started_at=datetime.utcnow(),
+        )
+
+        await ctx.log("Starting command execution...")
+        platform = await asyncio.to_thread(_load_platform, platform_id)
+        await ctx.log(f"Connecting to {platform.name}...")
+
+        ssh_client = AsyncSSHClient(
+            host=platform.host,
+            port=platform.port,
+            username=platform.username,
+            password=platform.password,
+            private_key=platform.private_key_data,
+        )
+
         try:
-            task_run = db.query(TaskRun).filter(TaskRun.id == task_run_id).first()
-            if not task_run:
-                raise ValueError(f"TaskRun {task_run_id} not found")
-            task_run.status = TaskStatusEnum.RUNNING
-            task_run.started_at = datetime.utcnow()
-            db.commit()
-            await ctx.log("Starting command execution...")
-            platform = db.query(Platform).filter(Platform.id == platform_id).first()
-            if not platform:
-                raise ValueError(f"Platform {platform_id} not found")
-            await ctx.log(f"Connecting to {platform.name}...")
-            ssh_client = AsyncSSHClient()
-            if platform.auth_method == "password":
-                password = crypto.decrypt(platform.password)
-                await ssh_client.connect_with_password(
-                    host=platform.host,
-                    port=platform.port,
-                    username=platform.username,
-                    password=password
-                )
-            else:
-                key = db.query(SSHKey).filter(SSHKey.id == platform.ssh_key_id).first()
-                if not key or not key.private_key:
-                    raise ValueError("SSH key not found or has no private key")
-                private_key_data = crypto.decrypt(key.private_key)
-                await ssh_client.connect_with_key(
-                    host=platform.host,
-                    port=platform.port,
-                    username=platform.username,
-                    private_key_data=private_key_data
-                )
+            success, error = await ssh_client.connect()
+            if not success:
+                raise RuntimeError(error or "Failed to establish SSH connection")
+
             await ctx.log("Connected, executing command...")
             await ctx.log(f"$ {command}\n")
-            stdout, stderr = await ssh_client.execute_command(command)
+            exit_code, stdout, stderr = await ssh_client.execute_command(
+                command, timeout=timeout or 60
+            )
             if stdout:
                 await ctx.log(stdout)
             if stderr:
                 await ctx.log(stderr)
-            await ssh_client.close()
-            output_content = f"Command: {command}\n\n=== STDOUT ===\n{stdout}\n\n=== STDERR ===\n{stderr}"
+
+            output_content = (
+                f"Command: {command}\n\n=== EXIT CODE ===\n{exit_code}\n\n=== STDOUT ===\n"
+                f"{stdout}\n\n=== STDERR ===\n{stderr}"
+            )
             s3_key = f"tasks/{task_run_id}/output.txt"
             upload_to_s3(s3_key, output_content)
-            task_run.status = TaskStatusEnum.SUCCESS
-            task_run.completed_at = datetime.utcnow()
-            task_run.output_s3_key = s3_key
-            db.commit()
+
+            await asyncio.to_thread(
+                _update_task_status,
+                task_run_id,
+                TaskStatusEnum.SUCCESS,
+                completed_at=datetime.utcnow(),
+                output_s3_key=s3_key,
+            )
             await ctx.log("Command executed successfully")
             return {"task_id": job_id, "status": "success"}
         except Exception as e:
             logger.exception(f"Task {task_run_id} failed")
-            task_run = db.query(TaskRun).filter(TaskRun.id == task_run_id).first()
-            if task_run:
-                task_run.status = TaskStatusEnum.FAILED
-                task_run.completed_at = datetime.utcnow()
-## executor будет реализован ниже
-                task_run.error = str(e)
-                db.commit()
+            await asyncio.to_thread(
+                _update_task_status,
+                task_run_id,
+                TaskStatusEnum.FAILED,
+                completed_at=datetime.utcnow(),
+                error=str(e),
+            )
             await ctx.log(f"error: {str(e)}")
             raise
         finally:
-            db.close()
+            await ssh_client.close()
 
 
 
