@@ -1,190 +1,62 @@
 # SPDX-License-Identifier: MIT
-"""Reusable automation scripts API endpoints."""
-import uuid
-from datetime import datetime
-from typing import List
-
-from sqlalchemy.orm import Session
-import uuid
-from datetime import datetime
-from typing import List
-
-from sqlalchemy.orm import Session
+"""Script API endpoints (in-memory)."""
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Router
 
-from app.audit import log_audit
-from app.db import get_db
-from app.models import Script, UserRole
-from app.pagination import get_pagination_params
-from app.rbac import ALL_ROLES, get_request_user, require_roles
-from app.schemas import (
-    MessageResponse,
-    ScriptCreate,
-    ScriptResponse,
-    ScriptUpdate,
-)
+from app.storage import storage
 
 router = Router()
 
-
-def _get_db_session() -> Session:
-    """Return a database session from dependency factory."""
-    return next(get_db())
-
-
-@require_roles(*ALL_ROLES)
-async def list_scripts(request: Request) -> JSONResponse:
-    """Return all stored scripts ordered by name."""
-    db: Session = _get_db_session()
-    try:
-        try:
-            limit, offset = get_pagination_params(request, default_limit=25)
-        except ValueError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=400)
-
-        query = db.query(Script)
-        total = query.count()
-        scripts: List[Script] = (
-            query.order_by(Script.name.asc()).offset(offset).limit(limit).all()
-        )
-        items = [
-            ScriptResponse.model_validate(script).model_dump(mode="json")
-            for script in scripts
-        ]
-        response = JSONResponse(items)
-        response.headers["X-Total-Count"] = str(total)
-        response.headers["X-Limit"] = str(limit)
-        response.headers["X-Offset"] = str(offset)
-        return response
-    finally:
-        db.close()
+def _script_payload(data: dict):
+    required = ["name", "language", "content"]
+    if not all(data.get(f) for f in required):
+        return None
+    return {
+        "name": data["name"],
+        "language": data.get("language", "bash"),
+        "description": data.get("description"),
+        "content": data["content"],
+        "created_by": data.get("created_by", "system"),
+    }
 
 
-@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
-async def create_script(request: Request) -> JSONResponse:
-    """Create a new reusable script."""
-    db: Session = _get_db_session()
-    try:
-        data = await request.json()
-        script_data = ScriptCreate(**data)
-        user = get_request_user(request)
-
-        new_script = Script(
-            id=uuid.uuid4(),
-            name=script_data.name.strip(),
-            language=script_data.language.strip(),
-            description=script_data.description.strip() if script_data.description else None,
-            content=script_data.content,
-            created_by=user.username if user else "system",
-        )
-        db.add(new_script)
-        db.commit()
-        db.refresh(new_script)
-
-        log_audit(
-            db,
-            user=user.username if user else "system",
-            action="create",
-            object_type="script",
-            object_id=str(new_script.id),
-            meta={"name": new_script.name, "language": new_script.language},
-        )
-
-        return JSONResponse(
-            ScriptResponse.model_validate(new_script).model_dump(mode="json"),
-            status_code=201,
-        )
-    except Exception as exc:  # pragma: no cover - generic safety net mirrors existing endpoints
-        db.rollback()
-        return JSONResponse({"error": str(exc)}, status_code=400)
-    finally:
-        db.close()
+async def create_script(request: Request):
+    data = await request.json()
+    payload = _script_payload(data)
+    if not payload:
+        return JSONResponse({"error": "Invalid script data"}, status_code=400)
+    created = storage.create_script(payload)
+    return JSONResponse(created, status_code=201)
 
 
-@require_roles(*ALL_ROLES)
-async def get_script(request: Request) -> JSONResponse:
-    """Fetch a single script by identifier."""
-    script_id = request.path_params["script_id"]
-    db: Session = _get_db_session()
-    try:
-        script = db.query(Script).filter(Script.id == script_id).first()
-        if not script:
-            return JSONResponse({"error": "Script not found"}, status_code=404)
-        return JSONResponse(ScriptResponse.model_validate(script).model_dump(mode="json"))
-    finally:
-        db.close()
+async def update_script(request: Request):
+    script_id = request.path_params.get("script_id")
+    updates = await request.json()
+    updated = storage.update_script(script_id, updates)
+    if not updated:
+        return JSONResponse({"error": "Script not found"}, status_code=404)
+    return JSONResponse(updated)
 
 
-@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
-async def update_script(request: Request) -> JSONResponse:
-    """Update script fields."""
-    script_id = request.path_params["script_id"]
-    db: Session = _get_db_session()
-    try:
-        user = get_request_user(request)
-        payload = await request.json()
-        update_data = ScriptUpdate(**payload)
-
-        script = db.query(Script).filter(Script.id == script_id).first()
-        if not script:
-            return JSONResponse({"error": "Script not found"}, status_code=404)
-
-        for field, value in update_data.model_dump(exclude_unset=True).items():
-            if isinstance(value, str):
-                trimmed = value.strip()
-                setattr(script, field, trimmed or (None if field == "description" else trimmed))
-            else:
-                setattr(script, field, value)
-
-        script.updated_at = datetime.utcnow()
-        db.commit()
-        db.refresh(script)
-
-        log_audit(
-            db,
-            user=user.username if user else "system",
-            action="update",
-            object_type="script",
-            object_id=str(script.id),
-            meta={"name": script.name, "language": script.language},
-        )
-
-        return JSONResponse(ScriptResponse.model_validate(script).model_dump(mode="json"))
-    except Exception as exc:  # pragma: no cover - mirrors existing endpoints
-        db.rollback()
-        return JSONResponse({"error": str(exc)}, status_code=400)
-    finally:
-        db.close()
+async def get_script(request: Request):
+    script_id = request.path_params.get("script_id")
+    script = storage.get_script(script_id)
+    if not script:
+        return JSONResponse({"error": "Script not found"}, status_code=404)
+    return JSONResponse(script)
 
 
-@require_roles(UserRole.ADMIN)
-async def delete_script(request: Request) -> JSONResponse:
-    """Delete a script by identifier."""
-    script_id = request.path_params["script_id"]
-    db: Session = _get_db_session()
-    try:
-        script = db.query(Script).filter(Script.id == script_id).first()
-        if not script:
-            return JSONResponse({"error": "Script not found"}, status_code=404)
+async def list_scripts(request: Request):
+    return JSONResponse(storage.list_scripts())
 
-        user = get_request_user(request)
-        log_audit(
-            db,
-            user=user.username if user else "system",
-            action="delete",
-            object_type="script",
-            object_id=str(script.id),
-            meta={"name": script.name},
-        )
 
-        db.delete(script)
-        db.commit()
-
-        return JSONResponse(MessageResponse(message="Script deleted successfully").model_dump())
-    finally:
-        db.close()
+async def delete_script(request: Request):
+    script_id = request.path_params.get("script_id")
+    removed = storage.delete_script(script_id)
+    if not removed:
+        return JSONResponse({"error": "Script not found"}, status_code=404)
+    return JSONResponse({"message": f"Script {removed['name']} deleted"})
 
 
 routes = [
