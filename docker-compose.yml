@@ -193,27 +193,27 @@ services:
         exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   worker:
-    image: python:3.13-slim
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: testum/worker:latest
     container_name: testum_worker
     restart: unless-stopped
     working_dir: /app
     environment:
-      APP_ENV: production
-      SECRET_KEY: test-secret-key-change-me-in-production
-      ADMIN_USERNAME: admin
-      ADMIN_PASSWORD: admin123
-      FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
-      # Ensure the worker knows where to find the pyjobkit engine
+      # Конфигурация движка и подключения к БД
       PYJOBKIT_ENGINE: app.task_engine:engine
-      # Async URL is required for the SQL backend used by pyjobkit workers
       PYJOBKIT_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/testum
       DATABASE_URL: postgresql://postgres:postgres@db:5432/testum
+
+      # Секреты и параметры, которые реально использует worker (см. app.config)
+      FERNET_KEY: 8KMhgoZ3LqvVNxKz4YHzMNJRCq5YUf3yx8WlBKxuX8k=
+      SSH_HOST_KEY_POLICY: auto_add
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: testum-artifacts
       MINIO_SECURE: "false"
-      SSH_HOST_KEY_POLICY: auto_add
     networks:
       - testum_network
     depends_on:
@@ -222,32 +222,12 @@ services:
       minio:
         condition: service_healthy
     command:
-      - /bin/bash
+      - /bin/sh
       - -c
-      - |
-        set -e
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update -qq
-        apt-get install -y -qq --no-install-recommends gcc libpq-dev postgresql-client git
-        rm -rf /var/lib/apt/lists/*
-        cd /tmp
-        rm -rf testum
-        git clone --depth 1 --branch main https://github.com/4stm4/testum.git testum > /dev/null 2>&1
-        cd testum
-        rm -rf /app/*
-        mv * /app/ 2>/dev/null || true
-        mv .* /app/ 2>/dev/null || true
-        cd /app
-        rm -rf /app/.venv
-        python3 -m venv /app/.venv
-        . /app/.venv/bin/activate
-        python -m pip install --no-cache-dir --upgrade pip setuptools wheel
-        python -m pip install --no-cache-dir -r /app/requirements.txt
-        until pg_isready -h db -p 5432 -U postgres; do
-          sleep 2
-        done
-        alembic upgrade head
-        exec python -m app.worker_launcher
+      - >
+        python -m pyjobkit.worker \
+        --engine "${PYJOBKIT_ENGINE:-app.task_engine:engine}" \
+        --database-url "${PYJOBKIT_DATABASE_URL}"
 
 networks:
   testum_network:
