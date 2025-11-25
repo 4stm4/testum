@@ -1,0 +1,23 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYJOBKIT_ENGINE=app.task_engine:engine
+
+WORKDIR /app
+
+# Install system dependencies required by asyncpg/psycopg2-binary wheels
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install only the dependencies needed for the worker engine
+COPY requirements.worker.txt ./
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.worker.txt
+
+# Copy the worker code (engine + executors)
+COPY app/ ./app/
+
+CMD ["python", "-m", "pyjobkit.worker", "--engine", "app.task_engine:engine"]
