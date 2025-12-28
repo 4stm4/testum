@@ -20,4 +20,4 @@ RUN pip install --upgrade pip \
 # Copy the worker code (engine + executors)
 COPY app/ ./app/
 
-CMD ["python", "-m", "pyjobkit.worker", "--engine", "app.task_engine:engine"]
+CMD ["python", "-m", "app.worker_launcher"]

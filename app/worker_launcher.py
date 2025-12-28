@@ -78,31 +78,42 @@ async def _wait_for_db(url: str, attempts: int, delay: int) -> None:
     raise SystemExit(f"Unable to connect to database: {last_error}")
 
 
-def _run_worker(engine: str, db_url: str, attempts: int, delay: int) -> int:
-    """Spawn the pyjobkit worker with retry/backoff."""
-    command = [sys.executable, "-m", "pyjobkit.worker", "--engine", engine]
-    if db_url:
-        command.extend(["--database-url", db_url])
+async def _run_worker_async(engine_path: str) -> None:
+    """Run the pyjobkit worker directly in this process."""
+    from pyjobkit.worker import Worker
+    import importlib
 
+    # Import engine from the specified path (e.g., "app.task_engine:engine")
+    module_path, engine_name = engine_path.rsplit(":", 1)
+    module = importlib.import_module(module_path)
+    engine = getattr(module, engine_name)
+
+    _log(f"Creating worker with engine from {engine_path}")
+    worker = Worker(engine)
+    _log("Starting worker...")
+    await worker.run()
+
+
+def _run_worker(engine: str, attempts: int, delay: int) -> int:
+    """Spawn the pyjobkit worker with retry/backoff."""
     backoff = delay
     for attempt in range(1, attempts + 1):
-        _log(
-            f"Starting worker (attempt {attempt}/{attempts})... command={' '.join(command)}"
-        )
-        result = subprocess.run(command, check=False)
-        if result.returncode == 0:
+        _log(f"Starting worker (attempt {attempt}/{attempts})")
+        try:
+            asyncio.run(_run_worker_async(engine))
             _log("Worker exited cleanly")
             return 0
+        except Exception as exc:
+            _log(f"Worker failed on attempt {attempt}/{attempts}: {exc}")
+            if attempt < attempts:
+                _log(f"Retrying in {backoff}s...")
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 30)
+            else:
+                _log(f"Worker failed after {attempts} attempts")
+                return 1
 
-        _log(
-            f"Worker exited with code {result.returncode} on attempt {attempt}/{attempts}"
-        )
-        if attempt < attempts:
-            _log(f"Retrying in {backoff}s...")
-            time.sleep(backoff)
-            backoff = min(backoff * 2, 30)
-
-    return result.returncode
+    return 1
 
 
 def main() -> None:
@@ -124,7 +135,7 @@ def main() -> None:
 
     asyncio.run(_wait_for_db(db_url, attempts=db_attempts, delay=initial_delay))
 
-    exit_code = _run_worker(engine, db_url, attempts=max_attempts, delay=initial_delay)
+    exit_code = _run_worker(engine, attempts=max_attempts, delay=initial_delay)
     if exit_code != 0:
         raise SystemExit(exit_code)
 
