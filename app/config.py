@@ -31,6 +31,14 @@ class Config:
     # SSH
     SSH_HOST_KEY_POLICY: str = os.getenv("SSH_HOST_KEY_POLICY", "auto_add")
 
+    # SMTP (optional — used for email notifications)
+    SMTP_HOST: Optional[str] = os.getenv("SMTP_HOST")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: Optional[str] = os.getenv("SMTP_USER")
+    SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD")
+    SMTP_FROM: str = os.getenv("SMTP_FROM", "testum@localhost")
+    SMTP_TLS: bool = os.getenv("SMTP_TLS", "true").lower() == "true"
+
     @classmethod
     def validate(cls):
         """Validate required configuration values."""

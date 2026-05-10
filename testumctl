@@ -4,136 +4,219 @@
 import sys
 import argparse
 import json
+import time
 import requests
 from getpass import getpass
 from pathlib import Path
 from typing import Optional
 
 
+# ---------------------------------------------------------------------------
+# API client
+# ---------------------------------------------------------------------------
+
 class TestumClient:
-    """Testum API client."""
-    
     def __init__(self, base_url: str, token: Optional[str] = None):
         self.base_url = base_url.rstrip('/')
         self.token = token
         self.session = requests.Session()
         if token:
             self.session.cookies.set('access_token', token)
-    
-    def login(self, username: str, password: str) -> str:
-        """Login and get access token."""
-        response = self.session.post(
-            f"{self.base_url}/api/auth/login",
-            json={"username": username, "password": password}
-        )
-        response.raise_for_status()
-        data = response.json()
-        self.token = data['access_token']
-        return self.token
-    
-    def list_platforms(self, limit: int = 100, offset: int = 0) -> list:
-        """List all platforms."""
-        response = self.session.get(
-            f"{self.base_url}/api/platforms/",
-            params={"limit": limit, "offset": offset}
-        )
-        response.raise_for_status()
-        return response.json()
-    
-    def get_platform(self, platform_id: str) -> dict:
-        """Get platform by ID."""
-        response = self.session.get(f"{self.base_url}/api/platforms/{platform_id}")
-        response.raise_for_status()
-        return response.json()
-    
-    def create_platform(self, data: dict) -> dict:
-        """Create new platform."""
-        response = self.session.post(
-            f"{self.base_url}/api/platforms/",
-            json=data
-        )
-        response.raise_for_status()
-        return response.json()
-    
-    def delete_platform(self, platform_id: str) -> None:
-        """Delete platform."""
-        response = self.session.delete(f"{self.base_url}/api/platforms/{platform_id}")
-        response.raise_for_status()
-    
-    def run_command(self, platform_id: str, command: str, timeout: int = 60) -> dict:
-        """Run command on platform."""
-        response = self.session.post(
-            f"{self.base_url}/api/platforms/{platform_id}/run_command",
-            json={"command": command, "timeout": timeout}
-        )
-        response.raise_for_status()
-        return response.json()
-    
-    def get_task(self, task_id: str) -> dict:
-        """Get task status."""
-        response = self.session.get(f"{self.base_url}/api/tasks/{task_id}")
-        response.raise_for_status()
-        return response.json()
 
+    def _get(self, path: str, **kwargs) -> requests.Response:
+        r = self.session.get(f"{self.base_url}{path}", **kwargs)
+        r.raise_for_status()
+        return r
+
+    def _post(self, path: str, **kwargs) -> requests.Response:
+        r = self.session.post(f"{self.base_url}{path}", **kwargs)
+        r.raise_for_status()
+        return r
+
+    def _put(self, path: str, **kwargs) -> requests.Response:
+        r = self.session.put(f"{self.base_url}{path}", **kwargs)
+        r.raise_for_status()
+        return r
+
+    def _delete(self, path: str, **kwargs) -> requests.Response:
+        r = self.session.delete(f"{self.base_url}{path}", **kwargs)
+        r.raise_for_status()
+        return r
+
+    # --- auth ---
+    def login(self, username: str, password: str) -> str:
+        r = self.session.post(
+            f"{self.base_url}/api/auth/login",
+            json={"username": username, "password": password},
+        )
+        r.raise_for_status()
+        self.token = r.json()["access_token"]
+        return self.token
+
+    # --- platforms ---
+    def list_platforms(self, limit: int = 100, offset: int = 0) -> list:
+        return self._get("/api/platforms/", params={"limit": limit, "offset": offset}).json()
+
+    def get_platform(self, platform_id: str) -> dict:
+        return self._get(f"/api/platforms/{platform_id}").json()
+
+    def create_platform(self, data: dict) -> dict:
+        return self._post("/api/platforms/", json=data).json()
+
+    def delete_platform(self, platform_id: str) -> None:
+        self._delete(f"/api/platforms/{platform_id}")
+
+    def refresh_platform_info(self, platform_id: str) -> dict:
+        return self._post(f"/api/platforms/{platform_id}/refresh-info").json()
+
+    # --- tasks ---
+    def run_command(self, platform_id: str, command: str, timeout: int = 60) -> dict:
+        return self._post(
+            f"/api/platforms/{platform_id}/run_command",
+            json={"command": command, "timeout": timeout},
+        ).json()
+
+    def get_task(self, task_id: str) -> dict:
+        return self._get(f"/api/tasks/{task_id}").json()
+
+    def revoke_task(self, task_id: str) -> dict:
+        return self._post(f"/api/tasks/{task_id}/revoke").json()
+
+    # --- scripts ---
+    def list_scripts(self, limit: int = 100, offset: int = 0) -> list:
+        return self._get("/api/scripts/", params={"limit": limit, "offset": offset}).json()
+
+    def get_script(self, script_id: str) -> dict:
+        return self._get(f"/api/scripts/{script_id}").json()
+
+    def create_script(self, data: dict) -> dict:
+        return self._post("/api/scripts/", json=data).json()
+
+    def delete_script(self, script_id: str) -> None:
+        self._delete(f"/api/scripts/{script_id}")
+
+    def run_script(self, platform_id: str, script_id: str, timeout: int = 60) -> dict:
+        return self._post(
+            f"/api/platforms/{platform_id}/run_command",
+            json={"script_id": script_id, "timeout": timeout},
+        ).json()
+
+    # --- automations ---
+    def list_automations(self, limit: int = 100, offset: int = 0) -> list:
+        return self._get("/api/automations/", params={"limit": limit, "offset": offset}).json()
+
+    def get_automation(self, job_id: str) -> dict:
+        return self._get(f"/api/automations/{job_id}").json()
+
+    def create_automation(self, data: dict) -> dict:
+        return self._post("/api/automations/", json=data).json()
+
+    def update_automation(self, job_id: str, data: dict) -> dict:
+        return self._put(f"/api/automations/{job_id}", json=data).json()
+
+    def delete_automation(self, job_id: str) -> None:
+        self._delete(f"/api/automations/{job_id}")
+
+    def run_automation(self, job_id: str) -> dict:
+        return self._post(f"/api/automations/{job_id}/run").json()
+
+    # --- audit ---
+    def list_audit(self, limit: int = 50, offset: int = 0, action: Optional[str] = None) -> list:
+        params: dict = {"limit": limit, "offset": offset}
+        if action:
+            params["action"] = action
+        return self._get("/api/audit/", params=params).json()
+
+    def audit_stats(self) -> dict:
+        return self._get("/api/audit/stats").json()
+
+
+# ---------------------------------------------------------------------------
+# Config manager
+# ---------------------------------------------------------------------------
 
 class ConfigManager:
-    """Manage CLI configuration."""
-    
     def __init__(self):
-        self.config_dir = Path.home() / '.testum'
-        self.config_file = self.config_dir / 'config.json'
+        self.config_dir = Path.home() / ".testum"
+        self.config_file = self.config_dir / "config.json"
         self.config_dir.mkdir(exist_ok=True)
-    
+
     def load(self) -> dict:
-        """Load configuration."""
         if self.config_file.exists():
             return json.loads(self.config_file.read_text())
         return {}
-    
-    def save(self, config: dict) -> None:
-        """Save configuration."""
-        self.config_file.write_text(json.dumps(config, indent=2))
-        self.config_file.chmod(0o600)  # Secure permissions
 
+    def save(self, config: dict) -> None:
+        self.config_file.write_text(json.dumps(config, indent=2))
+        self.config_file.chmod(0o600)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _die(msg: str) -> None:
+    print(f"✗ {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def _json_or_table(data, json_flag: bool, render_fn) -> None:
+    if json_flag:
+        print(json.dumps(data, indent=2, default=str))
+    else:
+        render_fn(data)
+
+
+def _poll_task(client: TestumClient, task_id: str, interval: float = 1.5) -> dict:
+    """Poll until task leaves PENDING/RUNNING state."""
+    while True:
+        task = client.get_task(task_id)
+        status = task.get("status", "")
+        if status not in ("pending", "running"):
+            return task
+        print(f"  [{status}] …", end="\r", flush=True)
+        time.sleep(interval)
+
+
+# ---------------------------------------------------------------------------
+# login
+# ---------------------------------------------------------------------------
 
 def cmd_login(args, config_manager: ConfigManager):
-    """Login to Testum."""
     base_url = args.url or input("Testum URL (e.g., http://localhost:8000): ")
     username = args.username or input("Username: ")
     password = args.password or getpass("Password: ")
-    
+
     client = TestumClient(base_url)
     try:
         token = client.login(username, password)
-        config_manager.save({
-            "base_url": base_url,
-            "token": token,
-            "username": username
-        })
+        config_manager.save({"base_url": base_url, "token": token, "username": username})
         print(f"✓ Logged in as {username}")
     except requests.HTTPError as e:
-        print(f"✗ Login failed: {e}", file=sys.stderr)
-        sys.exit(1)
+        _die(f"Login failed: {e}")
+
+
+# ---------------------------------------------------------------------------
+# platforms
+# ---------------------------------------------------------------------------
+
+def _render_platforms(platforms: list) -> None:
+    print(f"{'ID':<36}  {'Name':<20}  {'Host':<30}  Status")
+    print("-" * 96)
+    for p in platforms:
+        status = "active" if p.get("is_active", True) else "inactive"
+        print(f"{p['id']:<36}  {p['name']:<20}  {p['host']:<30}  {status}")
 
 
 def cmd_platforms_list(args, client: TestumClient):
-    """List platforms."""
     try:
-        platforms = client.list_platforms(limit=args.limit, offset=args.offset)
-        if args.json:
-            print(json.dumps(platforms, indent=2))
-        else:
-            print(f"{'ID':<36} {'Name':<20} {'Host':<30} {'Status':<10}")
-            print("-" * 100)
-            for p in platforms:
-                print(f"{p['id']:<36} {p['name']:<20} {p['host']:<30} {'Active' if p.get('is_active', True) else 'Inactive':<10}")
+        data = client.list_platforms(limit=args.limit, offset=args.offset)
+        _json_or_table(data, args.json, _render_platforms)
     except requests.HTTPError as e:
-        print(f"✗ Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        _die(str(e))
 
 
 def cmd_platforms_add(args, client: TestumClient):
-    """Add new platform."""
     data = {
         "name": args.name,
         "host": args.host,
@@ -141,147 +224,547 @@ def cmd_platforms_add(args, client: TestumClient):
         "username": args.username,
         "auth_method": args.auth_method,
     }
-    
     if args.auth_method == "password":
-        password = args.password or getpass("Password: ")
-        data["password"] = password
-    
+        data["password"] = args.password or getpass("SSH password: ")
     try:
-        platform = client.create_platform(data)
-        print(f"✓ Platform created: {platform['id']}")
+        p = client.create_platform(data)
+        print(f"✓ Platform created: {p['id']}")
     except requests.HTTPError as e:
-        print(f"✗ Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        _die(str(e))
 
 
 def cmd_platforms_remove(args, client: TestumClient):
-    """Remove platform."""
     if not args.yes:
-        confirm = input(f"Delete platform {args.platform_id}? [y/N]: ")
-        if confirm.lower() != 'y':
+        if input(f"Delete platform {args.platform_id}? [y/N]: ").lower() != "y":
             print("Cancelled")
             return
-    
     try:
         client.delete_platform(args.platform_id)
-        print(f"✓ Platform deleted: {args.platform_id}")
+        print(f"✓ Deleted: {args.platform_id}")
     except requests.HTTPError as e:
-        print(f"✗ Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        _die(str(e))
 
+
+def cmd_platforms_refresh(args, client: TestumClient):
+    try:
+        result = client.refresh_platform_info(args.platform_id)
+        if args.json:
+            print(json.dumps(result, indent=2, default=str))
+        else:
+            info = result.get("system_info", {})
+            for key, val in info.items():
+                print(f"  {key:<16} {val}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+# ---------------------------------------------------------------------------
+# exec
+# ---------------------------------------------------------------------------
 
 def cmd_exec(args, client: TestumClient):
-    """Execute command on platform."""
     try:
         result = client.run_command(args.platform_id, args.command, args.timeout)
-        task_id = result.get('task_id')
-        
-        if args.wait:
-            print(f"Task ID: {task_id}")
-            print("Waiting for completion...")
-            # TODO: Poll task status
-            import time
-            time.sleep(2)
-            task = client.get_task(task_id)
-            print(f"Status: {task.get('status')}")
-            if task.get('output'):
-                print("\nOutput:")
-                print(task['output'])
-        else:
+        task_id = result.get("task_id")
+        if not args.wait:
             print(f"✓ Task started: {task_id}")
-            print(f"  View status: testumctl task get {task_id}")
-    
-    except requests.HTTPError as e:
-        print(f"✗ Error: {e}", file=sys.stderr)
-        sys.exit(1)
+            print(f"  Poll: testumctl task get {task_id}")
+            return
 
+        print(f"Task {task_id} — waiting…")
+        task = _poll_task(client, task_id)
+        print()
+        print(f"Status : {task.get('status')}")
+        if task.get("stdout"):
+            print("\nOutput:\n" + task["stdout"])
+        if task.get("stderr"):
+            print("\nStderr:\n" + task["stderr"])
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+# ---------------------------------------------------------------------------
+# task
+# ---------------------------------------------------------------------------
+
+def cmd_task_get(args, client: TestumClient):
+    try:
+        task = client.get_task(args.task_id)
+        if args.json:
+            print(json.dumps(task, indent=2, default=str))
+        else:
+            for field in ("id", "status", "type", "created_at", "finished_at"):
+                if field in task:
+                    print(f"  {field:<14} {task[field]}")
+            if task.get("stdout"):
+                print("\nOutput:\n" + task["stdout"])
+            if task.get("stderr"):
+                print("\nStderr:\n" + task["stderr"])
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_task_revoke(args, client: TestumClient):
+    if not args.yes:
+        if input(f"Revoke task {args.task_id}? [y/N]: ").lower() != "y":
+            print("Cancelled")
+            return
+    try:
+        result = client.revoke_task(args.task_id)
+        print(f"✓ Revoked: {result}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+# ---------------------------------------------------------------------------
+# scripts
+# ---------------------------------------------------------------------------
+
+def _render_scripts(scripts: list) -> None:
+    print(f"{'ID':<36}  {'Name':<30}  Language")
+    print("-" * 82)
+    for s in scripts:
+        print(f"{s['id']:<36}  {s['name']:<30}  {s.get('language', 'shell')}")
+
+
+def cmd_scripts_list(args, client: TestumClient):
+    try:
+        data = client.list_scripts(limit=args.limit, offset=args.offset)
+        _json_or_table(data, args.json, _render_scripts)
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_scripts_show(args, client: TestumClient):
+    try:
+        s = client.get_script(args.script_id)
+        if args.json:
+            print(json.dumps(s, indent=2, default=str))
+        else:
+            print(f"ID       : {s['id']}")
+            print(f"Name     : {s['name']}")
+            print(f"Language : {s.get('language', 'shell')}")
+            if s.get("description"):
+                print(f"Desc     : {s['description']}")
+            print("\n--- content ---")
+            print(s.get("content", ""))
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_scripts_create(args, client: TestumClient):
+    content = args.content
+    if not content:
+        if not sys.stdin.isatty():
+            content = sys.stdin.read()
+        else:
+            _die("Provide --content or pipe content via stdin")
+
+    data = {
+        "name": args.name,
+        "content": content,
+        "language": args.language,
+    }
+    if args.description:
+        data["description"] = args.description
+
+    try:
+        s = client.create_script(data)
+        print(f"✓ Script created: {s['id']}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_scripts_remove(args, client: TestumClient):
+    if not args.yes:
+        if input(f"Delete script {args.script_id}? [y/N]: ").lower() != "y":
+            print("Cancelled")
+            return
+    try:
+        client.delete_script(args.script_id)
+        print(f"✓ Deleted: {args.script_id}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_scripts_exec(args, client: TestumClient):
+    try:
+        result = client.run_script(args.platform_id, args.script_id, args.timeout)
+        task_id = result.get("task_id")
+        if not args.wait:
+            print(f"✓ Task started: {task_id}")
+            print(f"  Poll: testumctl task get {task_id}")
+            return
+
+        print(f"Task {task_id} — waiting…")
+        task = _poll_task(client, task_id)
+        print()
+        print(f"Status : {task.get('status')}")
+        if task.get("stdout"):
+            print("\nOutput:\n" + task["stdout"])
+        if task.get("stderr"):
+            print("\nStderr:\n" + task["stderr"])
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+# ---------------------------------------------------------------------------
+# automations
+# ---------------------------------------------------------------------------
+
+def _render_automations(jobs: list) -> None:
+    print(f"{'ID':<36}  {'Name':<25}  {'Trigger':<8}  {'Enabled':<7}  Next run")
+    print("-" * 100)
+    for j in jobs:
+        enabled = "yes" if j.get("is_enabled") else "no"
+        next_run = j.get("next_run_at") or "-"
+        print(
+            f"{j['id']:<36}  {j['name']:<25}  {j.get('trigger_type',''):<8}  "
+            f"{enabled:<7}  {next_run}"
+        )
+
+
+def cmd_automations_list(args, client: TestumClient):
+    try:
+        data = client.list_automations(limit=args.limit, offset=args.offset)
+        _json_or_table(data, args.json, _render_automations)
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_automations_show(args, client: TestumClient):
+    try:
+        j = client.get_automation(args.job_id)
+        if args.json:
+            print(json.dumps(j, indent=2, default=str))
+        else:
+            for field in ("id", "name", "trigger_type", "cron_expression",
+                          "is_enabled", "last_run_at", "next_run_at"):
+                if field in j:
+                    print(f"  {field:<20} {j[field]}")
+            print(f"  {'execution_type':<20} {j.get('execution_type')}")
+            if j.get("command"):
+                print(f"  {'command':<20} {j['command']}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_automations_run(args, client: TestumClient):
+    try:
+        result = client.run_automation(args.job_id)
+        enqueued = result.get("enqueued_jobs", [])
+        print(f"✓ {result.get('message', 'Dispatched')}")
+        for jid in enqueued:
+            print(f"  pyjobkit id: {jid}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_automations_enable(args, client: TestumClient):
+    try:
+        result = client.update_automation(args.job_id, {"is_enabled": True})
+        print(f"✓ Enabled: {result['id']}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_automations_disable(args, client: TestumClient):
+    try:
+        result = client.update_automation(args.job_id, {"is_enabled": False})
+        print(f"✓ Disabled: {result['id']}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_automations_remove(args, client: TestumClient):
+    if not args.yes:
+        if input(f"Delete automation {args.job_id}? [y/N]: ").lower() != "y":
+            print("Cancelled")
+            return
+    try:
+        client.delete_automation(args.job_id)
+        print(f"✓ Deleted: {args.job_id}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+# ---------------------------------------------------------------------------
+# audit
+# ---------------------------------------------------------------------------
+
+def _render_audit(logs: list) -> None:
+    print(f"{'Timestamp':<24}  {'User':<16}  {'Action':<20}  Object")
+    print("-" * 90)
+    for entry in logs:
+        ts = (entry.get("timestamp") or entry.get("created_at") or "")[:19]
+        user = entry.get("username") or entry.get("user_id") or "-"
+        action = entry.get("action") or "-"
+        obj = entry.get("object_id") or "-"
+        print(f"{ts:<24}  {str(user):<16}  {action:<20}  {obj}")
+
+
+def cmd_audit_list(args, client: TestumClient):
+    try:
+        data = client.list_audit(limit=args.limit, offset=args.offset, action=args.action)
+        _json_or_table(data, args.json, _render_audit)
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+def cmd_audit_stats(args, client: TestumClient):
+    try:
+        data = client.audit_stats()
+        if args.json:
+            print(json.dumps(data, indent=2, default=str))
+        else:
+            for k, v in data.items():
+                print(f"  {k:<30} {v}")
+    except requests.HTTPError as e:
+        _die(str(e))
+
+
+# ---------------------------------------------------------------------------
+# arg parser
+# ---------------------------------------------------------------------------
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="testumctl — CLI for the Testum SSH execution platform",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  testumctl login --url http://localhost:8000
+  testumctl platforms list
+  testumctl exec <platform-id> "uptime" --wait
+  testumctl scripts create --name deploy --content "$(cat deploy.sh)"
+  testumctl scripts exec <platform-id> <script-id> --wait
+  testumctl automations list
+  testumctl automations run <job-id>
+  testumctl automations enable <job-id>
+  testumctl audit list --limit 20
+""",
+    )
+    sub = parser.add_subparsers(dest="command")
+
+    # -- login --
+    lp = sub.add_parser("login", help="Authenticate and save token")
+    lp.add_argument("--url", help="Testum base URL")
+    lp.add_argument("--username", "-u")
+    lp.add_argument("--password", "-p")
+
+    # -- platforms --
+    pp = sub.add_parser("platforms", help="Manage SSH platforms")
+    psub = pp.add_subparsers(dest="subcommand")
+
+    pl = psub.add_parser("list", help="List platforms")
+    pl.add_argument("--limit", type=int, default=100)
+    pl.add_argument("--offset", type=int, default=0)
+    pl.add_argument("--json", action="store_true")
+
+    pa = psub.add_parser("add", help="Add a platform")
+    pa.add_argument("--name", required=True)
+    pa.add_argument("--host", required=True)
+    pa.add_argument("--port", type=int, default=22)
+    pa.add_argument("--username", required=True)
+    pa.add_argument("--auth-method", choices=["password", "key"], default="password")
+    pa.add_argument("--password")
+
+    prm = psub.add_parser("remove", help="Delete a platform")
+    prm.add_argument("platform_id")
+    prm.add_argument("--yes", "-y", action="store_true")
+
+    prf = psub.add_parser("refresh", help="Refresh system_info for a platform")
+    prf.add_argument("platform_id")
+    prf.add_argument("--json", action="store_true")
+
+    # -- exec --
+    ep = sub.add_parser("exec", help="Run a shell command on a platform")
+    ep.add_argument("platform_id")
+    ep.add_argument("command")
+    ep.add_argument("--timeout", type=int, default=60)
+    ep.add_argument("--wait", action="store_true", help="Wait for completion and show output")
+
+    # -- task --
+    tp = sub.add_parser("task", help="Inspect or revoke tasks")
+    tsub = tp.add_subparsers(dest="subcommand")
+
+    tg = tsub.add_parser("get", help="Show task details")
+    tg.add_argument("task_id")
+    tg.add_argument("--json", action="store_true")
+
+    tv = tsub.add_parser("revoke", help="Cancel a running task")
+    tv.add_argument("task_id")
+    tv.add_argument("--yes", "-y", action="store_true")
+
+    # -- scripts --
+    sp = sub.add_parser("scripts", help="Manage scripts")
+    ssub = sp.add_subparsers(dest="subcommand")
+
+    sl = ssub.add_parser("list", help="List scripts")
+    sl.add_argument("--limit", type=int, default=100)
+    sl.add_argument("--offset", type=int, default=0)
+    sl.add_argument("--json", action="store_true")
+
+    ss = ssub.add_parser("show", help="Show script content")
+    ss.add_argument("script_id")
+    ss.add_argument("--json", action="store_true")
+
+    sc = ssub.add_parser("create", help="Create a script")
+    sc.add_argument("--name", required=True)
+    sc.add_argument("--content", help="Script body (or pipe via stdin)")
+    sc.add_argument("--language", default="shell")
+    sc.add_argument("--description")
+
+    srm = ssub.add_parser("remove", help="Delete a script")
+    srm.add_argument("script_id")
+    srm.add_argument("--yes", "-y", action="store_true")
+
+    sx = ssub.add_parser("exec", help="Run a script on a platform")
+    sx.add_argument("platform_id")
+    sx.add_argument("script_id")
+    sx.add_argument("--timeout", type=int, default=60)
+    sx.add_argument("--wait", action="store_true")
+
+    # -- automations --
+    ap = sub.add_parser("automations", help="Manage automation jobs")
+    asub = ap.add_subparsers(dest="subcommand")
+
+    al = asub.add_parser("list", help="List automation jobs")
+    al.add_argument("--limit", type=int, default=100)
+    al.add_argument("--offset", type=int, default=0)
+    al.add_argument("--json", action="store_true")
+
+    aw = asub.add_parser("show", help="Show automation job details")
+    aw.add_argument("job_id")
+    aw.add_argument("--json", action="store_true")
+
+    ar = asub.add_parser("run", help="Manually dispatch an automation job")
+    ar.add_argument("job_id")
+
+    ae = asub.add_parser("enable", help="Enable an automation job")
+    ae.add_argument("job_id")
+
+    ad = asub.add_parser("disable", help="Disable an automation job")
+    ad.add_argument("job_id")
+
+    adel = asub.add_parser("remove", help="Delete an automation job")
+    adel.add_argument("job_id")
+    adel.add_argument("--yes", "-y", action="store_true")
+
+    # -- audit --
+    aup = sub.add_parser("audit", help="View audit logs")
+    ausub = aup.add_subparsers(dest="subcommand")
+
+    aul = ausub.add_parser("list", help="List recent audit events")
+    aul.add_argument("--limit", type=int, default=50)
+    aul.add_argument("--offset", type=int, default=0)
+    aul.add_argument("--action", help="Filter by action name")
+    aul.add_argument("--json", action="store_true")
+
+    aus = ausub.add_parser("stats", help="Show audit statistics")
+    aus.add_argument("--json", action="store_true")
+
+    return parser, pp, tp, sp, ap, aup
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
 
 def main():
-    """Main CLI entry point."""
-    parser = argparse.ArgumentParser(
-        description="testumctl - CLI client for Testum platform",
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    
-    subparsers = parser.add_subparsers(dest='command', help='Commands')
-    
-    # Login
-    login_parser = subparsers.add_parser('login', help='Login to Testum')
-    login_parser.add_argument('--url', help='Testum URL')
-    login_parser.add_argument('--username', '-u', help='Username')
-    login_parser.add_argument('--password', '-p', help='Password')
-    
-    # Platforms
-    platforms_parser = subparsers.add_parser('platforms', help='Manage platforms')
-    platforms_sub = platforms_parser.add_subparsers(dest='subcommand')
-    
-    # Platforms list
-    list_parser = platforms_sub.add_parser('list', help='List platforms')
-    list_parser.add_argument('--limit', type=int, default=100)
-    list_parser.add_argument('--offset', type=int, default=0)
-    list_parser.add_argument('--json', action='store_true', help='Output as JSON')
-    
-    # Platforms add
-    add_parser = platforms_sub.add_parser('add', help='Add platform')
-    add_parser.add_argument('--name', required=True, help='Platform name')
-    add_parser.add_argument('--host', required=True, help='Hostname or IP')
-    add_parser.add_argument('--port', type=int, default=22, help='SSH port')
-    add_parser.add_argument('--username', required=True, help='SSH username')
-    add_parser.add_argument('--auth-method', choices=['password', 'key'], default='password')
-    add_parser.add_argument('--password', help='SSH password')
-    
-    # Platforms remove
-    remove_parser = platforms_sub.add_parser('remove', help='Remove platform')
-    remove_parser.add_argument('platform_id', help='Platform ID')
-    remove_parser.add_argument('--yes', '-y', action='store_true', help='Skip confirmation')
-    
-    # Exec
-    exec_parser = subparsers.add_parser('exec', help='Execute command on platform')
-    exec_parser.add_argument('platform_id', help='Platform ID')
-    exec_parser.add_argument('command', help='Command to execute')
-    exec_parser.add_argument('--timeout', type=int, default=60, help='Timeout in seconds')
-    exec_parser.add_argument('--wait', action='store_true', help='Wait for completion')
-    
-    # Parse args
+    parser, platforms_parser, task_parser, scripts_parser, automations_parser, audit_parser = _build_parser()
     args = parser.parse_args()
-    
+
     if not args.command:
         parser.print_help()
         sys.exit(1)
-    
-    # Config manager
+
     config_manager = ConfigManager()
-    
-    # Handle login separately
-    if args.command == 'login':
+
+    if args.command == "login":
         cmd_login(args, config_manager)
         return
-    
-    # Load config and create client
+
     config = config_manager.load()
-    if not config.get('base_url') or not config.get('token'):
-        print("✗ Not logged in. Run: testumctl login", file=sys.stderr)
-        sys.exit(1)
-    
-    client = TestumClient(config['base_url'], config['token'])
-    
-    # Route commands
-    if args.command == 'platforms':
-        if args.subcommand == 'list':
-            cmd_platforms_list(args, client)
-        elif args.subcommand == 'add':
-            cmd_platforms_add(args, client)
-        elif args.subcommand == 'remove':
-            cmd_platforms_remove(args, client)
+    if not config.get("base_url") or not config.get("token"):
+        _die("Not logged in. Run: testumctl login")
+
+    client = TestumClient(config["base_url"], config["token"])
+
+    try:
+        if args.command == "platforms":
+            sub = getattr(args, "subcommand", None)
+            if sub == "list":
+                cmd_platforms_list(args, client)
+            elif sub == "add":
+                cmd_platforms_add(args, client)
+            elif sub == "remove":
+                cmd_platforms_remove(args, client)
+            elif sub == "refresh":
+                cmd_platforms_refresh(args, client)
+            else:
+                platforms_parser.print_help()
+
+        elif args.command == "exec":
+            cmd_exec(args, client)
+
+        elif args.command == "task":
+            sub = getattr(args, "subcommand", None)
+            if sub == "get":
+                cmd_task_get(args, client)
+            elif sub == "revoke":
+                cmd_task_revoke(args, client)
+            else:
+                task_parser.print_help()
+
+        elif args.command == "scripts":
+            sub = getattr(args, "subcommand", None)
+            if sub == "list":
+                cmd_scripts_list(args, client)
+            elif sub == "show":
+                cmd_scripts_show(args, client)
+            elif sub == "create":
+                cmd_scripts_create(args, client)
+            elif sub == "remove":
+                cmd_scripts_remove(args, client)
+            elif sub == "exec":
+                cmd_scripts_exec(args, client)
+            else:
+                scripts_parser.print_help()
+
+        elif args.command == "automations":
+            sub = getattr(args, "subcommand", None)
+            if sub == "list":
+                cmd_automations_list(args, client)
+            elif sub == "show":
+                cmd_automations_show(args, client)
+            elif sub == "run":
+                cmd_automations_run(args, client)
+            elif sub == "enable":
+                cmd_automations_enable(args, client)
+            elif sub == "disable":
+                cmd_automations_disable(args, client)
+            elif sub == "remove":
+                cmd_automations_remove(args, client)
+            else:
+                automations_parser.print_help()
+
+        elif args.command == "audit":
+            sub = getattr(args, "subcommand", None)
+            if sub == "list":
+                cmd_audit_list(args, client)
+            elif sub == "stats":
+                cmd_audit_stats(args, client)
+            else:
+                audit_parser.print_help()
+
         else:
-            platforms_parser.print_help()
-    
-    elif args.command == 'exec':
-        cmd_exec(args, client)
-    
-    else:
-        parser.print_help()
+            parser.print_help()
+
+    except KeyboardInterrupt:
+        print("\nInterrupted")
+        sys.exit(130)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -222,6 +222,9 @@ class RunCommandExecutor(Executor):
         platform_id = payload["platform_id"]
         command = payload["command"]
         timeout: Optional[int] = payload.get("timeout")
+        automation_job_id: Optional[str] = payload.get("automation_job_id")
+        triggered_by: str = payload.get("triggered_by", "manual")
+        _platform_name: str = str(platform_id)  # updated once platform is loaded
 
         async def emit(text: str, stream: str = "stdout") -> None:
             await ctx.log(text, stream=stream)
@@ -237,6 +240,7 @@ class RunCommandExecutor(Executor):
 
         await emit("Starting command execution...")
         platform = await asyncio.to_thread(_load_platform, platform_id)
+        _platform_name = platform.name
         logger.info(f"[RunCommandExecutor] Platform loaded: {platform}")
         await emit(f"Connecting to {platform.name}...")
 
@@ -289,6 +293,18 @@ class RunCommandExecutor(Executor):
                 stderr=stderr or None,
             )
             logger.info(f"[RunCommandExecutor] Status set to {final_status} for task_run_id={task_run_id}")
+
+            from app.notifications import notify_task_completion
+            await notify_task_completion(
+                task_run_id=task_run_id,
+                automation_job_id=automation_job_id,
+                platform_name=_platform_name,
+                platform_id=str(platform_id),
+                status=final_status.value,
+                triggered_by=triggered_by,
+                stdout_snippet=stdout or "",
+            )
+
             logger.info(f"[RunCommandExecutor] END run: job_id={job_id}, task_run_id={task_run_id}")
             return {"task_id": str(job_id), "status": final_status.value}
         except Exception as e:
@@ -301,6 +317,17 @@ class RunCommandExecutor(Executor):
                 error_message=str(e),
             )
             logger.info(f"[RunCommandExecutor] Status set to FAILED for task_run_id={task_run_id}")
+
+            from app.notifications import notify_task_completion
+            await notify_task_completion(
+                task_run_id=task_run_id,
+                automation_job_id=automation_job_id,
+                platform_name=_platform_name,
+                platform_id=str(platform_id),
+                status="failure",
+                triggered_by=triggered_by,
+            )
+
             await emit(f"ERROR: {e}")
             raise
         finally:

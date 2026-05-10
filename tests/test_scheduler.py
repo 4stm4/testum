@@ -288,3 +288,228 @@ def test_webhook_wrong_trigger_type(client: TestClient):
 def test_webhook_not_found(client: TestClient):
     resp = client.post(f"/api/automations/webhook/{uuid.uuid4()}")
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# POST /api/platforms/{id}/refresh-info
+# ---------------------------------------------------------------------------
+
+def test_refresh_platform_info_not_found(client: TestClient):
+    resp = client.post(f"/api/platforms/{uuid.uuid4()}/refresh-info")
+    assert resp.status_code == 404
+
+
+def test_refresh_platform_info_unreachable(client: TestClient):
+    """An unreachable platform should return 400 (SSH fails)."""
+    p = client.post(
+        "/api/platforms/",
+        json={
+            "name": "refresh-test-plat",
+            "host": "10.255.255.1",  # unreachable
+            "port": 22,
+            "username": "ops",
+            "auth_method": "password",
+            "password": "s3cr3tXYZ",
+        },
+    )
+    assert p.status_code == 201
+    pid = p.json()["id"]
+
+    with patch(
+        "app.scheduler.collect_system_info",
+        new_callable=AsyncMock,
+        return_value=None,
+    ):
+        resp = client.post(f"/api/platforms/{pid}/refresh-info")
+
+    assert resp.status_code == 400
+
+
+def test_refresh_platform_info_success(client: TestClient):
+    """A reachable platform should return 200 with system_info."""
+    p = client.post(
+        "/api/platforms/",
+        json={
+            "name": "refresh-ok-plat",
+            "host": "10.0.0.5",
+            "port": 22,
+            "username": "ops",
+            "auth_method": "password",
+            "password": "s3cr3tXYZ",
+        },
+    )
+    assert p.status_code == 201
+    pid = p.json()["id"]
+
+    fake_info = {
+        "hostname": "test-host",
+        "kernel": "5.15.0",
+        "uptime": "up 2 days",
+        "cpu": "Intel Xeon (4 cores)",
+        "memory": "8G total, 2G used, 6G free",
+        "disk": "50G total, 10G used, 40G free, 20% used%",
+        "load_average": "0.10 0.15 0.12",
+        "refreshed_at": "2025-01-01T00:00:00",
+    }
+
+    with patch(
+        "app.scheduler.collect_system_info",
+        new_callable=AsyncMock,
+        return_value=fake_info,
+    ):
+        resp = client.post(f"/api/platforms/{pid}/refresh-info")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["system_info"]["hostname"] == "test-host"
+    assert data["system_info"]["kernel"] == "5.15.0"
+
+
+# ---------------------------------------------------------------------------
+# Notifications
+# ---------------------------------------------------------------------------
+
+def test_notify_no_settings_is_noop():
+    """notify_task_completion does nothing when automation_job_id is None."""
+    import asyncio
+    from app.notifications import notify_task_completion
+
+    asyncio.run(
+        notify_task_completion(
+            task_run_id="fake-task",
+            automation_job_id=None,
+            platform_name="test-plat",
+            platform_id="fake-pid",
+            status="success",
+        )
+    )
+
+
+def test_notify_webhook_sent(client: TestClient):
+    """Completing a job with webhook settings triggers an outbound POST."""
+    from unittest.mock import AsyncMock, patch, MagicMock
+    import asyncio
+    from app.notifications import notify_task_completion
+
+    # Create a platform + automation job with webhook notification settings
+    p = client.post(
+        "/api/platforms/",
+        json={
+            "name": "notif-plat",
+            "host": "10.9.9.1",
+            "port": 22,
+            "username": "ops",
+            "auth_method": "password",
+            "password": "s3cr3t",
+        },
+    )
+    assert p.status_code == 201
+    pid = p.json()["id"]
+
+    j = client.post(
+        "/api/automations/",
+        json={
+            "name": "notif-job",
+            "execution_type": "command",
+            "command": "echo hi",
+            "trigger_type": "manual",
+            "run_on_all_platforms": False,
+            "target_platform_ids": [pid],
+            "timeout_seconds": 30,
+            "max_retries": 0,
+            "retry_delay_seconds": 60,
+            "is_enabled": True,
+            "notification_settings": {
+                "webhook": {"url": "https://hooks.example.com/test", "on": "always"}
+            },
+        },
+    )
+    assert j.status_code == 201
+    job_id = j.json()["id"]
+
+    posted_payloads = []
+
+    class FakeResponse:
+        status_code = 200
+
+    class FakeClient:
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, *_):
+            pass
+        async def post(self, url, **kwargs):
+            posted_payloads.append({"url": url, **kwargs})
+            return FakeResponse()
+
+    with patch("app.notifications.httpx.AsyncClient", return_value=FakeClient()):
+        asyncio.run(
+            notify_task_completion(
+                task_run_id="task-xyz",
+                automation_job_id=job_id,
+                platform_name="notif-plat",
+                platform_id=pid,
+                status="success",
+                triggered_by="manual",
+            )
+        )
+
+    assert len(posted_payloads) == 1
+    assert posted_payloads[0]["url"] == "https://hooks.example.com/test"
+    body = posted_payloads[0]["json"]
+    assert body["status"] == "success"
+    assert body["job_id"] == job_id
+
+
+def test_notify_on_failure_only_skips_success(client: TestClient):
+    """Webhook with on=failure should not fire for successful tasks."""
+    from unittest.mock import patch
+    import asyncio
+    from app.notifications import notify_task_completion
+
+    p = client.post(
+        "/api/platforms/",
+        json={
+            "name": "notif-skip-plat",
+            "host": "10.9.9.2",
+            "port": 22,
+            "username": "ops",
+            "auth_method": "password",
+            "password": "s3cr3t",
+        },
+    )
+    pid = p.json()["id"]
+
+    j = client.post(
+        "/api/automations/",
+        json={
+            "name": "notif-skip-job",
+            "execution_type": "command",
+            "command": "echo hi",
+            "trigger_type": "manual",
+            "run_on_all_platforms": False,
+            "target_platform_ids": [pid],
+            "timeout_seconds": 30,
+            "max_retries": 0,
+            "retry_delay_seconds": 60,
+            "is_enabled": True,
+            "notification_settings": {
+                "webhook": {"url": "https://hooks.example.com/fail-only", "on": "failure"}
+            },
+        },
+    )
+    job_id = j.json()["id"]
+
+    called = []
+
+    with patch("app.notifications._send_webhook", side_effect=lambda *a, **kw: called.append(1)):
+        asyncio.run(
+            notify_task_completion(
+                task_run_id="task-abc",
+                automation_job_id=job_id,
+                platform_name="notif-skip-plat",
+                platform_id=pid,
+                status="success",   # should NOT trigger on=failure webhook
+            )
+        )
+
+    assert called == [], "Webhook should not fire for success when on=failure"

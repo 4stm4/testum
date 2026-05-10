@@ -559,6 +559,30 @@ async def get_platform_info(request: Request):
         db.close()
 
 
+@require_roles(*ALL_ROLES)
+async def refresh_platform_info(request: Request):
+    """Re-collect system_info from the platform and persist it to the DB."""
+    platform_id = request.path_params["platform_id"]
+    db: Session = next(get_db())
+    try:
+        platform = db.query(Platform).filter(Platform.id == platform_id).first()
+        if not platform:
+            return JSONResponse({"error": "Platform not found"}, status_code=404)
+    finally:
+        db.close()
+
+    from app.scheduler import refresh_platform
+    info = await refresh_platform(str(platform_id))
+
+    if info is None:
+        return JSONResponse(
+            {"error": "Could not connect to platform or collect system info"},
+            status_code=400,
+        )
+
+    return JSONResponse({"system_info": info})
+
+
 @require_roles(UserRole.ADMIN, UserRole.OPERATOR)
 async def revoke_task(request: Request):
     """Revoke (stop) a running task."""
@@ -625,6 +649,7 @@ routes = [
     Route("/{platform_id:uuid}/deploy_keys", deploy_keys, methods=["POST"]),
     Route("/{platform_id:uuid}/run_command", run_command, methods=["POST"]),
     Route("/{platform_id:uuid}/info", get_platform_info, methods=["GET"]),
+    Route("/{platform_id:uuid}/refresh-info", refresh_platform_info, methods=["POST"]),
 ]
 
 platforms_router = Router(routes=routes)

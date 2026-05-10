@@ -15,7 +15,7 @@ from typing import Any
 
 from croniter import croniter
 
-from app.db import SessionLocal
+import app.db as _app_db
 from app.models import (
     AutomationExecutionEnum,
     AutomationJob,
@@ -70,7 +70,7 @@ async def dispatch_automation_job(job_id: str, triggered_by: str = "cron") -> li
 
     enqueued: list[str] = []
 
-    with SessionLocal() as db:
+    with _app_db.SessionLocal() as db:
         job: AutomationJob | None = db.query(AutomationJob).filter(
             AutomationJob.id == job_id
         ).first()
@@ -137,7 +137,7 @@ async def dispatch_automation_job(job_id: str, triggered_by: str = "cron") -> li
 async def _tick() -> None:
     """Run one scheduler tick: dispatch all due CRON jobs."""
     now = datetime.utcnow()
-    with SessionLocal() as db:
+    with _app_db.SessionLocal() as db:
         due_jobs: list[AutomationJob] = (
             db.query(AutomationJob)
             .filter(
@@ -194,7 +194,7 @@ async def collect_system_info(platform: Platform) -> dict[str, Any] | None:
             password = crypto.decrypt_string(platform.encrypted_password)
         elif auth == "private_key":
             if platform.ssh_key_id:
-                with SessionLocal() as db:
+                with _app_db.SessionLocal() as db:
                     from app.models import SSHKey
                     key = db.query(SSHKey).filter(SSHKey.id == platform.ssh_key_id).first()
                     if key and key.encrypted_private_key:
@@ -255,7 +255,7 @@ async def refresh_platform(platform_id: str) -> dict[str, Any] | None:
 
     Returns the collected info dict, or None if the platform was unreachable.
     """
-    with SessionLocal() as db:
+    with _app_db.SessionLocal() as db:
         platform: Platform | None = db.query(Platform).filter(Platform.id == platform_id).first()
         if not platform:
             return None
@@ -274,7 +274,7 @@ async def refresh_platform(platform_id: str) -> dict[str, Any] | None:
 
 async def _refresh_all_platforms() -> None:
     """Refresh system_info for every platform in the DB concurrently."""
-    with SessionLocal() as db:
+    with _app_db.SessionLocal() as db:
         platform_ids = [str(p.id) for p in db.query(Platform.id).all()]
 
     if not platform_ids:
