@@ -108,23 +108,23 @@
             if (status) url += `&status=${encodeURIComponent(status)}`;
             if (type) url += `&type=${encodeURIComponent(type)}`;
             const bodyEl = document.getElementById('tasksBody');
-            bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">Loading tasks…</td></tr>`;
+            bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">${t('loadingTasks')}</td></tr>`;
             try {
                 const resp = await fetch(url);
                 if (!resp.ok) {
-                    bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">Failed to load tasks</td></tr>`;
+                    bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">${t('failedToLoad')}</td></tr>`;
                     return;
                 }
                 const data = await resp.json();
                 if (data.length === 0) {
-                    bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">No tasks found</td></tr>`;
+                    bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">${t('noTasksFound')}</td></tr>`;
                 } else {
                     bodyEl.innerHTML = data.map(renderRow).join('');
                 }
                 document.getElementById('prevPage').disabled = offset === 0;
                 document.getElementById('nextPage').disabled = data.length < limit;
             } catch (e) {
-                bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">Error: ${e.message}</td></tr>`;
+                bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">${t('errorPrefix')}${e.message}</td></tr>`;
             }
         }
 

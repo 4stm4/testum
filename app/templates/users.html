@@ -28,66 +28,6 @@
             color: var(--md-on-surface-variant);
         }
 
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
-        }
-
-        .modal.active {
-            display: block;
-        }
-
-        .modal-content {
-            background: var(--md-surface-container-low);
-            border: 1px solid var(--md-outline-variant);
-            border-radius: 16px;
-            width: min(520px, 90vw);
-            margin: 60px auto;
-            overflow: hidden;
-            box-shadow: var(--md-elevation-3);
-        }
-
-        .modal-header {
-            padding: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--md-outline-variant);
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font: var(--md-headline-small);
-        }
-
-        .modal-close {
-            border: none;
-            background: transparent;
-            color: var(--md-on-surface-variant);
-            font-size: 28px;
-            cursor: pointer;
-            border-radius: 8px;
-            width: 36px;
-            height: 36px;
-            display: grid;
-            place-items: center;
-        }
-
-        .modal-close:hover {
-            background: var(--md-surface-container-highest);
-            color: var(--md-error);
-        }
-
-        .modal-body {
-            padding: 24px;
-            display: grid;
-            gap: 16px;
-        }
-
         .form-actions {
             display: flex;
             justify-content: flex-end;
@@ -143,7 +83,7 @@
                 </thead>
                 <tbody id="usersTableBody">
                     <tr>
-                        <td colspan="7" class="table-empty-state">Loading users…</td>
+                        <td colspan="7" class="table-empty-state" data-i18n="loadingUsers">Loading users…</td>
                     </tr>
                 </tbody>
             </table>
@@ -174,6 +114,20 @@
                     <div class="form-group" id="passwordGroup">
                         <label for="password">Password *</label>
                         <input type="password" id="password" minlength="6">
+                    </div>
+
+                    <div id="changePasswordGroup" style="display:none;">
+                        <details>
+                            <summary style="cursor:pointer; font: var(--md-label-medium); color: var(--md-primary); user-select:none;">Change password</summary>
+                            <div class="form-group" style="margin-top:12px;">
+                                <label for="newPassword">New password</label>
+                                <input type="password" id="newPassword" minlength="6" placeholder="Leave blank to keep current">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm new password</label>
+                                <input type="password" id="confirmPassword" minlength="6">
+                            </div>
+                        </details>
                     </div>
 
                     <div class="form-group">
@@ -254,21 +208,23 @@
                 document.getElementById('isActive').checked = user.is_active;
                 passwordGroup.style.display = 'none';
                 document.getElementById('password').required = false;
+                document.getElementById('changePasswordGroup').style.display = 'block';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
             } else {
                 title.textContent = 'Add User';
                 passwordGroup.style.display = 'block';
                 document.getElementById('password').required = true;
+                document.getElementById('changePasswordGroup').style.display = 'none';
             }
 
             modal.classList.add('active');
-            modal.style.display = 'block';
             document.body.classList.add('modal-open');
         }
 
         function closeUserModal() {
             const modal = document.getElementById('userModal');
             modal.classList.remove('active');
-            modal.style.display = 'none';
             document.body.classList.remove('modal-open');
         }
 
@@ -279,7 +235,7 @@
                 const tbody = document.getElementById('usersTableBody');
 
                 if (!data.items || data.items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="table-empty-state">No users found</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="7" class="table-empty-state">${t('noUsersFound')}</td></tr>`;
                     return;
                 }
 
@@ -355,6 +311,20 @@
 
             if (!isEdit) {
                 payload.password = document.getElementById('password').value;
+            } else {
+                const newPw = document.getElementById('newPassword').value;
+                const confirmPw = document.getElementById('confirmPassword').value;
+                if (newPw) {
+                    if (newPw !== confirmPw) {
+                        showMessage('Passwords do not match', 'error');
+                        return;
+                    }
+                    if (newPw.length < 6) {
+                        showMessage('Password must be at least 6 characters', 'error');
+                        return;
+                    }
+                    payload.password = newPw;
+                }
             }
 
             try {

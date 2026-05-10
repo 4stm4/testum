@@ -262,11 +262,25 @@ const translations = {
         signIn: 'Sign In',
         signingIn: 'Signing in...',
         
-        // Messages
+        // Common UI states
         loading: 'Loading...',
         yes: 'Yes',
         no: 'No',
-        
+        save: 'Save',
+        cancel: 'Cancel',
+        delete: 'Delete',
+        edit: 'Edit',
+        refresh: 'Refresh',
+        details: 'Details',
+        noTasksFound: 'No tasks found',
+        noUsersFound: 'No users found',
+        noAuditFound: 'No audit logs found',
+        loadingTasks: 'Loading tasks…',
+        loadingUsers: 'Loading users…',
+        loadingAudit: 'Loading…',
+        failedToLoad: 'Failed to load',
+        errorPrefix: 'Error: ',
+
         // Theme & Language
         themeLight: 'Switch to Light Theme',
         themeDark: 'Switch to Dark Theme',
@@ -443,6 +457,20 @@ const translations = {
         loading: 'Загрузка...',
         yes: 'Да',
         no: 'Нет',
+        save: 'Сохранить',
+        cancel: 'Отмена',
+        delete: 'Удалить',
+        edit: 'Редактировать',
+        refresh: 'Обновить',
+        details: 'Детали',
+        noTasksFound: 'Задачи не найдены',
+        noUsersFound: 'Пользователи не найдены',
+        noAuditFound: 'Журнал пуст',
+        loadingTasks: 'Загрузка задач…',
+        loadingUsers: 'Загрузка пользователей…',
+        loadingAudit: 'Загрузка…',
+        failedToLoad: 'Не удалось загрузить',
+        errorPrefix: 'Ошибка: ',
         
         // Theme & Language
         themeLight: 'Переключить на светлую тему',

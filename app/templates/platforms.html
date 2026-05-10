@@ -514,7 +514,7 @@
                 const tbody = document.getElementById('platformsTableBody');
 
                 if (platforms.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No platforms found. Add your first platform.</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${t('noPlatformsFound')}</td></tr>`;
                     return;
                 }
 

@@ -129,9 +129,8 @@
         .md-icon-button .material-symbols-rounded {
             font-size: 20px;
             line-height: 1;
-            display: block;
-            width: 20px;
-            height: 20px;
+            overflow: visible;
+            flex-shrink: 0;
         }
 
         .md-icon-button:hover {
@@ -407,7 +406,7 @@
         </main>
     </div>
 
-    <script src="/static/testum.js"></script>
+    <script src="/static/testum.js?v=2"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

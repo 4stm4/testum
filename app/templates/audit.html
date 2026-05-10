@@ -292,7 +292,7 @@
                 </tr>
             </thead>
             <tbody id="auditTableBody">
-                <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+                <tr><td colspan="7" class="empty-state" data-i18n="loadingAudit">Loading…</td></tr>
             </tbody>
         </table>
 
@@ -324,7 +324,7 @@
 
         async function loadAuditLogs() {
             const tbody = document.getElementById('auditTableBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state" data-i18n="loadingAudit">Loading…</td></tr>';
 
             // Build query params
             const params = new URLSearchParams();
@@ -352,7 +352,7 @@
                 totalCount = parseInt(response.headers.get('X-Total-Count') || '0');
 
                 if (logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No audit logs found</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${t('noAuditFound')}</td></tr>`;
                 } else {
                     tbody.innerHTML = logs.map(log => {
                         const timestamp = new Date(log.timestamp).toLocaleString();

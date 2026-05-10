@@ -315,11 +315,42 @@ apt update && apt upgrade -y"></textarea>
 DEPLOY_ENV=staging"></textarea>
             </div>
 
-            <div class="form-field">
-                <label for="jobNotifications">Уведомления</label>
-                <input id="jobNotifications" placeholder="devops@example.com, incident@example.com" />
-                <p class="form-helper">Почтовые адреса через запятую. Slack/webhook можно добавить позже.</p>
-            </div>
+            <details class="form-field">
+                <summary style="cursor:pointer; font-size:0.85em; color:var(--text-secondary); font-weight:600; user-select:none;">Уведомления</summary>
+                <div style="display:grid; gap:10px; margin-top:10px; padding-left:4px;">
+                    <div class="form-field">
+                        <label for="notifyEmailTo">Email-адреса</label>
+                        <input id="notifyEmailTo" placeholder="devops@example.com, alert@example.com" />
+                        <p class="form-helper">Несколько адресов через запятую.</p>
+                    </div>
+                    <div class="form-field">
+                        <label for="notifyEmailOn">Слать email при</label>
+                        <select id="notifyEmailOn">
+                            <option value="">— не слать —</option>
+                            <option value="always">Любом завершении</option>
+                            <option value="failure">Ошибке</option>
+                            <option value="success">Успехе</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="notifyWebhookUrl">Webhook URL</label>
+                        <input id="notifyWebhookUrl" placeholder="https://hooks.example.com/notify" />
+                    </div>
+                    <div class="form-field">
+                        <label for="notifyWebhookOn">Слать webhook при</label>
+                        <select id="notifyWebhookOn">
+                            <option value="">— не слать —</option>
+                            <option value="always">Любом завершении</option>
+                            <option value="failure">Ошибке</option>
+                            <option value="success">Успехе</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="notifyWebhookSecret">Webhook Secret (опционально)</label>
+                        <input id="notifyWebhookSecret" placeholder="Добавляется как X-Testum-Secret" />
+                    </div>
+                </div>
+            </details>
 
             <div class="form-field">
                 <label for="jobTags">Теги</label>
@@ -428,6 +459,14 @@ DEPLOY_ENV=staging"></textarea>
             }
         }
 
+        function renderNotifyBadges(settings) {
+            if (!settings || (!settings.email && !settings.webhook)) return '';
+            const parts = [];
+            if (settings.email) parts.push(`<span class="chip"><span class="material-symbols-rounded" style="font-size:14px;">mail</span> email on ${settings.email.on}</span>`);
+            if (settings.webhook) parts.push(`<span class="chip"><span class="material-symbols-rounded" style="font-size:14px;">webhook</span> webhook on ${settings.webhook.on}</span>`);
+            return `<div class="tags" style="font-size:0.8em;">${parts.join('')}</div>`;
+        }
+
         function renderJobCard(job) {
             const triggerCopy = {
                 manual: 'Manual trigger',
@@ -466,6 +505,7 @@ DEPLOY_ENV=staging"></textarea>
                         <strong style="font-size: 0.85em;">Теги:</strong>
                         <div class="tags">${tags}</div>
                     </div>
+                    ${renderNotifyBadges(job.notification_settings)}
                     <div style="display:flex; gap:12px; flex-wrap:wrap;">
                         <button class="ghost" data-action="toggle">${toggleLabel}</button>
                         <button class="ghost" data-action="delete" style="color:#f38ba8; border-color:#f38ba8;">${deleteLabel}</button>
@@ -528,6 +568,23 @@ DEPLOY_ENV=staging"></textarea>
             return input.split(',').map(item => item.trim()).filter(Boolean);
         }
 
+        function buildNotificationSettings() {
+            const settings = {};
+            const emailTo = parseList(document.getElementById('notifyEmailTo').value);
+            const emailOn = document.getElementById('notifyEmailOn').value;
+            if (emailOn && emailTo.length > 0) {
+                settings.email = { to: emailTo, on: emailOn };
+            }
+            const webhookUrl = document.getElementById('notifyWebhookUrl').value.trim();
+            const webhookOn = document.getElementById('notifyWebhookOn').value;
+            if (webhookOn && webhookUrl) {
+                settings.webhook = { url: webhookUrl, on: webhookOn };
+                const secret = document.getElementById('notifyWebhookSecret').value.trim();
+                if (secret) settings.webhook.secret = secret;
+            }
+            return Object.keys(settings).length ? settings : null;
+        }
+
         function resetForm() {
             document.getElementById('jobName').value = '';
             document.getElementById('jobDescription').value = '';
@@ -541,7 +598,11 @@ DEPLOY_ENV=staging"></textarea>
             runAllCheckbox.checked = false;
             Array.from(platformsSelect.options).forEach(opt => opt.selected = false);
             document.getElementById('jobEnv').value = '';
-            document.getElementById('jobNotifications').value = '';
+            document.getElementById('notifyEmailTo').value = '';
+            document.getElementById('notifyEmailOn').value = '';
+            document.getElementById('notifyWebhookUrl').value = '';
+            document.getElementById('notifyWebhookOn').value = '';
+            document.getElementById('notifyWebhookSecret').value = '';
             document.getElementById('jobTags').value = '';
             document.getElementById('jobApproval').checked = false;
             document.getElementById('jobTimeout').value = 900;
@@ -633,7 +694,7 @@ DEPLOY_ENV=staging"></textarea>
                 run_on_all_platforms: runAllCheckbox.checked,
                 target_platform_ids: runAllCheckbox.checked ? [] : Array.from(platformsSelect.selectedOptions).map(opt => opt.value),
                 environment: parseEnv(document.getElementById('jobEnv').value),
-                notification_settings: { emails: parseList(document.getElementById('jobNotifications').value) },
+                notification_settings: buildNotificationSettings(),
                 tags: parseList(document.getElementById('jobTags').value),
                 require_approval: document.getElementById('jobApproval').checked,
                 timeout_seconds: Number(document.getElementById('jobTimeout').value || 900),
