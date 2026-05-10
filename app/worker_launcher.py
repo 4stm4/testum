@@ -79,8 +79,9 @@ async def _wait_for_db(url: str, attempts: int, delay: int) -> None:
 
 
 async def _run_worker_async(engine_path: str) -> None:
-    """Run the pyjobkit worker directly in this process."""
+    """Run the pyjobkit worker and CRON scheduler concurrently in this process."""
     from pyjobkit.worker import Worker
+    from app.scheduler import run_scheduler
     import importlib
 
     # Import engine from the specified path (e.g., "app.task_engine:engine")
@@ -90,8 +91,13 @@ async def _run_worker_async(engine_path: str) -> None:
 
     _log(f"Creating worker with engine from {engine_path}")
     worker = Worker(engine)
-    _log("Starting worker...")
-    await worker.run()
+    _log("Starting worker + CRON scheduler...")
+
+    # Run both concurrently; if either crashes the gather propagates the exception
+    await asyncio.gather(
+        worker.run(),
+        run_scheduler(),
+    )
 
 
 def _run_worker(engine: str, attempts: int, delay: int) -> int:

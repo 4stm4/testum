@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Automation jobs API endpoints."""
+import hmac
+import hashlib
 import uuid
 from typing import List, Optional
 
@@ -142,6 +144,15 @@ async def create_job(request: Request) -> JSONResponse:
 
         user = get_request_user(request)
 
+        cron_expr = payload.cron_expression.strip() if payload.cron_expression else None
+        next_run_at = None
+        if AutomationTriggerEnum(payload.trigger_type) == AutomationTriggerEnum.CRON and cron_expr:
+            try:
+                from app.scheduler import calc_next_run
+                next_run_at = calc_next_run(cron_expr).replace(tzinfo=None)
+            except Exception:
+                pass
+
         job = AutomationJob(
             id=uuid.uuid4(),
             name=payload.name.strip(),
@@ -150,7 +161,7 @@ async def create_job(request: Request) -> JSONResponse:
             command=payload.command.strip() if payload.command else None,
             script_id=payload.script_id,
             trigger_type=AutomationTriggerEnum(payload.trigger_type),
-            cron_expression=payload.cron_expression.strip() if payload.cron_expression else None,
+            cron_expression=cron_expr,
             repository_url=payload.repository_url.strip() if payload.repository_url else None,
             repository_branch=payload.repository_branch.strip() if payload.repository_branch else None,
             webhook_secret=payload.webhook_secret.strip() if payload.webhook_secret else None,
@@ -167,6 +178,7 @@ async def create_job(request: Request) -> JSONResponse:
             notes=payload.notes.strip() if payload.notes else None,
             is_enabled=payload.is_enabled,
             created_by=user.username if user else "system",
+            next_run_at=next_run_at,
         )
 
         db.add(job)
@@ -249,6 +261,12 @@ async def update_job(request: Request) -> JSONResponse:
             job.trigger_type = AutomationTriggerEnum(data["trigger_type"])
         if "cron_expression" in data:
             job.cron_expression = data["cron_expression"].strip() if data["cron_expression"] else None
+            if job.cron_expression and job.trigger_type in (AutomationTriggerEnum.CRON, "cron"):
+                try:
+                    from app.scheduler import calc_next_run
+                    job.next_run_at = calc_next_run(job.cron_expression).replace(tzinfo=None)
+                except Exception:
+                    pass
         if "repository_url" in data:
             job.repository_url = data["repository_url"].strip() if data["repository_url"] else None
         if "repository_branch" in data:
@@ -382,12 +400,109 @@ async def delete_job(request: Request) -> JSONResponse:
         db.close()
 
 
+@require_roles(UserRole.ADMIN, UserRole.OPERATOR)
+async def run_job(request: Request) -> JSONResponse:
+    """Manually trigger an automation job on all its target platforms."""
+
+    job_id = request.path_params["job_id"]
+    db: Session = _get_db_session()
+    try:
+        job = db.query(AutomationJob).filter(AutomationJob.id == job_id).first()
+        if not job:
+            return JSONResponse({"error": "Automation job not found"}, status_code=404)
+        if not job.is_enabled:
+            return JSONResponse({"error": "Automation job is disabled"}, status_code=400)
+    finally:
+        db.close()
+
+    try:
+        from app.scheduler import dispatch_automation_job
+        enqueued = await dispatch_automation_job(job_id, triggered_by="manual")
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+    user = get_request_user(request)
+    db = _get_db_session()
+    try:
+        log_audit(
+            db,
+            user=user.username if user else "system",
+            action="run",
+            object_type="automation_job",
+            object_id=job_id,
+            meta={"triggered_by": "manual", "enqueued": len(enqueued)},
+        )
+    finally:
+        db.close()
+
+    return JSONResponse({
+        "message": f"Dispatched {len(enqueued)} task(s)",
+        "enqueued_jobs": enqueued,
+    })
+
+
+async def webhook_trigger(request: Request) -> JSONResponse:
+    """
+    Trigger an automation job via webhook.
+
+    URL: POST /api/automations/webhook/{job_id}
+    Auth: X-Hub-Signature-256 header (HMAC-SHA256 of body with job's webhook_secret)
+          OR Authorization: Bearer <webhook_secret> for simple token auth.
+    """
+
+    job_id = request.path_params["job_id"]
+    db: Session = _get_db_session()
+    try:
+        job = db.query(AutomationJob).filter(AutomationJob.id == job_id).first()
+        if not job:
+            return JSONResponse({"error": "Automation job not found"}, status_code=404)
+        if not job.is_enabled:
+            return JSONResponse({"error": "Automation job is disabled"}, status_code=400)
+        if job.trigger_type not in (AutomationTriggerEnum.WEBHOOK, AutomationTriggerEnum.GITHUB_PUSH, "webhook", "github_push"):
+            return JSONResponse({"error": "Job is not configured for webhook triggering"}, status_code=400)
+
+        webhook_secret = job.webhook_secret
+    finally:
+        db.close()
+
+    # Verify secret
+    body = await request.body()
+    if webhook_secret:
+        # GitHub-style HMAC-SHA256 signature
+        sig_header = request.headers.get("X-Hub-Signature-256", "")
+        if sig_header.startswith("sha256="):
+            expected = "sha256=" + hmac.new(
+                webhook_secret.encode(), body, hashlib.sha256
+            ).hexdigest()
+            if not hmac.compare_digest(sig_header, expected):
+                return JSONResponse({"error": "Invalid signature"}, status_code=401)
+        else:
+            # Simple bearer token fallback
+            auth = request.headers.get("Authorization", "")
+            token = auth.removeprefix("Bearer ").strip()
+            if not hmac.compare_digest(token, webhook_secret):
+                return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    try:
+        from app.scheduler import dispatch_automation_job
+        enqueued = await dispatch_automation_job(job_id, triggered_by="webhook")
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+    return JSONResponse({
+        "message": f"Webhook accepted, dispatched {len(enqueued)} task(s)",
+        "enqueued_jobs": enqueued,
+    })
+
+
 routes = [
     Route("/", list_jobs, methods=["GET"]),
     Route("/", create_job, methods=["POST"]),
+    Route("/webhook/{job_id:uuid}", webhook_trigger, methods=["POST"]),
     Route("/{job_id:uuid}", get_job, methods=["GET"]),
     Route("/{job_id:uuid}", update_job, methods=["PUT"]),
     Route("/{job_id:uuid}", delete_job, methods=["DELETE"]),
+    Route("/{job_id:uuid}/run", run_job, methods=["POST"]),
 ]
 
 automations_router = Router(routes=routes)
