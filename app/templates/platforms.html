@@ -18,56 +18,6 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
-        /* M3 Icon buttons in toolbar - 40x40dp */
-        .toolbar-icon-btn {
-            width: 40px;
-            height: 40px;
-            min-width: 40px;
-            min-height: 40px;
-            border-radius: 50%;
-            border: none;
-            background: transparent;
-            color: var(--md-on-surface-variant, #CAC4D0);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-
-        .toolbar-icon-btn .material-symbols-rounded {
-            font-size: 24px;
-            line-height: 1;
-            display: block;
-            width: 24px;
-            height: 24px;
-        }
-
-        .toolbar-icon-btn:hover:not(:disabled) {
-            background: rgba(208, 188, 255, 0.08);
-        }
-
-        .toolbar-icon-btn:focus-visible {
-            outline: 2px solid var(--md-primary);
-            outline-offset: 2px;
-        }
-
-        .toolbar-icon-btn:disabled {
-            opacity: 0.38;
-            cursor: not-allowed;
-        }
-
-        /* M3 Primary filled button */
-        .toolbar-icon-btn.primary {
-            background: var(--md-primary, #D0BCFF);
-            color: var(--md-on-primary, #381E72);
-        }
-
-        .toolbar-icon-btn.primary:hover:not(:disabled) {
-            background: color-mix(in srgb, var(--md-primary, #D0BCFF) 92%, white);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
-        }
 
         .message > div {
             padding: 15px 20px;
@@ -308,39 +258,6 @@
             margin-top: 24px;
         }
 
-        .btn-primary,
-        .btn-secondary {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: var(--md-primary);
-            color: var(--md-on-primary);
-        }
-
-        .btn-secondary {
-            background: var(--md-surface-container-high);
-            color: var(--md-on-surface);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            opacity: 0.9;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: var(--md-surface-container-highest);
-        }
-
-        .btn-primary:disabled,
-        .btn-secondary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
 
         .conditional {
             display: none;
@@ -357,11 +274,11 @@
         
         <div style="display: flex; gap: 16px; align-items: center;">
             <div class="toolbar-container" role="toolbar" aria-label="Platform actions">
-                <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
+                <button class="md-icon-button primary" type="button" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
                     <span class="material-symbols-rounded" aria-hidden="true">add</span>
                 </button>
                 
-                <button class="toolbar-icon-btn" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn" aria-label="Refresh">
+                <button class="md-icon-button" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn" aria-label="Refresh">
                     <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
                 </button>
             </div>

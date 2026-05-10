@@ -19,7 +19,7 @@
     </script>
     <link rel="stylesheet" href="/static/fonts/fonts.css">
     <link rel="stylesheet" href="/static/material.css">
-    <link rel="stylesheet" href="/static/app.css">
+    <link rel="stylesheet" href="/static/app.css?v=2">
     <style>
         body {
             min-height: 100vh;
@@ -363,7 +363,7 @@
                 <a href="/jobs" class="sidebar-link{% if active_page == 'jobs' %} active{% endif %}">
                     <span class="sidebar-link-main">
                         <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">assignment</span></span>
-                        <span>Jobs</span>
+                        <span data-i18n="jobs">Jobs</span>
                     </span>
                     <span class="sidebar-count">{{ sidebar_counts['jobs'] }}</span>
                 </a>

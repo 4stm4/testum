@@ -1,5 +1,17 @@
 /* Testum Application Styles - Material Design 3 Compatible */
 
+/* Legacy variable aliases — map older naming convention to MD3 tokens */
+:root,
+[data-theme] {
+    --bg-primary:    var(--md-surface);
+    --bg-secondary:  var(--md-surface-container-low);
+    --bg-tertiary:   var(--md-surface-container-highest);
+    --text-primary:  var(--md-on-surface);
+    --text-secondary: var(--md-on-surface-variant);
+    --border-color:  var(--md-outline-variant);
+    --accent-primary: var(--md-primary);
+}
+
 /* Universal resets and base */
 a {
   color: inherit;
@@ -164,10 +176,89 @@ button.danger:hover,
   background: color-mix(in srgb, var(--md-error) 90%, white);
 }
 
+button.text,
+.btn-text {
+  background: transparent;
+  color: var(--md-primary);
+  padding: 10px 16px;
+}
+
+button.text:hover,
+.btn-text:hover {
+  background: color-mix(in srgb, var(--md-primary) 8%, transparent);
+}
+
 button:disabled {
   opacity: 0.38;
   cursor: not-allowed;
   transform: none !important;
+}
+
+/* Toolbar labeled button (icon + text) */
+.toolbar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  font: var(--md-label-large);
+  cursor: pointer;
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface);
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.toolbar-icon-btn .material-symbols-rounded {
+  font-size: 20px;
+  line-height: 1;
+  width: 20px;
+  height: 20px;
+}
+
+.toolbar-icon-btn:hover {
+  background: color-mix(in srgb, var(--md-primary) 12%, var(--md-surface-container-high));
+}
+
+.toolbar-icon-btn.primary {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+}
+
+.toolbar-icon-btn.primary:hover {
+  background: color-mix(in srgb, var(--md-primary) 90%, white);
+  box-shadow: var(--md-elevation-1);
+}
+
+.toolbar-icon-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Filled variant of icon-only button */
+.md-icon-button.primary {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+}
+
+.md-icon-button.primary:hover {
+  background: color-mix(in srgb, var(--md-primary) 90%, white);
+  box-shadow: var(--md-elevation-1);
+}
+
+/* Toolbar layout */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
 }
 
 /* Cards */
@@ -621,7 +712,84 @@ pre {
   margin: 24px 0;
 }
 
-/* Modal/Dialog overlay */
+/* Modal / Dialog
+ * .modal        — full-screen overlay (display:none → .active = display:flex)
+ * .modal-content — the white/dark card centred in the overlay
+ * .modal-header / .modal-body / .modal-footer — inner regions
+ */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--md-surface-container-high);
+  border-radius: 20px;
+  width: 92%;
+  max-width: 640px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: var(--md-elevation-3);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.modal-header h2,
+.modal-title {
+  margin: 0;
+  font: var(--md-title-large);
+  color: var(--md-on-surface);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0;
+  transition: background 0.2s ease;
+}
+
+.modal-close:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 10%, transparent);
+}
+
+.modal-body {
+  padding: 20px 24px;
+}
+
+.modal-footer,
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--md-outline-variant);
+}
+
+/* Legacy alias kept for existing templates */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -630,33 +798,6 @@ pre {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-}
-
-.modal {
-  background: var(--md-surface-container-high);
-  border-radius: 28px;
-  padding: 24px;
-  max-width: 560px;
-  width: 90%;
-  box-shadow: var(--md-elevation-3);
-}
-
-.modal-title {
-  font: var(--md-headline-small);
-  color: var(--md-on-surface);
-  margin-bottom: 16px;
-}
-
-.modal-content {
-  font: var(--md-body-medium);
-  color: var(--md-on-surface-variant);
-  margin-bottom: 24px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 
 /* Responsive */

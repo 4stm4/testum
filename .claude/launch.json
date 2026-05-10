@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "testum-dev",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--port", "8765", "--reload"],
+      "port": 8765,
+      "env": {
+        "DATABASE_URL": "sqlite:///./dev.db",
+        "FERNET_KEY": "XvgfcADXX1oKcITCS8V7iQWr9VcweqQR7H3Vc_2qsFs=",
+        "SECRET_KEY": "dev-secret-key"
+      }
+    }
+  ]
+}
