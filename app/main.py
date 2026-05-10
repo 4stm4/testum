@@ -1,6 +1,7 @@
 
 # SPDX-License-Identifier: MIT
 """Main Starlette application."""
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta
@@ -519,10 +520,52 @@ app = Starlette(
 )
 
 
+_background_tasks: list = []
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize application services."""
     ensure_default_admin_user()
+
+    # Start the pyjobkit worker in-process so commands and deploys work
+    # without a separate worker container (useful for local dev and single-
+    # container deployments).  In Docker the dedicated worker container is
+    # preferred; running both is harmless — only one will claim each job.
+    from pyjobkit.worker import Worker
+    from app.scheduler import run_scheduler, run_system_info_refresher
+
+    worker = Worker(engine)
+
+    async def _run_worker():
+        try:
+            await worker.run()
+        except Exception:
+            logger.exception("In-process worker crashed")
+
+    async def _run_scheduler():
+        try:
+            await run_scheduler()
+        except Exception:
+            logger.exception("In-process scheduler crashed")
+
+    async def _run_refresher():
+        try:
+            await run_system_info_refresher()
+        except Exception:
+            logger.exception("In-process system_info refresher crashed")
+
+    for coro in (_run_worker, _run_scheduler, _run_refresher):
+        task = asyncio.create_task(coro())
+        _background_tasks.append(task)
+
+    logger.info("In-process worker, scheduler and refresher started")
+
+
+@app.on_event("shutdown")
+async def shutdown_event() -> None:
+    for task in _background_tasks:
+        task.cancel()
 
 
 logger.info(f"Application started in {config.APP_ENV} mode")

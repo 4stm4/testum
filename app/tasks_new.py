@@ -147,7 +147,10 @@ class DeployKeysExecutor(Executor):
 
         try:
             logger.info(f"[DeployKeysExecutor] Connecting to SSH...")
-            success, error = await ssh_client.connect()
+            try:
+                success, error = await asyncio.wait_for(ssh_client.connect(), timeout=15)
+            except asyncio.TimeoutError:
+                raise RuntimeError("SSH connection timed out (15s)")
             if not success:
                 raise RuntimeError(error or "Failed to establish SSH connection")
 
@@ -181,8 +184,12 @@ class DeployKeysExecutor(Executor):
 
             output_content = "\n".join(output_lines)
             s3_key = f"tasks/{task_run_id}/output.txt"
-            logger.info(f"[DeployKeysExecutor] Uploading output to S3: {s3_key}")
-            upload_to_s3(s3_key, output_content)
+            try:
+                logger.info(f"[DeployKeysExecutor] Uploading output to S3: {s3_key}")
+                upload_to_s3(s3_key, output_content)
+            except Exception as s3_err:
+                logger.warning(f"[DeployKeysExecutor] S3 upload skipped: {s3_err}")
+                s3_key = None
 
             summary = f"Deployed {deployed_count}/{len(keys)} keys successfully"
             await emit(summary)
@@ -254,7 +261,10 @@ class RunCommandExecutor(Executor):
 
         try:
             logger.info(f"[RunCommandExecutor] Connecting to SSH...")
-            success, error = await ssh_client.connect()
+            try:
+                success, error = await asyncio.wait_for(ssh_client.connect(), timeout=15)
+            except asyncio.TimeoutError:
+                raise RuntimeError("SSH connection timed out (15s)")
             if not success:
                 raise RuntimeError(error or "Failed to establish SSH connection")
 
@@ -280,8 +290,12 @@ class RunCommandExecutor(Executor):
                 f"{stdout}\n\n=== STDERR ===\n{stderr}"
             )
             s3_key = f"tasks/{task_run_id}/output.txt"
-            logger.info(f"[RunCommandExecutor] Uploading output to S3: {s3_key}")
-            upload_to_s3(s3_key, output_content)
+            try:
+                logger.info(f"[RunCommandExecutor] Uploading output to S3: {s3_key}")
+                upload_to_s3(s3_key, output_content)
+            except Exception as s3_err:
+                logger.warning(f"[RunCommandExecutor] S3 upload skipped: {s3_err}")
+                s3_key = None
 
             final_status = TaskStatusEnum.SUCCESS if exit_code == 0 else TaskStatusEnum.FAILED
             await asyncio.to_thread(

@@ -289,6 +289,7 @@ async def deploy_keys(request: Request):
                 "platform_id": str(platform_id),
                 "key_ids": key_ids_str,
             },
+            max_attempts=1,
         )
         job_id_str = str(job_id)
         task_run.pyjobkit_job_id = job_id_str
@@ -306,7 +307,7 @@ async def deploy_keys(request: Request):
         )
 
         return JSONResponse({
-            "task_id": job_id_str,
+            "task_id": str(task_run.id),
             "status": "pending",
             "message": "Key deployment task started",
         })
@@ -352,6 +353,7 @@ async def run_command(request: Request):
                 "command": command_request.command,
                 "timeout": command_request.timeout,
             },
+            max_attempts=1,
         )
         job_id_str = str(job_id)
         task_run.pyjobkit_job_id = job_id_str
@@ -369,7 +371,7 @@ async def run_command(request: Request):
         )
 
         return JSONResponse({
-            "task_id": job_id_str,
+            "task_id": str(task_run.id),
             "status": "pending",
             "message": "Command execution task started",
         })
