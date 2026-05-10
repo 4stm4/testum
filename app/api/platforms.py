@@ -291,6 +291,7 @@ async def deploy_keys(request: Request):
             },
         )
         job_id_str = str(job_id)
+        task_run.pyjobkit_job_id = job_id_str
         db.commit()
 
         # Audit log
@@ -353,6 +354,8 @@ async def run_command(request: Request):
             },
         )
         job_id_str = str(job_id)
+        task_run.pyjobkit_job_id = job_id_str
+        db.commit()
 
         # Audit log
         user = get_request_user(request)
@@ -575,9 +578,18 @@ async def revoke_task(request: Request):
                 status_code=400
             )
 
+        # Signal PyJobKit to cancel the job if we have its queue ID
+        if task.pyjobkit_job_id:
+            import uuid as _uuid
+            try:
+                await engine.cancel(_uuid.UUID(task.pyjobkit_job_id))
+            except Exception as cancel_err:
+                logger.warning("Could not cancel PyJobKit job %s: %s", task.pyjobkit_job_id, cancel_err)
+
         # Update task status in database
         task.status = TaskStatusEnum.FAILED
         task.error_message = "Task stopped by user"
+        task.finished_at = __import__("datetime").datetime.utcnow()
         db.commit()
 
         # Audit log

@@ -198,9 +198,12 @@ class TaskRun(Base):
     stderr = Column(Text, nullable=True)  # For small outputs
     error_message = Column(Text, nullable=True)
     
+    # PyJobKit queue reference
+    pyjobkit_job_id = Column(String(255), nullable=True, index=True)
+
     # Additional data
     task_metadata = Column(JSON, nullable=True)  # Additional task-specific data
-    
+
     # Timestamps
     started_at = Column(DateTime, nullable=True)
     finished_at = Column(DateTime, nullable=True)
