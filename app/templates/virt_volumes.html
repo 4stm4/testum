@@ -1,0 +1,249 @@
+{% extends "layout.html" %}
+{% set active_page = 'virt_volumes' %}
+
+{% block title %}Volumes - Testum{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .selectors-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .selectors-row label { font: var(--md-label-medium); color: var(--md-on-surface-variant); white-space: nowrap; }
+    .selectors-row select { min-width: 180px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-info">
+        <h1 class="page-title">
+            <span class="material-symbols-rounded" aria-hidden="true">hard_drive</span>
+            <span>Volumes</span>
+        </h1>
+        <p class="page-subtitle">Manage storage volumes inside libvirt pools.</p>
+    </div>
+    <div class="page-actions">
+        <div class="selectors-row">
+            <label for="platformSelect">Platform:</label>
+            <select id="platformSelect">
+                <option value="">— select —</option>
+            </select>
+            <label for="poolSelect">Pool:</label>
+            <select id="poolSelect" disabled>
+                <option value="">— select —</option>
+            </select>
+        </div>
+        <button id="addVolumeBtn" class="toolbar-icon-btn primary" disabled>
+            <span class="material-symbols-rounded" aria-hidden="true">add</span>
+            <span>Add Volume</span>
+        </button>
+        <button id="refreshBtn" class="toolbar-icon-btn">
+            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+            <span>Refresh</span>
+        </button>
+    </div>
+</div>
+
+<div class="card table-card">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Capacity (GB)</th>
+                    <th>Allocation (GB)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="volumesBody">
+                <tr><td colspan="5" class="table-empty-state">Select a platform and pool to load volumes.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Volume Modal -->
+<div id="addVolumeModal" class="modal" style="display:none">
+    <div class="modal-content" style="max-width:480px">
+        <div class="modal-header">
+            <h2 class="modal-title">Add Volume</h2>
+            <button class="modal-close" onclick="closeAddModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Name *</label>
+                <input type="text" id="volName" class="form-input" placeholder="e.g. ubuntu-disk">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Full path *</label>
+                <input type="text" id="volPath" class="form-input" placeholder="/var/lib/libvirt/images/ubuntu-disk.qcow2">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Capacity (GB) *</label>
+                <input type="number" id="volCapacity" class="form-input" placeholder="20" min="1">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+            <button id="createVolumeBtn" class="btn btn-primary">Create Volume</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="deleteModal" class="modal" style="display:none">
+    <div class="modal-content" style="max-width:420px">
+        <div class="modal-header">
+            <h2 class="modal-title">Delete Volume</h2>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Permanently delete volume <strong id="deleteVolName"></strong>? This cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+            <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPlatformId = null;
+let currentPoolName   = null;
+
+async function loadPlatforms() {
+    const sel = document.getElementById('platformSelect');
+    try {
+        const resp = await fetch('/api/platforms/?limit=200');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        (data.platforms || data).forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name + ' (' + p.host + ')';
+            sel.appendChild(opt);
+        });
+        const params = new URLSearchParams(location.search);
+        const pid = params.get('platform_id');
+        const pname = params.get('pool_name');
+        if (pid) { sel.value = pid; await onPlatformChange(pid, pname); }
+    } catch(e) { console.error(e); }
+}
+
+async function onPlatformChange(pid, preselectedPool) {
+    currentPlatformId = pid;
+    currentPoolName = null;
+    const poolSel = document.getElementById('poolSelect');
+    poolSel.innerHTML = '<option value="">— select —</option>';
+    poolSel.disabled = !pid;
+    document.getElementById('addVolumeBtn').disabled = true;
+    document.getElementById('volumesBody').innerHTML = '<tr><td colspan="5" class="table-empty-state">Select a pool to load volumes.</td></tr>';
+    if (!pid) return;
+    try {
+        // load all pools to populate dropdown
+        const resp = await fetch(`/api/virt/${pid}/pools?state=1&state=2&state=4&state=8&state=16&state=32`);
+        if (!resp.ok) return;
+        const pools = await resp.json();
+        pools.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.name;
+            opt.textContent = p.name + (p.is_active ? '' : ' (inactive)');
+            poolSel.appendChild(opt);
+        });
+        if (preselectedPool) { poolSel.value = preselectedPool; onPoolChange(preselectedPool); }
+    } catch(e) { console.error(e); }
+}
+
+function onPoolChange(poolName) {
+    currentPoolName = poolName;
+    document.getElementById('addVolumeBtn').disabled = !poolName;
+    if (poolName && currentPlatformId) loadVolumes();
+    else document.getElementById('volumesBody').innerHTML = '<tr><td colspan="5" class="table-empty-state">Select a pool to load volumes.</td></tr>';
+}
+
+async function loadVolumes() {
+    if (!currentPlatformId || !currentPoolName) return;
+    const body = document.getElementById('volumesBody');
+    body.innerHTML = '<tr><td colspan="5" class="table-empty-state">Loading…</td></tr>';
+    try {
+        const resp = await fetch(`/api/virt/${currentPlatformId}/volumes?pool_name=${encodeURIComponent(currentPoolName)}`);
+        const data = await resp.json();
+        if (!resp.ok) { body.innerHTML = `<tr><td colspan="5" class="table-empty-state">${data.error || 'Error'}</td></tr>`; return; }
+        if (!data.length) { body.innerHTML = '<tr><td colspan="5" class="table-empty-state">No volumes in this pool.</td></tr>'; return; }
+        body.innerHTML = data.map(renderRow).join('');
+    } catch(e) {
+        body.innerHTML = `<tr><td colspan="5" class="table-empty-state">Error: ${e.message}</td></tr>`;
+    }
+}
+
+function renderRow(v) {
+    return `<tr>
+        <td><strong>${escapeHtml(v.name)}</strong></td>
+        <td>${v.type}</td>
+        <td>${v.capacity_gb}</td>
+        <td>${v.allocation_gb}</td>
+        <td>
+            <div class="table-actions">
+                <button class="btn btn-ghost" style="color:var(--md-error)" onclick="openDeleteModal('${escapeHtml(v.name)}')">
+                    <span class="material-symbols-rounded">delete</span><span>Delete</span>
+                </button>
+            </div>
+        </td>
+    </tr>`;
+}
+
+// Add Volume modal
+document.getElementById('addVolumeBtn').addEventListener('click', () => { document.getElementById('addVolumeModal').style.display = 'flex'; });
+function closeAddModal() { document.getElementById('addVolumeModal').style.display = 'none'; }
+document.getElementById('addVolumeModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
+document.getElementById('createVolumeBtn').addEventListener('click', async () => {
+    const name     = document.getElementById('volName').value.trim();
+    const path     = document.getElementById('volPath').value.trim();
+    const capacity = parseInt(document.getElementById('volCapacity').value);
+    if (!name || !path || !capacity) { showToast('All fields are required', 'error'); return; }
+    try {
+        const resp = await fetch(`/api/virt/${currentPlatformId}/volumes/create`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ name, pool_name: currentPoolName, path, capacity })
+        });
+        const data = await resp.json();
+        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        if (resp.ok) { closeAddModal(); loadVolumes(); }
+    } catch(e) { showToast(e.message, 'error'); }
+});
+
+// Delete Volume modal
+let pendingDeleteName = null;
+function openDeleteModal(name) { pendingDeleteName = name; document.getElementById('deleteVolName').textContent = name; document.getElementById('deleteModal').style.display = 'flex'; }
+function closeDeleteModal() { pendingDeleteName = null; document.getElementById('deleteModal').style.display = 'none'; }
+document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!pendingDeleteName || !currentPlatformId || !currentPoolName) return;
+    const name = pendingDeleteName;
+    closeDeleteModal();
+    const resp = await fetch(`/api/virt/${currentPlatformId}/volumes/delete`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, pool_name: currentPoolName }) });
+    const data = await resp.json();
+    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    if (resp.ok) loadVolumes();
+});
+
+document.getElementById('platformSelect').addEventListener('change', e => {
+    const pid = e.target.value;
+    if (pid) history.replaceState({}, '', `?platform_id=${pid}`);
+    else history.replaceState({}, '', location.pathname);
+    onPlatformChange(pid, null);
+});
+document.getElementById('poolSelect').addEventListener('change', e => {
+    const pname = e.target.value;
+    if (pname && currentPlatformId) history.replaceState({}, '', `?platform_id=${currentPlatformId}&pool_name=${encodeURIComponent(pname)}`);
+    onPoolChange(pname);
+});
+document.getElementById('refreshBtn').addEventListener('click', loadVolumes);
+
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg, type) { if (window.showNotification) showNotification(msg, type); else alert(msg); }
+
+loadPlatforms();
+</script>
+{% endblock %}

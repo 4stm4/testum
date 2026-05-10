@@ -1,0 +1,308 @@
+{% extends "layout.html" %}
+{% set active_page = 'virt_vms' %}
+
+{% block title %}Virtual Machines - Testum{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .vm-state { display: inline-flex; align-items: center; gap: 5px; }
+    .vm-state.running  { color: var(--md-primary); }
+    .vm-state.stopped  { color: var(--md-on-surface-variant); }
+    .vm-state.paused   { color: var(--md-tertiary); }
+    .vm-state.crashed  { color: var(--md-error); }
+    .platform-selector { display: flex; align-items: center; gap: 8px; }
+    .platform-selector label { font: var(--md-label-medium); color: var(--md-on-surface-variant); white-space: nowrap; }
+    .platform-selector select { min-width: 200px; }
+    .install-output {
+        background: var(--md-surface-container-highest);
+        border-radius: 8px;
+        padding: 16px;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 420px;
+        overflow-y: auto;
+        color: var(--md-on-surface);
+        min-height: 80px;
+    }
+    .install-output .line-cmd  { color: var(--md-primary); font-weight: 600; }
+    .install-output .line-head { color: var(--md-tertiary); font-weight: 700; }
+    .install-spinner { display: inline-flex; align-items: center; gap: 8px; color: var(--md-on-surface-variant); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-info">
+        <h1 class="page-title">
+            <span class="material-symbols-rounded" aria-hidden="true">computer</span>
+            <span>Virtual Machines</span>
+        </h1>
+        <p class="page-subtitle">Manage virtual machines on libvirt platforms.</p>
+    </div>
+    <div class="page-actions">
+        <div class="platform-selector">
+            <label for="platformSelect">Platform:</label>
+            <select id="platformSelect">
+                <option value="">— select —</option>
+            </select>
+        </div>
+        <button id="installBtn" class="toolbar-icon-btn" disabled>
+            <span class="material-symbols-rounded" aria-hidden="true">build</span>
+            <span>Install libvirt</span>
+        </button>
+        <button id="refreshBtn" class="toolbar-icon-btn">
+            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+            <span>Refresh</span>
+        </button>
+    </div>
+</div>
+
+<div class="card table-card">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>UUID</th>
+                    <th>State</th>
+                    <th>Memory</th>
+                    <th>vCPUs</th>
+                    <th>Autostart</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="vmsBody">
+                <tr><td colspan="7" class="table-empty-state">Select a platform to load VMs.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="deleteModal" class="modal" style="display:none">
+    <div class="modal-content" style="max-width:420px">
+        <div class="modal-header">
+            <h2 class="modal-title">Delete VM</h2>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Delete VM <strong id="deleteVmName"></strong>? The VM will be force-stopped and undefined.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+            <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Install libvirt Modal -->
+<div id="installModal" class="modal" style="display:none">
+    <div class="modal-content" style="max-width:680px">
+        <div class="modal-header">
+            <h2 class="modal-title">
+                <span class="material-symbols-rounded" aria-hidden="true">build</span>
+                Install libvirt &amp; dependencies
+            </h2>
+            <button class="modal-close" id="installModalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom:12px;color:var(--md-on-surface-variant)">
+                Connects to the selected platform via SSH, detects the OS, and installs
+                <code>qemu-kvm</code>, <code>libvirt</code>, and related packages.
+                The user is added to the <code>libvirt</code> group and the service is enabled.
+            </p>
+            <div id="installOutput" class="install-output">Press <strong>Run Install</strong> to start.</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="installModalClose2">Close</button>
+            <button id="runInstallBtn" class="btn btn-primary">
+                <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
+                Run Install
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPlatformId = null;
+
+async function loadPlatforms() {
+    const sel = document.getElementById('platformSelect');
+    try {
+        const resp = await fetch('/api/platforms/?limit=200');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        (data.platforms || data).forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name + ' (' + p.host + ')';
+            sel.appendChild(opt);
+        });
+        // restore from query param
+        const pid = new URLSearchParams(location.search).get('platform_id');
+        if (pid) { sel.value = pid; document.getElementById('installBtn').disabled = false; loadVMs(pid); }
+    } catch(e) { console.error(e); }
+}
+
+async function loadVMs(platformId) {
+    currentPlatformId = platformId;
+    const body = document.getElementById('vmsBody');
+    body.innerHTML = '<tr><td colspan="7" class="table-empty-state">Loading…</td></tr>';
+    try {
+        const resp = await fetch(`/api/virt/${platformId}/vms`);
+        const data = await resp.json();
+        if (!resp.ok) { body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${data.error || 'Error'}</td></tr>`; return; }
+        if (!data.length) { body.innerHTML = '<tr><td colspan="7" class="table-empty-state">No VMs found on this platform.</td></tr>'; return; }
+        body.innerHTML = data.map(vm => renderRow(vm)).join('');
+    } catch(e) {
+        body.innerHTML = `<tr><td colspan="7" class="table-empty-state">Error: ${e.message}</td></tr>`;
+    }
+}
+
+function stateClass(s) {
+    const m = { Running: 'running', SHUTOFF: 'stopped', SHUTDOWN: 'stopped', Paused: 'paused', CRASHED: 'crashed' };
+    return m[s] || 'stopped';
+}
+
+function renderRow(vm) {
+    const shortUuid = vm.uuid ? vm.uuid.substring(0, 8) + '…' : '—';
+    const memMb = vm.memory_kb ? (vm.memory_kb / 1024).toFixed(0) + ' MB' : '—';
+    const sc = stateClass(vm.state);
+    const isRunning = vm.state === 'Running';
+    return `<tr>
+        <td><strong>${escapeHtml(vm.name)}</strong></td>
+        <td><code title="${escapeHtml(vm.uuid || '')}">${shortUuid}</code></td>
+        <td><span class="vm-state ${sc}"><span class="material-symbols-rounded" style="font-size:16px">${isRunning ? 'play_circle' : 'stop_circle'}</span>${vm.state}</span></td>
+        <td>${memMb}</td>
+        <td>${vm.vcpus}</td>
+        <td>${vm.autostart ? '✓' : '—'}</td>
+        <td>
+            <div class="table-actions">
+                ${isRunning
+                    ? `<button class="btn btn-ghost" onclick="stopVM('${escapeHtml(vm.name)}')"><span class="material-symbols-rounded">stop</span><span>Stop</span></button>`
+                    : `<button class="btn btn-ghost" onclick="startVM('${escapeHtml(vm.name)}')"><span class="material-symbols-rounded">play_arrow</span><span>Start</span></button>`
+                }
+                <button class="btn btn-ghost" style="color:var(--md-error)" onclick="openDeleteModal('${escapeHtml(vm.name)}')"><span class="material-symbols-rounded">delete</span><span>Delete</span></button>
+            </div>
+        </td>
+    </tr>`;
+}
+
+async function startVM(name) {
+    if (!currentPlatformId) return;
+    try {
+        const resp = await fetch(`/api/virt/${currentPlatformId}/vms/start`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+        const data = await resp.json();
+        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        if (resp.ok) loadVMs(currentPlatformId);
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function stopVM(name) {
+    if (!currentPlatformId) return;
+    try {
+        const resp = await fetch(`/api/virt/${currentPlatformId}/vms/stop`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+        const data = await resp.json();
+        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        if (resp.ok) loadVMs(currentPlatformId);
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+let pendingDeleteName = null;
+function openDeleteModal(name) {
+    pendingDeleteName = name;
+    document.getElementById('deleteVmName').textContent = name;
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+function closeDeleteModal() {
+    pendingDeleteName = null;
+    document.getElementById('deleteModal').style.display = 'none';
+}
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!pendingDeleteName || !currentPlatformId) return;
+    closeDeleteModal();
+    try {
+        const resp = await fetch(`/api/virt/${currentPlatformId}/vms/delete`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: pendingDeleteName}) });
+        const data = await resp.json();
+        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        if (resp.ok) loadVMs(currentPlatformId);
+    } catch(e) { showToast(e.message, 'error'); }
+});
+document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
+
+document.getElementById('platformSelect').addEventListener('change', e => {
+    const pid = e.target.value;
+    document.getElementById('installBtn').disabled = !pid;
+    if (pid) {
+        history.replaceState({}, '', `?platform_id=${pid}`);
+        loadVMs(pid);
+    } else {
+        document.getElementById('vmsBody').innerHTML = '<tr><td colspan="7" class="table-empty-state">Select a platform to load VMs.</td></tr>';
+    }
+});
+document.getElementById('refreshBtn').addEventListener('click', () => { if (currentPlatformId) loadVMs(currentPlatformId); });
+
+// ── Install modal ──────────────────────────────────────────────────────────
+function openInstallModal() {
+    document.getElementById('installOutput').textContent = 'Press Run Install to start.';
+    document.getElementById('runInstallBtn').disabled = false;
+    document.getElementById('runInstallBtn').innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">play_arrow</span> Run Install';
+    document.getElementById('installModal').style.display = 'flex';
+}
+function closeInstallModal() { document.getElementById('installModal').style.display = 'none'; }
+
+document.getElementById('installBtn').addEventListener('click', openInstallModal);
+document.getElementById('installModalClose').addEventListener('click', closeInstallModal);
+document.getElementById('installModalClose2').addEventListener('click', closeInstallModal);
+document.getElementById('installModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeInstallModal(); });
+
+document.getElementById('runInstallBtn').addEventListener('click', async () => {
+    if (!currentPlatformId) return;
+    const btn = document.getElementById('runInstallBtn');
+    const out = document.getElementById('installOutput');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-rounded spin" aria-hidden="true">progress_activity</span> Running…';
+    out.textContent = 'Connecting to platform and detecting OS…\n';
+
+    try {
+        const resp = await fetch(`/api/virt/${currentPlatformId}/install`, { method: 'POST' });
+        const data = await resp.json();
+        // render with coloured lines
+        out.innerHTML = colorizeOutput(data.output || data.error || 'No output');
+        out.scrollTop = out.scrollHeight;
+        btn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">check</span> Done';
+        if (!data.ok) btn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">error</span> Failed';
+    } catch(e) {
+        out.textContent = 'Error: ' + e.message;
+        btn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">error</span> Failed';
+    }
+    btn.disabled = false;
+});
+
+function colorizeOutput(text) {
+    return text.split('\n').map(line => {
+        const esc = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        if (line.startsWith('===')) return `<span class="line-head">${esc}</span>`;
+        if (line.startsWith('$'))   return `<span class="line-cmd">${esc}</span>`;
+        return esc;
+    }).join('\n');
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg, type) {
+    // reuse app toast if available, else alert
+    if (window.showNotification) { showNotification(msg, type); } else { alert(msg); }
+}
+
+loadPlatforms();
+</script>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "layout.html" %}
+{% set active_page = 'virt_pools' %}
+
+{% block title %}Storage Pools - Testum{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .platform-selector { display: flex; align-items: center; gap: 8px; }
+    .platform-selector label { font: var(--md-label-medium); color: var(--md-on-surface-variant); white-space: nowrap; }
+    .platform-selector select { min-width: 200px; }
+    .capacity-bar { display: flex; flex-direction: column; gap: 3px; min-width: 120px; }
+    .capacity-bar-track { height: 4px; background: var(--md-surface-container-highest); border-radius: 2px; overflow: hidden; }
+    .capacity-bar-fill  { height: 100%; background: var(--md-primary); border-radius: 2px; transition: width .3s; }
+    .capacity-label { font: var(--md-label-small); color: var(--md-on-surface-variant); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-info">
+        <h1 class="page-title">
+            <span class="material-symbols-rounded" aria-hidden="true">storage</span>
+            <span>Storage Pools</span>
+        </h1>
+        <p class="page-subtitle">Manage libvirt storage pools on your platforms.</p>
+    </div>
+    <div class="page-actions">
+        <div class="platform-selector">
+            <label for="platformSelect">Platform:</label>
+            <select id="platformSelect">
+                <option value="">— select —</option>
+            </select>
+        </div>
+        <button id="addPoolBtn" class="toolbar-icon-btn primary" disabled>
+            <span class="material-symbols-rounded" aria-hidden="true">add</span>
+            <span>Add Pool</span>
+        </button>
+        <button id="refreshBtn" class="toolbar-icon-btn">
+            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+            <span>Refresh</span>
+        </button>
+    </div>
+</div>
+
+<div class="card table-card">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>State</th>
+                    <th>Volumes</th>
+                    <th>Capacity</th>
+                    <th>Usage</th>
+                    <th>Autostart</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="poolsBody">
+                <tr><td colspan="7" class="table-empty-state">Select a platform to load pools.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Pool Modal -->
+<div id="addPoolModal" class="modal" style="display:none">
+    <div class="modal-content" style="max-width:520px">
+        <div class="modal-header">
+            <h2 class="modal-title">Add Storage Pool</h2>
+            <button class="modal-close" onclick="closeAddModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Name *</label>
+                <input type="text" id="poolName" class="form-input" placeholder="e.g. default">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Type *</label>
+                <select id="poolType" class="form-input">
+                    <option value="dir">dir — directory</option>
+                    <option value="fs">fs — filesystem</option>
+                    <option value="netfs">netfs — network filesystem</option>
+                    <option value="logical">logical — LVM</option>
+                    <option value="disk">disk — physical disk</option>
+                    <option value="iscsi">iscsi — iSCSI</option>
+                    <option value="scsi">scsi — SCSI</option>
+                    <option value="rbd">rbd — Ceph RBD</option>
+                    <option value="gluster">gluster — GlusterFS</option>
+                    <option value="zfs">zfs — ZFS</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Source (device/path/host)</label>
+                <input type="text" id="poolSource" class="form-input" placeholder="/dev/sdb or server:/export">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target path</label>
+                <input type="text" id="poolTarget" class="form-input" placeholder="/var/lib/libvirt/images">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Host (for netfs/iscsi)</label>
+                <input type="text" id="poolHost" class="form-input" placeholder="192.168.1.10">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+            <button id="createPoolBtn" class="btn btn-primary">Create Pool</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="deleteModal" class="modal" style="display:none">
+    <div class="modal-content" style="max-width:420px">
+        <div class="modal-header">
+            <h2 class="modal-title">Delete Pool</h2>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Delete pool <strong id="deletePoolName"></strong>? This will undefine and delete it from the hypervisor.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+            <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPlatformId = null;
+
+async function loadPlatforms() {
+    const sel = document.getElementById('platformSelect');
+    try {
+        const resp = await fetch('/api/platforms/?limit=200');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        (data.platforms || data).forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name + ' (' + p.host + ')';
+            sel.appendChild(opt);
+        });
+        const pid = new URLSearchParams(location.search).get('platform_id');
+        if (pid) { sel.value = pid; onPlatformChange(pid); }
+    } catch(e) { console.error(e); }
+}
+
+function onPlatformChange(pid) {
+    currentPlatformId = pid;
+    document.getElementById('addPoolBtn').disabled = !pid;
+    if (pid) loadPools(pid);
+    else document.getElementById('poolsBody').innerHTML = '<tr><td colspan="7" class="table-empty-state">Select a platform to load pools.</td></tr>';
+}
+
+async function loadPools(platformId) {
+    const body = document.getElementById('poolsBody');
+    body.innerHTML = '<tr><td colspan="7" class="table-empty-state">Loading…</td></tr>';
+    try {
+        // load all states by passing multiple flags summed = all
+        const resp = await fetch(`/api/virt/${platformId}/pools?state=1&state=2&state=4&state=8&state=16&state=32`);
+        const data = await resp.json();
+        if (!resp.ok) { body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${data.error || 'Error'}</td></tr>`; return; }
+        if (!data.length) { body.innerHTML = '<tr><td colspan="7" class="table-empty-state">No storage pools found.</td></tr>'; return; }
+        body.innerHTML = data.map(renderRow).join('');
+    } catch(e) {
+        body.innerHTML = `<tr><td colspan="7" class="table-empty-state">Error: ${e.message}</td></tr>`;
+    }
+}
+
+function fmtBytes(bytes) {
+    if (!bytes) return '0 B';
+    const units = ['B','KB','MB','GB','TB'];
+    let i = 0, v = bytes;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return v.toFixed(1) + ' ' + units[i];
+}
+
+function renderRow(p) {
+    const pct = p.capacity ? Math.round(p.allocation / p.capacity * 100) : 0;
+    const stateChip = p.is_active
+        ? '<span class="status-chip success">Active</span>'
+        : '<span class="status-chip failed">Inactive</span>';
+    return `<tr>
+        <td><strong>${escapeHtml(p.name)}</strong></td>
+        <td>${stateChip}</td>
+        <td>${p.num_volumes}</td>
+        <td>${fmtBytes(p.capacity)}</td>
+        <td>
+            <div class="capacity-bar">
+                <div class="capacity-bar-track"><div class="capacity-bar-fill" style="width:${pct}%"></div></div>
+                <span class="capacity-label">${fmtBytes(p.allocation)} / ${fmtBytes(p.capacity)} (${pct}%)</span>
+            </div>
+        </td>
+        <td>${p.auto_start ? '✓' : '—'}</td>
+        <td>
+            <div class="table-actions">
+                ${p.is_active
+                    ? `<button class="btn btn-ghost" onclick="deactivatePool('${escapeHtml(p.name)}')"><span class="material-symbols-rounded">stop</span><span>Deactivate</span></button>`
+                    : `<button class="btn btn-ghost" onclick="activatePool('${escapeHtml(p.name)}')"><span class="material-symbols-rounded">play_arrow</span><span>Activate</span></button>`
+                }
+                <button class="btn btn-ghost" style="color:var(--md-error)" onclick="openDeleteModal('${escapeHtml(p.name)}')"><span class="material-symbols-rounded">delete</span></button>
+            </div>
+        </td>
+    </tr>`;
+}
+
+async function activatePool(name) {
+    if (!currentPlatformId) return;
+    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/activate`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+    const data = await resp.json();
+    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    if (resp.ok) loadPools(currentPlatformId);
+}
+
+async function deactivatePool(name) {
+    if (!currentPlatformId) return;
+    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/deactivate`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+    const data = await resp.json();
+    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    if (resp.ok) loadPools(currentPlatformId);
+}
+
+// Add Pool modal
+document.getElementById('addPoolBtn').addEventListener('click', () => {
+    document.getElementById('addPoolModal').style.display = 'flex';
+});
+function closeAddModal() { document.getElementById('addPoolModal').style.display = 'none'; }
+document.getElementById('addPoolModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
+
+document.getElementById('createPoolBtn').addEventListener('click', async () => {
+    const name = document.getElementById('poolName').value.trim();
+    const pool_type = document.getElementById('poolType').value;
+    if (!name) { showToast('Name is required', 'error'); return; }
+    try {
+        const resp = await fetch(`/api/virt/${currentPlatformId}/pools/create`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                name, pool_type,
+                source: document.getElementById('poolSource').value.trim() || null,
+                target: document.getElementById('poolTarget').value.trim() || null,
+                host:   document.getElementById('poolHost').value.trim()   || null,
+            })
+        });
+        const data = await resp.json();
+        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        if (resp.ok) { closeAddModal(); loadPools(currentPlatformId); }
+    } catch(e) { showToast(e.message, 'error'); }
+});
+
+// Delete Pool modal
+let pendingDeleteName = null;
+function openDeleteModal(name) {
+    pendingDeleteName = name;
+    document.getElementById('deletePoolName').textContent = name;
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+function closeDeleteModal() { pendingDeleteName = null; document.getElementById('deleteModal').style.display = 'none'; }
+document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!pendingDeleteName || !currentPlatformId) return;
+    const name = pendingDeleteName;
+    closeDeleteModal();
+    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/delete`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+    const data = await resp.json();
+    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    if (resp.ok) loadPools(currentPlatformId);
+});
+
+document.getElementById('platformSelect').addEventListener('change', e => {
+    const pid = e.target.value;
+    if (pid) history.replaceState({}, '', `?platform_id=${pid}`);
+    onPlatformChange(pid);
+});
+document.getElementById('refreshBtn').addEventListener('click', () => { if (currentPlatformId) loadPools(currentPlatformId); });
+
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg, type) { if (window.showNotification) showNotification(msg, type); else alert(msg); }
+
+loadPlatforms();
+</script>
+{% endblock %}

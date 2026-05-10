@@ -15,6 +15,7 @@ from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from app.api.automations import automations_router
+from app.api.virt import virt_router
 from app.api.audit import audit_router
 from app.api.backup import backup_router
 from app.api.gitops import gitops_router
@@ -253,6 +254,18 @@ async def jobs_page(request: Request):
     )
 
 
+async def virt_vms_page(request: Request):
+    return templates.TemplateResponse("virt_vms.html", build_template_context(request, "virt_vms"))
+
+
+async def virt_pools_page(request: Request):
+    return templates.TemplateResponse("virt_pools.html", build_template_context(request, "virt_pools"))
+
+
+async def virt_volumes_page(request: Request):
+    return templates.TemplateResponse("virt_volumes.html", build_template_context(request, "virt_volumes"))
+
+
 async def job_detail_page(request: Request):
     """Job detail page for a specific task."""
     task_id = request.path_params.get("task_id")
@@ -488,6 +501,9 @@ routes = [
     Route("/automations", automations_page),
     Route("/jobs", jobs_page),
     Route("/jobs/{task_id}", job_detail_page),
+    Route("/virt/vms", virt_vms_page),
+    Route("/virt/pools", virt_pools_page),
+    Route("/virt/volumes", virt_volumes_page),
     Route("/audit", audit_page),
     Route("/users", users_page),
     Route("/settings", settings_page),
@@ -510,6 +526,7 @@ routes = [
     Mount("/api/audit", audit_router),
     Mount("/api/backup", backup_router),
     Mount("/api/gitops", gitops_router),
+    Mount("/api/virt", virt_router),
     Mount("/static", StaticFiles(directory="app/static"), name="static"),
 ]
 

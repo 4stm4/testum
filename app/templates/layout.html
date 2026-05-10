@@ -369,6 +369,28 @@
             </div>
 
             <div class="sidebar-section">
+                <div class="sidebar-title" data-i18n="virtualization">Virtualization</div>
+                <a href="/virt/vms" class="sidebar-link{% if active_page == 'virt_vms' %} active{% endif %}">
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">computer</span></span>
+                        <span data-i18n="virtVms">Virtual Machines</span>
+                    </span>
+                </a>
+                <a href="/virt/pools" class="sidebar-link{% if active_page == 'virt_pools' %} active{% endif %}">
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">storage</span></span>
+                        <span data-i18n="virtPools">Storage Pools</span>
+                    </span>
+                </a>
+                <a href="/virt/volumes" class="sidebar-link{% if active_page == 'virt_volumes' %} active{% endif %}">
+                    <span class="sidebar-link-main">
+                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">hard_drive</span></span>
+                        <span data-i18n="virtVolumes">Volumes</span>
+                    </span>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
                 <div class="sidebar-title" data-i18n="system">System</div>
                 <a href="/users" class="sidebar-link{% if active_page == 'users' %} active{% endif %}">
                     <span class="sidebar-link-main">
@@ -406,7 +428,7 @@
         </main>
     </div>
 
-    <script src="/static/testum.js?v=5"></script>
+    <script src="/static/testum.js?v=6"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
