@@ -20,24 +20,24 @@
     <div class="page-header-info">
         <h1 class="page-title">
             <span class="material-symbols-rounded" aria-hidden="true">storage</span>
-            <span>Storage Pools</span>
+            <span data-i18n="virtPools">Storage Pools</span>
         </h1>
-        <p class="page-subtitle">Manage libvirt storage pools on your platforms.</p>
+        <p class="page-subtitle" data-i18n="virtPoolsSubtitle">Manage libvirt storage pools on your platforms.</p>
     </div>
     <div class="page-actions">
         <div class="platform-selector">
-            <label for="platformSelect">Platform:</label>
+            <label for="platformSelect" data-i18n="platformLabel">Platform:</label>
             <select id="platformSelect">
                 <option value="">— select —</option>
             </select>
         </div>
         <button id="addPoolBtn" class="toolbar-icon-btn primary" disabled>
             <span class="material-symbols-rounded" aria-hidden="true">add</span>
-            <span>Add Pool</span>
+            <span data-i18n="addPool">Add Pool</span>
         </button>
         <button id="refreshBtn" class="toolbar-icon-btn">
             <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-            <span>Refresh</span>
+            <span data-i18n="refresh">Refresh</span>
         </button>
     </div>
 </div>
@@ -47,17 +47,17 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>State</th>
-                    <th>Volumes</th>
-                    <th>Capacity</th>
-                    <th>Usage</th>
-                    <th>Autostart</th>
-                    <th>Actions</th>
+                    <th data-i18n="poolColName">Name</th>
+                    <th data-i18n="poolColState">State</th>
+                    <th data-i18n="poolColVolumes">Volumes</th>
+                    <th data-i18n="poolColCapacity">Capacity</th>
+                    <th data-i18n="poolColUsage">Usage</th>
+                    <th data-i18n="poolColAutostart">Autostart</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="poolsBody">
-                <tr><td colspan="7" class="table-empty-state">Select a platform to load pools.</td></tr>
+                <tr><td colspan="7" class="table-empty-state" data-i18n="poolSelectPlatform">Select a platform to load pools.</td></tr>
             </tbody>
         </table>
     </div>
@@ -67,16 +67,16 @@
 <div id="addPoolModal" class="modal" style="display:none">
     <div class="modal-content" style="max-width:520px">
         <div class="modal-header">
-            <h2 class="modal-title">Add Storage Pool</h2>
+            <h2 class="modal-title" data-i18n="addPoolTitle">Add Storage Pool</h2>
             <button class="modal-close" onclick="closeAddModal()">&times;</button>
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label class="form-label">Name *</label>
-                <input type="text" id="poolName" class="form-input" placeholder="e.g. default">
+                <label class="form-label" data-i18n="poolNameLabel">Name *</label>
+                <input type="text" id="poolName" class="form-input" placeholder="default">
             </div>
             <div class="form-group">
-                <label class="form-label">Type *</label>
+                <label class="form-label" data-i18n="poolTypeLabel">Type *</label>
                 <select id="poolType" class="form-input">
                     <option value="dir">dir — directory</option>
                     <option value="fs">fs — filesystem</option>
@@ -91,38 +91,38 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Source (device/path/host)</label>
-                <input type="text" id="poolSource" class="form-input" placeholder="/dev/sdb or server:/export">
+                <label class="form-label" data-i18n="poolSourceLabel">Source (device / path / host)</label>
+                <input type="text" id="poolSource" class="form-input" placeholder="/dev/sdb">
             </div>
             <div class="form-group">
-                <label class="form-label">Target path</label>
+                <label class="form-label" data-i18n="poolTargetLabel">Target path</label>
                 <input type="text" id="poolTarget" class="form-input" placeholder="/var/lib/libvirt/images">
             </div>
             <div class="form-group">
-                <label class="form-label">Host (for netfs/iscsi)</label>
+                <label class="form-label" data-i18n="poolHostLabel">Host (for netfs / iSCSI)</label>
                 <input type="text" id="poolHost" class="form-input" placeholder="192.168.1.10">
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
-            <button id="createPoolBtn" class="btn btn-primary">Create Pool</button>
+            <button class="btn btn-ghost" onclick="closeAddModal()" data-i18n="cancel">Cancel</button>
+            <button id="createPoolBtn" class="btn btn-primary" data-i18n="createPool">Create Pool</button>
         </div>
     </div>
 </div>
 
-<!-- Confirm Delete Modal -->
+<!-- Delete Pool Modal -->
 <div id="deleteModal" class="modal" style="display:none">
     <div class="modal-content" style="max-width:420px">
         <div class="modal-header">
-            <h2 class="modal-title">Delete Pool</h2>
+            <h2 class="modal-title" data-i18n="deletePoolTitle">Delete Pool</h2>
             <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <p>Delete pool <strong id="deletePoolName"></strong>? This will undefine and delete it from the hypervisor.</p>
+            <p><strong id="deletePoolName"></strong> — <span data-i18n="deletePoolBody">This will undefine and delete the pool from the hypervisor.</span></p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-            <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+            <button class="btn btn-ghost" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
+            <button id="confirmDeleteBtn" class="btn btn-danger" data-i18n="delete">Delete</button>
         </div>
     </div>
 </div>
@@ -153,30 +153,29 @@ function onPlatformChange(pid) {
     currentPlatformId = pid;
     document.getElementById('addPoolBtn').disabled = !pid;
     if (pid) loadPools(pid);
-    else document.getElementById('poolsBody').innerHTML = '<tr><td colspan="7" class="table-empty-state">Select a platform to load pools.</td></tr>';
+    else document.getElementById('poolsBody').innerHTML =
+        `<tr><td colspan="7" class="table-empty-state">${t('poolSelectPlatform')}</td></tr>`;
 }
 
 async function loadPools(platformId) {
     const body = document.getElementById('poolsBody');
-    body.innerHTML = '<tr><td colspan="7" class="table-empty-state">Loading…</td></tr>';
+    body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${t('loading')}</td></tr>`;
     try {
-        // load all states by passing multiple flags summed = all
         const resp = await fetch(`/api/virt/${platformId}/pools?state=1&state=2&state=4&state=8&state=16&state=32`);
         const data = await resp.json();
         if (!resp.ok) { body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${data.error || 'Error'}</td></tr>`; return; }
-        if (!data.length) { body.innerHTML = '<tr><td colspan="7" class="table-empty-state">No storage pools found.</td></tr>'; return; }
+        if (!data.length) { body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${t('poolNone')}</td></tr>`; return; }
         body.innerHTML = data.map(renderRow).join('');
     } catch(e) {
         body.innerHTML = `<tr><td colspan="7" class="table-empty-state">Error: ${e.message}</td></tr>`;
     }
 }
 
-function fmtBytes(bytes) {
-    if (!bytes) return '0 B';
-    const units = ['B','KB','MB','GB','TB'];
-    let i = 0, v = bytes;
-    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
-    return v.toFixed(1) + ' ' + units[i];
+function fmtBytes(b) {
+    if (!b) return '0 B';
+    const u = ['B','KB','MB','GB','TB']; let i = 0, v = b;
+    while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+    return v.toFixed(1) + ' ' + u[i];
 }
 
 function renderRow(p) {
@@ -199,59 +198,62 @@ function renderRow(p) {
         <td>
             <div class="table-actions">
                 ${p.is_active
-                    ? `<button class="btn btn-ghost" onclick="deactivatePool('${escapeHtml(p.name)}')"><span class="material-symbols-rounded">stop</span><span>Deactivate</span></button>`
-                    : `<button class="btn btn-ghost" onclick="activatePool('${escapeHtml(p.name)}')"><span class="material-symbols-rounded">play_arrow</span><span>Activate</span></button>`
+                    ? `<button class="btn btn-ghost" onclick="deactivatePool('${escapeHtml(p.name)}')">
+                           <span class="material-symbols-rounded">stop</span><span>${t('deactivate')}</span>
+                       </button>`
+                    : `<button class="btn btn-ghost" onclick="activatePool('${escapeHtml(p.name)}')">
+                           <span class="material-symbols-rounded">play_arrow</span><span>${t('activate')}</span>
+                       </button>`
                 }
-                <button class="btn btn-ghost" style="color:var(--md-error)" onclick="openDeleteModal('${escapeHtml(p.name)}')"><span class="material-symbols-rounded">delete</span></button>
+                <button class="btn btn-ghost" style="color:var(--md-error)" onclick="openDeleteModal('${escapeHtml(p.name)}')">
+                    <span class="material-symbols-rounded">delete</span>
+                </button>
             </div>
         </td>
     </tr>`;
 }
 
 async function activatePool(name) {
-    if (!currentPlatformId) return;
-    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/activate`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/activate`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
+    });
     const data = await resp.json();
     showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
     if (resp.ok) loadPools(currentPlatformId);
 }
 
 async function deactivatePool(name) {
-    if (!currentPlatformId) return;
-    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/deactivate`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/deactivate`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
+    });
     const data = await resp.json();
     showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
     if (resp.ok) loadPools(currentPlatformId);
 }
 
-// Add Pool modal
-document.getElementById('addPoolBtn').addEventListener('click', () => {
-    document.getElementById('addPoolModal').style.display = 'flex';
-});
+// Add pool modal
+document.getElementById('addPoolBtn').addEventListener('click', () => { document.getElementById('addPoolModal').style.display = 'flex'; });
 function closeAddModal() { document.getElementById('addPoolModal').style.display = 'none'; }
 document.getElementById('addPoolModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
-
 document.getElementById('createPoolBtn').addEventListener('click', async () => {
     const name = document.getElementById('poolName').value.trim();
     const pool_type = document.getElementById('poolType').value;
-    if (!name) { showToast('Name is required', 'error'); return; }
-    try {
-        const resp = await fetch(`/api/virt/${currentPlatformId}/pools/create`, {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({
-                name, pool_type,
-                source: document.getElementById('poolSource').value.trim() || null,
-                target: document.getElementById('poolTarget').value.trim() || null,
-                host:   document.getElementById('poolHost').value.trim()   || null,
-            })
-        });
-        const data = await resp.json();
-        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
-        if (resp.ok) { closeAddModal(); loadPools(currentPlatformId); }
-    } catch(e) { showToast(e.message, 'error'); }
+    if (!name) { showToast(t('poolNameLabel') + ' required', 'error'); return; }
+    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/create`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            name, pool_type,
+            source: document.getElementById('poolSource').value.trim() || null,
+            target: document.getElementById('poolTarget').value.trim() || null,
+            host:   document.getElementById('poolHost').value.trim()   || null,
+        })
+    });
+    const data = await resp.json();
+    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    if (resp.ok) { closeAddModal(); loadPools(currentPlatformId); }
 });
 
-// Delete Pool modal
+// Delete pool modal
 let pendingDeleteName = null;
 function openDeleteModal(name) {
     pendingDeleteName = name;
@@ -264,7 +266,9 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
     if (!pendingDeleteName || !currentPlatformId) return;
     const name = pendingDeleteName;
     closeDeleteModal();
-    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/delete`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/delete`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
+    });
     const data = await resp.json();
     showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
     if (resp.ok) loadPools(currentPlatformId);
@@ -273,6 +277,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
 document.getElementById('platformSelect').addEventListener('change', e => {
     const pid = e.target.value;
     if (pid) history.replaceState({}, '', `?platform_id=${pid}`);
+    else history.replaceState({}, '', location.pathname);
     onPlatformChange(pid);
 });
 document.getElementById('refreshBtn').addEventListener('click', () => { if (currentPlatformId) loadPools(currentPlatformId); });

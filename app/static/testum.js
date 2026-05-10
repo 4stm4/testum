@@ -111,6 +111,63 @@ const translations = {
         virtVms: 'Virtual Machines',
         virtPools: 'Storage Pools',
         virtVolumes: 'Volumes',
+
+        // Virt pages — common
+        platformLabel: 'Platform:',
+        poolLabel: 'Pool:',
+        close: 'Close',
+        cancel: 'Cancel',
+        delete: 'Delete',
+        activate: 'Activate',
+        deactivate: 'Deactivate',
+        selectPlatformFirst: 'Select a platform to load data.',
+        loading: 'Loading…',
+
+        // Virtual Machines page
+        virtVmsSubtitle: 'Manage virtual machines on libvirt platforms.',
+        installLibvirtBtn: 'Install libvirt',
+        vmName: 'Name', vmUuid: 'UUID', vmState: 'State', vmMemory: 'Memory', vmVcpus: 'vCPUs', vmAutostart: 'Autostart',
+        vmSelectPlatform: 'Select a platform to load VMs.',
+        vmNoVms: 'No VMs found on this platform.',
+        startVm: 'Start', stopVm: 'Stop', deleteVm: 'Delete',
+        deleteVmTitle: 'Delete VM',
+        deleteVmBody: 'The VM will be force-stopped and undefined.',
+        installModalTitle: 'Install libvirt & dependencies',
+        installModalDesc: 'Connects to the selected platform via SSH, detects the OS, and installs <code>qemu-kvm</code>, <code>libvirt</code>, and related packages. The user is added to the <code>libvirt</code> group and the service is enabled. Progress is tracked as a Job and visible in the Audit Log.',
+        installOutputPlaceholder: 'Press Run Install to start.',
+        viewJob: 'View Job',
+        liveMonitor: 'Live Monitor',
+        runInstall: 'Run Install',
+
+        // Storage Pools page
+        virtPoolsSubtitle: 'Manage libvirt storage pools on your platforms.',
+        addPool: 'Add Pool',
+        poolColName: 'Name', poolColState: 'State', poolColVolumes: 'Volumes',
+        poolColCapacity: 'Capacity', poolColUsage: 'Usage', poolColAutostart: 'Autostart',
+        poolSelectPlatform: 'Select a platform to load pools.',
+        poolNone: 'No storage pools found.',
+        addPoolTitle: 'Add Storage Pool',
+        poolNameLabel: 'Name *', poolTypeLabel: 'Type *',
+        poolSourceLabel: 'Source (device / path / host)',
+        poolTargetLabel: 'Target path',
+        poolHostLabel: 'Host (for netfs / iSCSI)',
+        createPool: 'Create Pool',
+        deletePoolTitle: 'Delete Pool',
+        deletePoolBody: 'This will undefine and delete the pool from the hypervisor.',
+
+        // Volumes page
+        virtVolumesSubtitle: 'Manage storage volumes inside libvirt pools.',
+        addVolume: 'Add Volume',
+        volColName: 'Name', volColType: 'Type', volColCapacity: 'Capacity (GB)', volColAlloc: 'Allocation (GB)',
+        volSelectPlatform: 'Select a platform and pool to load volumes.',
+        volSelectPool: 'Select a pool to load volumes.',
+        volNone: 'No volumes in this pool.',
+        addVolumeTitle: 'Add Volume',
+        volNameLabel: 'Name *', volPathLabel: 'Full path *', volCapLabel: 'Capacity (GB) *',
+        createVolume: 'Create Volume',
+        deleteVolumeTitle: 'Delete Volume',
+        deleteVolumeBody: 'Permanently delete this volume? This cannot be undone.',
+
         system: 'System',
         users: 'Users',
         auditLogs: 'Audit Logs',
@@ -338,6 +395,63 @@ const translations = {
         virtVms: 'Виртуальные машины',
         virtPools: 'Пулы хранилищ',
         virtVolumes: 'Тома',
+
+        // Virt pages — common
+        platformLabel: 'Платформа:',
+        poolLabel: 'Пул:',
+        close: 'Закрыть',
+        cancel: 'Отмена',
+        delete: 'Удалить',
+        activate: 'Активировать',
+        deactivate: 'Деактивировать',
+        selectPlatformFirst: 'Выберите платформу для загрузки данных.',
+        loading: 'Загрузка…',
+
+        // Virtual Machines page
+        virtVmsSubtitle: 'Управление виртуальными машинами на платформах libvirt.',
+        installLibvirtBtn: 'Установить libvirt',
+        vmName: 'Имя', vmUuid: 'UUID', vmState: 'Состояние', vmMemory: 'Память', vmVcpus: 'vCPU', vmAutostart: 'Автозапуск',
+        vmSelectPlatform: 'Выберите платформу для загрузки ВМ.',
+        vmNoVms: 'Виртуальные машины не найдены.',
+        startVm: 'Запустить', stopVm: 'Остановить', deleteVm: 'Удалить',
+        deleteVmTitle: 'Удалить ВМ',
+        deleteVmBody: 'ВМ будет принудительно остановлена и удалена из конфигурации.',
+        installModalTitle: 'Установка libvirt и зависимостей',
+        installModalDesc: 'Подключается к выбранной платформе по SSH, определяет ОС и устанавливает <code>qemu-kvm</code>, <code>libvirt</code> и сопутствующие пакеты. Пользователь добавляется в группу <code>libvirt</code>, сервис включается. Прогресс отображается в разделе Задачи и Журнале событий.',
+        installOutputPlaceholder: 'Нажмите «Запустить установку», чтобы начать.',
+        viewJob: 'Открыть задачу',
+        liveMonitor: 'Монитор',
+        runInstall: 'Запустить установку',
+
+        // Storage Pools page
+        virtPoolsSubtitle: 'Управление пулами хранилищ libvirt на ваших платформах.',
+        addPool: 'Добавить пул',
+        poolColName: 'Имя', poolColState: 'Состояние', poolColVolumes: 'Тома',
+        poolColCapacity: 'Объём', poolColUsage: 'Использование', poolColAutostart: 'Автозапуск',
+        poolSelectPlatform: 'Выберите платформу для загрузки пулов.',
+        poolNone: 'Пулы хранилищ не найдены.',
+        addPoolTitle: 'Добавить пул хранилища',
+        poolNameLabel: 'Имя *', poolTypeLabel: 'Тип *',
+        poolSourceLabel: 'Источник (устройство / путь / хост)',
+        poolTargetLabel: 'Путь назначения',
+        poolHostLabel: 'Хост (для netfs / iSCSI)',
+        createPool: 'Создать пул',
+        deletePoolTitle: 'Удалить пул',
+        deletePoolBody: 'Пул будет удалён из конфигурации гипервизора.',
+
+        // Volumes page
+        virtVolumesSubtitle: 'Управление томами внутри пулов libvirt.',
+        addVolume: 'Добавить том',
+        volColName: 'Имя', volColType: 'Тип', volColCapacity: 'Объём (ГБ)', volColAlloc: 'Выделено (ГБ)',
+        volSelectPlatform: 'Выберите платформу и пул для загрузки томов.',
+        volSelectPool: 'Выберите пул для загрузки томов.',
+        volNone: 'В этом пуле нет томов.',
+        addVolumeTitle: 'Добавить том',
+        volNameLabel: 'Имя *', volPathLabel: 'Полный путь *', volCapLabel: 'Объём (ГБ) *',
+        createVolume: 'Создать том',
+        deleteVolumeTitle: 'Удалить том',
+        deleteVolumeBody: 'Удалить том безвозвратно? Это действие нельзя отменить.',
+
         system: 'Система',
         users: 'Пользователи',
         auditLogs: 'Журнал событий',
@@ -562,7 +676,7 @@ function applyTranslations() {
     elements.forEach(element => {
         const key = element.getAttribute('data-i18n');
         const translation = t(key);
-        
+
         // Handle different element types
         if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
             if (element.placeholder !== undefined) {
@@ -571,6 +685,11 @@ function applyTranslations() {
         } else {
             element.textContent = translation;
         }
+    });
+
+    // data-i18n-html: like data-i18n but sets innerHTML (for keys containing markup)
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        el.innerHTML = t(el.getAttribute('data-i18n-html'));
     });
     
     // Update language toggle button

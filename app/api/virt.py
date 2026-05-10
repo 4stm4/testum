@@ -1,15 +1,18 @@
 """Virt API — libvirt/VM management endpoints backed by Platform records."""
 import asyncio
 import logging
+import uuid
+from datetime import datetime
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Router
 
+from app.audit import log_audit
 from app.crypto import crypto
-from app.db import get_db
-from app.models import Platform, SSHKey
-from app.rbac import require_roles, ALL_ROLES
+from app.db import get_db, SessionLocal
+from app.models import Platform, SSHKey, TaskRun, TaskStatusEnum, TaskTypeEnum
+from app.rbac import require_roles, ALL_ROLES, get_request_user
 
 logger = logging.getLogger(__name__)
 
@@ -457,44 +460,85 @@ def _detect_os_id(os_release: str) -> str:
     return "unknown"
 
 
-async def _run_install_over_ssh(platform, db) -> tuple[bool, str]:
-    """SSH into platform, detect OS, run install steps. Returns (ok, output)."""
+async def _bg_install_libvirt(platform_id: str, task_id: str) -> None:
+    """Background task: SSH install, stream output into TaskRun.stdout, update status."""
     from app.ssh_helper import AsyncSSHClient
 
-    password, private_key = _resolve_credentials(platform, db)
-    output_lines: list[str] = []
+    db = SessionLocal()
+    try:
+        task = db.query(TaskRun).filter(TaskRun.id == task_id).first()
+        if not task:
+            return
 
-    async with AsyncSSHClient(
-        host=platform.host,
-        port=platform.port,
-        username=platform.username,
-        password=password,
-        private_key=private_key,
-        known_host_fingerprint=platform.known_host_fingerprint,
-    ) as ssh:
-        # 1. detect OS
-        rc, stdout, stderr = await ssh.execute_command("cat /etc/os-release")
-        os_id = _detect_os_id(stdout) if rc == 0 else "unknown"
-        output_lines.append(f"=== Detected OS: {os_id} ===\n")
+        task.status = TaskStatusEnum.RUNNING
+        task.started_at = datetime.utcnow()
+        task.stdout = ""
+        db.commit()
 
-        steps = _INSTALL_STEPS.get(os_id, _DEFAULT_INSTALL_STEPS)
+        def _append(text: str) -> None:
+            """Append text to task stdout and flush to DB."""
+            task.stdout = (task.stdout or "") + text
+            db.commit()
 
-        # 2. run install steps
-        for cmd in steps:
-            output_lines.append(f"\n$ {cmd}\n")
-            rc, stdout, stderr = await ssh.execute_command(cmd, timeout=300)
-            if stdout:
-                output_lines.append(stdout)
-            if stderr:
-                output_lines.append(stderr)
-            if rc != 0:
-                output_lines.append(f"[exit code {rc}]\n")
+        platform = db.query(Platform).filter(Platform.id == platform_id).first()
+        if not platform:
+            _append("[Platform not found]\n")
+            task.status = TaskStatusEnum.FAILED
+            task.finished_at = datetime.utcnow()
+            db.commit()
+            return
 
-        # 3. verify libvirt is available
-        rc, stdout, stderr = await ssh.execute_command("virsh version 2>&1", timeout=30)
-        output_lines.append(f"\n=== virsh version ===\n{stdout or stderr}\n")
+        password, private_key = _resolve_credentials(platform, db)
 
-    return True, "".join(output_lines)
+        try:
+            async with AsyncSSHClient(
+                host=platform.host,
+                port=platform.port,
+                username=platform.username,
+                password=password,
+                private_key=private_key,
+                known_host_fingerprint=platform.known_host_fingerprint,
+            ) as ssh:
+                # 1. detect OS
+                rc, stdout, stderr = await ssh.execute_command("cat /etc/os-release")
+                os_id = _detect_os_id(stdout) if rc == 0 else "unknown"
+                _append(f"=== Detected OS: {os_id} ===\n")
+
+                steps = _INSTALL_STEPS.get(os_id, _DEFAULT_INSTALL_STEPS)
+
+                # 2. run steps, stream each result to DB
+                failed = False
+                for cmd in steps:
+                    _append(f"\n$ {cmd}\n")
+                    rc, stdout, stderr = await ssh.execute_command(cmd, timeout=300)
+                    if stdout:
+                        _append(stdout)
+                    if stderr:
+                        _append(stderr)
+                    if rc != 0:
+                        _append(f"[exit code {rc}]\n")
+                        failed = True
+
+                # 3. verify
+                rc, stdout, stderr = await ssh.execute_command("virsh version 2>&1", timeout=30)
+                _append(f"\n=== virsh version ===\n{stdout or stderr}\n")
+                if rc != 0:
+                    failed = True
+
+            task.status = TaskStatusEnum.FAILED if failed else TaskStatusEnum.SUCCESS
+
+        except Exception as exc:
+            logger.exception("bg install_libvirt ssh error")
+            _append(f"\n[SSH error: {exc}]\n")
+            task.status = TaskStatusEnum.FAILED
+
+        task.finished_at = datetime.utcnow()
+        db.commit()
+
+    except Exception:
+        logger.exception("bg install_libvirt unexpected error")
+    finally:
+        db.close()
 
 
 @require_roles(*ALL_ROLES)
@@ -503,12 +547,39 @@ async def install_libvirt(request: Request):
     platform, _, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
-    try:
-        ok, output = await _run_install_over_ssh(platform, db)
-        return JSONResponse({"ok": ok, "output": output})
-    except Exception as exc:
-        logger.exception("install_libvirt failed for platform %s", platform_id)
-        return JSONResponse({"ok": False, "output": str(exc)}, status_code=500)
+
+    # Create a tracked job
+    task_run = TaskRun(
+        id=uuid.uuid4(),
+        type=TaskTypeEnum.RUN_COMMAND,
+        platform_id=platform.id,
+        status=TaskStatusEnum.PENDING,
+        task_metadata={"install_type": "libvirt"},
+    )
+    db.add(task_run)
+    db.commit()
+    db.refresh(task_run)
+    task_id = str(task_run.id)
+
+    # Audit log
+    user = get_request_user(request)
+    log_audit(
+        db,
+        user=user.username if user else "system",
+        action="install_libvirt",
+        object_type="platform",
+        object_id=str(platform.id),
+        meta={"task_id": task_id},
+    )
+
+    # Fire-and-forget background task
+    asyncio.create_task(_bg_install_libvirt(str(platform.id), task_id))
+
+    return JSONResponse({
+        "task_id": task_id,
+        "job_url": f"/jobs/{task_id}",
+        "message": "Install started",
+    })
 
 
 # ── Router ────────────────────────────────────────────────────────────────────
