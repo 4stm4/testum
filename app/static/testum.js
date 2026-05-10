@@ -309,6 +309,9 @@ const translations = {
         gitUrlRequired: 'Git URL is required',
         cloningRepo: 'Cloning Git repository…',
         connectionError: 'Connection error. Please try again.',
+        refresh: 'Refresh',
+        usersSubtitle: 'Invite teammates, assign roles, and control access to Testum.',
+        jobsSubtitle: 'Track execution history and live status for your automation jobs.',
 
         // Theme & Language
         themeLight: 'Switch to Light Theme',
@@ -529,6 +532,9 @@ const translations = {
         gitUrlRequired: 'Необходимо указать URL репозитория',
         cloningRepo: 'Клонирование репозитория…',
         connectionError: 'Ошибка соединения. Попробуйте ещё раз.',
+        refresh: 'Обновить',
+        usersSubtitle: 'Управление командой, ролями и доступом к Testum.',
+        jobsSubtitle: 'История выполнения и статус задач автоматизации.',
 
         // Theme & Language
         themeLight: 'Переключить на светлую тему',

@@ -5,14 +5,6 @@
 
 {% block extra_styles %}
     <style>
-        .jobs-toolbar {
-            margin-bottom: 24px;
-        }
-
-        .jobs-toolbar .filters-inline select {
-            min-width: 140px;
-        }
-
         .job-type {
             display: inline-flex;
             align-items: center;
@@ -37,23 +29,14 @@
 
 {% block content %}
     <div class="page-header">
-        <div>
+        <div class="page-header-info">
             <h1 class="page-title">
                 <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-                <span>Jobs</span>
+                <span data-i18n="jobs">Jobs</span>
             </h1>
-            <p class="page-subtitle">Track execution history and live status for your automation jobs.</p>
+            <p class="page-subtitle" data-i18n="jobsSubtitle">Track execution history and live status for your automation jobs.</p>
         </div>
         <div class="page-actions">
-            <button id="refreshBtn" class="btn btn-secondary">
-                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-                <span>Refresh</span>
-            </button>
-        </div>
-    </div>
-
-    <div class="card table-card">
-        <div class="card-header jobs-toolbar">
             <div class="filters-inline">
                 <select id="filterStatus">
                     <option value="">Status: All</option>
@@ -68,7 +51,14 @@
                     <option value="run_command">Run Command</option>
                 </select>
             </div>
+            <button id="refreshBtn" class="toolbar-icon-btn">
+                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+                <span data-i18n="refresh">Refresh</span>
+            </button>
         </div>
+    </div>
+
+    <div class="card table-card">
         <div class="table-wrapper">
             <table id="tasksTable" class="data-table jobs-table">
                 <thead>

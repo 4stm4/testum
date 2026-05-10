@@ -21,16 +21,15 @@
 
 {% block content %}
     <div class="page-header">
-        <h1 class="page-title title-with-icon">
-            <span class="material-symbols-rounded" aria-hidden="true">code_blocks</span>
-            <span data-i18n="scriptsTitle">Scripts</span>
-        </h1>
-    </div>
-    <div class="toolbar">
-        <div></div>
-        <div>
+        <div class="page-header-info">
+            <h1 class="page-title">
+                <span class="material-symbols-rounded" aria-hidden="true">code_blocks</span>
+                <span data-i18n="scriptsTitle">Scripts</span>
+            </h1>
+        </div>
+        <div class="page-actions">
             <button class="toolbar-icon-btn primary" onclick="openScriptModal()">
-                <span class="material-symbols-rounded">add</span>
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
                 <span data-i18n="addScript">Add Script</span>
             </button>
         </div>

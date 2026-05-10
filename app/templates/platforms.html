@@ -266,22 +266,22 @@
 {% endblock %}
 
 {% block content %}
-    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <h1 class="page-title title-with-icon" style="margin: 0;">
-            <span class="material-symbols-rounded" aria-hidden="true">dns</span>
-            <span data-i18n="platformsTitle">Platforms</span>
-        </h1>
-        
-        <div style="display: flex; gap: 16px; align-items: center;">
-            <div class="toolbar-container" role="toolbar" aria-label="Platform actions">
-                <button class="md-icon-button primary" type="button" onclick="openModal()" title="Add new platform" aria-label="Add new platform">
-                    <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                </button>
-                
-                <button class="md-icon-button" onclick="refreshPlatforms()" title="Refresh list" id="refreshBtn" aria-label="Refresh">
-                    <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-                </button>
-            </div>
+    <div class="page-header">
+        <div class="page-header-info">
+            <h1 class="page-title">
+                <span class="material-symbols-rounded" aria-hidden="true">dns</span>
+                <span data-i18n="platformsTitle">Platforms</span>
+            </h1>
+        </div>
+        <div class="page-actions">
+            <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" aria-label="Add new platform">
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
+                <span data-i18n="addNewPlatform">Add Platform</span>
+            </button>
+            <button class="toolbar-icon-btn" onclick="refreshPlatforms()" id="refreshBtn" aria-label="Refresh">
+                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+                <span data-i18n="refresh">Refresh</span>
+            </button>
         </div>
     </div>
 

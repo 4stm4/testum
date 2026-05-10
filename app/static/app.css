@@ -42,16 +42,24 @@ a {
 /* Page level structure */
 .page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.page-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .page-header .page-title {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin: 0;
 }
 
 .page-header .page-title .material-symbols-rounded {
@@ -63,12 +71,14 @@ a {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .page-subtitle {
   margin: 0;
   color: var(--md-on-surface-variant);
+  font: var(--md-body-medium);
 }
 
 .page-section {

@@ -68,25 +68,22 @@
 
 {% block content %}
     <div class="page-header">
-        <div>
+        <div class="page-header-info">
             <h1 class="page-title">
                 <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
                 <span data-i18n="sshKeysTitle">SSH Keys</span>
             </h1>
             <p class="page-subtitle" data-i18n="sshKeysSubtitle">Manage public and private key pairs used to connect to your platforms.</p>
         </div>
-    </div>
-
-    <div id="message" class="message" aria-live="polite"></div>
-
-    <div class="toolbar">
-        <div class="toolbar-actions">
-            <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" title="Add new SSH key" aria-label="Add new SSH key">
+        <div class="page-actions">
+            <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" aria-label="Add new SSH key">
                 <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                <span>Add SSH Key</span>
+                <span data-i18n="addNewKey">Add SSH Key</span>
             </button>
         </div>
     </div>
+
+    <div id="message" class="message" aria-live="polite"></div>
 
     <section class="page-section">
         <div class="card">
