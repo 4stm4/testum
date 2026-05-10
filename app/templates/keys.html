@@ -144,7 +144,7 @@
 
         function openModal() {
             document.getElementById('keyForm').reset();
-            document.querySelector('#keyModal .modal-header h2').textContent = 'Add New SSH Key';
+            document.querySelector('#keyModal .modal-header h2').textContent = t('addNewKey');
             document.getElementById('keyModal').classList.add('active');
             document.body.classList.add('modal-open');
         }
@@ -249,7 +249,7 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMessage('Key deleted successfully');
+                    showMessage(t('keyDeleted'));
                     loadKeys();
                 } else {
                     showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
@@ -282,7 +282,7 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMessage('Key added successfully');
+                    showMessage(t('keyAdded'));
                     closeModal();
                     loadKeys();
                 } else {

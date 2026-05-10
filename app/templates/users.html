@@ -200,7 +200,7 @@
             document.getElementById('userId').value = '';
 
             if (user) {
-                title.textContent = 'Edit User';
+                title.textContent = t('editUser');
                 document.getElementById('userId').value = user.id;
                 document.getElementById('username').value = user.username;
                 document.getElementById('email').value = user.email || '';
@@ -212,7 +212,7 @@
                 document.getElementById('newPassword').value = '';
                 document.getElementById('confirmPassword').value = '';
             } else {
-                title.textContent = 'Add User';
+                title.textContent = t('addUser');
                 passwordGroup.style.display = 'block';
                 document.getElementById('password').required = true;
                 document.getElementById('changePasswordGroup').style.display = 'none';
@@ -286,13 +286,13 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMessage('User deleted successfully');
+                    showMessage(t('userDeleted'));
                     loadUsers();
                 } else {
-                    showMessage(result.error || 'Failed to delete user', 'error');
+                    showMessage(result.error || t('failedToLoad'), 'error');
                 }
             } catch (error) {
-                showMessage('Error: ' + error.message, 'error');
+                showMessage(t('errorPrefix') + error.message, 'error');
             }
         }
 
@@ -316,11 +316,11 @@
                 const confirmPw = document.getElementById('confirmPassword').value;
                 if (newPw) {
                     if (newPw !== confirmPw) {
-                        showMessage('Passwords do not match', 'error');
+                        showMessage(t('passwordsMismatch'), 'error');
                         return;
                     }
                     if (newPw.length < 6) {
-                        showMessage('Password must be at least 6 characters', 'error');
+                        showMessage(t('passwordTooShort'), 'error');
                         return;
                     }
                     payload.password = newPw;
@@ -340,14 +340,14 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMessage(isEdit ? 'User updated' : 'User created');
+                    showMessage(isEdit ? t('userUpdated') : t('userCreated'));
                     closeUserModal();
                     loadUsers();
                 } else {
-                    showMessage(result.error || 'Operation failed', 'error');
+                    showMessage(result.error || t('failedToLoad'), 'error');
                 }
             } catch (error) {
-                showMessage('Error: ' + error.message, 'error');
+                showMessage(t('errorPrefix') + error.message, 'error');
             }
         });
 

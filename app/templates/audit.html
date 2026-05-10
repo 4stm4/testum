@@ -374,7 +374,7 @@
 
                 updatePaginationInfo();
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Error: ${escapeHtml(error.message)}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${t('errorPrefix')}${escapeHtml(error.message)}</td></tr>`;
             }
         }
 

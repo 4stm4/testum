@@ -394,17 +394,7 @@ DEPLOY_ENV=staging"></textarea>
         </section>
 
         <section class="jobs-list" id="jobsList">
-            <div class="feature-card">
-                <h3>Как делают конкуренты</h3>
-                <p>Мы подсмотрели лучшие практики у GitHub Actions, Jenkins, GitLab CI и Ansible AWX и собрали must-have идеи:</p>
-                <ul style="margin-top: 10px; color: var(--text-secondary); font-size: 0.85em; display: grid; gap: 6px;">
-                    <li>✅ Approval gates перед критичными деплоями и запуском в проде.</li>
-                    <li>✅ Smart notifications: e-mail, Slack, webhook + отчёты в Confluence.</li>
-                    <li>✅ Drift detection и post-run проверки, чтобы знать, что хост остался в целевом состоянии.</li>
-                    <li>✅ Source control awareness — возможность запускать на конкретных ветках, тегах, PR.</li>
-                    <li>✅ Policy-as-code: теги, владельцы, SLO, SLA и ограничения по регионам.</li>
-                </ul>
-            </div>
+          
         </section>
     </div>
 {% endblock %}
@@ -434,7 +424,7 @@ DEPLOY_ENV=staging"></textarea>
             if (!response.ok) return;
             const scripts = await response.json();
             if (scripts.length === 0) {
-                document.getElementById('jobScript').innerHTML = '<option value="">Скриптов нет</option>';
+                document.getElementById('jobScript').innerHTML = `<option value="">${t('noScriptsAvailable')}</option>`;
                 return;
             }
             document.getElementById('jobScript').innerHTML = scripts.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
@@ -444,18 +434,18 @@ DEPLOY_ENV=staging"></textarea>
             try {
                 const response = await fetch('/api/automations/');
                 if (!response.ok) {
-                    jobsListEl.innerHTML = `<div class="empty-state">Не удалось загрузить задачи</div>`;
+                    jobsListEl.innerHTML = `<div class="empty-state">${t('failedToLoadAutomations')}</div>`;
                     return;
                 }
                 const jobs = await response.json();
                 if (jobs.length === 0) {
-                    jobsListEl.innerHTML = `<div class="empty-state">Задачи пока не созданы. Добавьте первую — и Testum запомнит расписание.</div>`;
+                    jobsListEl.innerHTML = `<div class="empty-state">${t('noAutomationsFound')}</div>`;
                     return;
                 }
                 jobsListEl.innerHTML = jobs.map(renderJobCard).join('');
             } catch (err) {
                 console.error(err);
-                jobsListEl.innerHTML = `<div class="empty-state">Ошибка загрузки: ${err.message}</div>`;
+                jobsListEl.innerHTML = `<div class="empty-state">${t('errorPrefix')}${err.message}</div>`;
             }
         }
 

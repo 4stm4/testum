@@ -398,7 +398,7 @@
                     setLoading(false);
                 }
             } catch (error) {
-                showMessage('Connection error. Please try again.', 'error');
+                showMessage(t('connectionError'), 'error');
                 setLoading(false);
             }
         });

@@ -118,7 +118,7 @@
                     if (!resp.ok) throw new Error('Failed to load');
                     const scripts = await resp.json();
                     if (!scripts || !scripts.length) {
-                        container.innerHTML = '<div class="empty-state" data-i18n="noScriptsFound">No scripts saved yet. Click "Add Script" to create one.</div>';
+                        container.innerHTML = `<div class="empty-state">${t('noScriptsFound')}</div>`;
                         return;
                     }
                     scripts.forEach(function(script){
@@ -129,9 +129,9 @@
                         const lang = document.createElement('div'); lang.className = 'script-item-language'; lang.textContent = script.language || '';
                         header.appendChild(title); header.appendChild(lang);
                         const desc = document.createElement('div'); desc.className = 'script-item-description'; desc.textContent = script.description || '';
-                        const updated = document.createElement('div'); updated.className = 'script-item-updated'; updated.textContent = script.updated_at ? ('Updated: ' + new Date(script.updated_at).toLocaleString()) : '';
+                        const updated = document.createElement('div'); updated.className = 'script-item-updated'; updated.textContent = script.updated_at ? new Date(script.updated_at).toLocaleString() : '';
                         const actions = document.createElement('div'); actions.className = 'script-item-actions';
-                        const editBtn = document.createElement('button'); editBtn.className = 'icon-btn'; editBtn.title = 'Edit'; editBtn.innerHTML = '<span class="material-symbols-rounded">edit</span>';
+                        const editBtn = document.createElement('button'); editBtn.className = 'icon-btn'; editBtn.title = t('edit'); editBtn.innerHTML = '<span class="material-symbols-rounded">edit</span>';
                         editBtn.addEventListener('click', function(ev){ ev.stopPropagation(); openScriptModal(script); });
                         actions.appendChild(editBtn);
                         item.appendChild(header); item.appendChild(desc); item.appendChild(updated); item.appendChild(actions);
@@ -139,7 +139,7 @@
                         container.appendChild(item);
                     });
                 } catch (err) {
-                    container.innerHTML = '<div class="empty-state">Failed to load scripts</div>';
+                    container.innerHTML = `<div class="empty-state">${t('failedToLoad')}</div>`;
                 }
             }
             document.getElementById('scriptForm').addEventListener('submit', async function(e){

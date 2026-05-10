@@ -490,15 +490,15 @@
 
                 document.getElementById('currentUsername').textContent = data.username || 'admin';
                 document.getElementById('appEnv').textContent = data.environment || 'production';
-                document.getElementById('fernetKey').textContent = data.fernet_key ? '••••••••••••••••••••' : 'Not Set';
+                document.getElementById('fernetKey').textContent = data.fernet_key ? '••••••••••••••••••••' : t('notSet');
                 document.getElementById('databaseUrl').textContent = data.database_url || 'postgresql://...';
                 document.getElementById('redisUrl').textContent = data.redis_url || 'redis://...';
                 document.getElementById('jobkitBroker').textContent = data.jobkit_broker_url || 'redis://...';
                 document.getElementById('jobkitBackend').textContent = data.jobkit_result_backend || 'redis://...';
                 document.getElementById('minioEndpoint').textContent = data.minio_endpoint || 'minio:9000';
                 document.getElementById('minioBucket').textContent = data.minio_bucket || 'testum';
-                document.getElementById('minioAccessKey').textContent = data.minio_access_key ? '••••••••••' : 'Not Set';
-                document.getElementById('minioSecure').textContent = data.minio_secure ? 'Enabled' : 'Disabled';
+                document.getElementById('minioAccessKey').textContent = data.minio_access_key ? '••••••••••' : t('notSet');
+                document.getElementById('minioSecure').textContent = data.minio_secure ? t('enabled') : t('disabled');
                 document.getElementById('sshPolicy').textContent = data.ssh_host_key_policy || 'auto_add';
             } catch (error) {
                 showMessage('Error loading settings: ' + error.message, 'error');
@@ -521,10 +521,10 @@
 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Failed to update username');
-                showMessage('Username updated successfully');
+                showMessage(t('usernameUpdated'));
                 setTimeout(() => window.location.href = '/login', 1000);
             } catch (error) {
-                showMessage('Error updating username: ' + error.message, 'error');
+                showMessage(t('errorPrefix') + error.message, 'error');
             }
         });
 
@@ -545,10 +545,10 @@
 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Failed to update password');
-                showMessage('Password updated successfully');
+                showMessage(t('passwordUpdated'));
                 setTimeout(() => window.location.href = '/login', 1000);
             } catch (error) {
-                showMessage('Error updating password: ' + error.message, 'error');
+                showMessage(t('errorPrefix') + error.message, 'error');
             }
         });
 
@@ -598,7 +598,7 @@
         // Backup & Restore functions
         function exportBackup() {
             window.open('/api/backup/export', '_blank');
-            showMessage('Backup export started...', 'success');
+            showMessage(t('backupStarted'), 'success');
         }
 
         async function importBackup(event) {
@@ -636,12 +636,12 @@
                 }
 
                 alert(message);
-                showMessage('Backup imported successfully', 'success');
-                
+                showMessage(t('backupImported'), 'success');
+
                 // Reload page to show new data
                 setTimeout(() => window.location.reload(), 1500);
             } catch (error) {
-                showMessage('Import failed: ' + error.message, 'error');
+                showMessage(t('errorPrefix') + error.message, 'error');
             } finally {
                 event.target.value = '';
             }
@@ -659,7 +659,7 @@
             const dryRun = document.getElementById('dryRun').checked;
 
             if (!gitUrl) {
-                showMessage('Git URL is required', 'error');
+                showMessage(t('gitUrlRequired'), 'error');
                 return;
             }
 
@@ -668,7 +668,7 @@
             }
 
             try {
-                showMessage('Cloning Git repository...', 'info');
+                showMessage(t('cloningRepo'), 'info');
 
                 const payload = {
                     git_url: gitUrl,
@@ -710,7 +710,7 @@
                 }
 
                 alert(message);
-                showMessage(dryRun ? 'Dry run completed - no changes made' : 'GitOps import successful', 'success');
+                showMessage(dryRun ? t('dryRunDone') : t('gitopsSuccess'), 'success');
 
                 // Clear sensitive fields
                 document.getElementById('gitToken').value = '';
@@ -720,7 +720,7 @@
                     setTimeout(() => window.location.reload(), 1500);
                 }
             } catch (error) {
-                showMessage('GitOps import failed: ' + error.message, 'error');
+                showMessage(t('errorPrefix') + error.message, 'error');
             }
         }
     </script>
