@@ -123,7 +123,6 @@ def import_platforms_from_config(db: Session, config: Dict[str, Any], dry_run: b
                     ssh_key = SSHKey(
                         name=key_data["name"],
                         public_key=key_data.get("public_key", ""),
-                        description=key_data.get("description"),
                     )
                     db.add(ssh_key)
                     db.flush()  # Get ID for platforms
@@ -164,7 +163,6 @@ def import_platforms_from_config(db: Session, config: Dict[str, Any], dry_run: b
                         username=platform_data["username"],
                         auth_method=platform_data.get("auth_method", "password"),
                         ssh_key_id=ssh_key_id,
-                        description=platform_data.get("description"),
                         known_host_fingerprint=platform_data.get("known_host_fingerprint"),
                     )
                     db.add(platform)

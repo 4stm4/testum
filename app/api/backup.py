@@ -40,10 +40,9 @@ async def export_backup(request: Request):
                 "host": platform.host,
                 "port": platform.port,
                 "username": platform.username,
-                "auth_method": platform.auth_method,
+                "auth_method": platform.auth_method.value if hasattr(platform.auth_method, "value") else str(platform.auth_method),
                 "ssh_key_id": str(platform.ssh_key_id) if platform.ssh_key_id else None,
                 "known_host_fingerprint": platform.known_host_fingerprint,
-                "description": platform.description,
                 # Note: encrypted_password is NOT exported for security
             })
 
@@ -53,7 +52,6 @@ async def export_backup(request: Request):
             backup_data["ssh_keys"].append({
                 "name": key.name,
                 "public_key": key.public_key,
-                "description": key.description,
             })
 
         # Export users (without passwords)
@@ -111,7 +109,6 @@ async def import_backup(request: Request):
                     new_key = SSHKey(
                         name=key_data["name"],
                         public_key=key_data["public_key"],
-                        description=key_data.get("description"),
                     )
                     db.add(new_key)
                     stats["ssh_keys_imported"] += 1
@@ -145,7 +142,6 @@ async def import_backup(request: Request):
                         auth_method=platform_data.get("auth_method", "password"),
                         ssh_key_id=ssh_key_id,
                         known_host_fingerprint=platform_data.get("known_host_fingerprint"),
-                        description=platform_data.get("description"),
                         # Note: passwords must be set manually after import
                     )
                     db.add(new_platform)
