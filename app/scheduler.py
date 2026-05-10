@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: MIT
-"""CRON scheduler for AutomationJob.
+"""CRON scheduler for AutomationJob and periodic platform system_info refresh.
 
-Runs as a background asyncio task alongside the PyJobKit worker.
-Every minute it queries automation_jobs for enabled CRON jobs whose
-next_run_at is in the past, dispatches them via the PyJobKit engine,
-and updates last_run_at / next_run_at.
+Two background loops run alongside the PyJobKit worker:
+  • run_scheduler()         — fires due CRON automation jobs every minute
+  • run_system_info_refresher() — refreshes Platform.system_info every hour
 """
 from __future__ import annotations
 
@@ -12,6 +11,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
 from croniter import croniter
 
@@ -29,7 +29,8 @@ from app.models import (
 
 logger = logging.getLogger(__name__)
 
-POLL_INTERVAL = 60  # seconds between scheduler ticks
+POLL_INTERVAL = 60          # seconds between CRON scheduler ticks
+SYSTEM_INFO_INTERVAL = 3600  # seconds between platform system_info refreshes
 
 
 def calc_next_run(cron_expr: str, base: datetime | None = None) -> datetime:
@@ -166,3 +167,139 @@ async def run_scheduler() -> None:
         except Exception:
             logger.exception("[scheduler] Unexpected error in tick")
         await asyncio.sleep(POLL_INTERVAL)
+
+
+# ---------------------------------------------------------------------------
+# Platform system_info refresh
+# ---------------------------------------------------------------------------
+
+async def collect_system_info(platform: Platform) -> dict[str, Any] | None:
+    """
+    Connect to *platform* via SSH and collect current system information.
+
+    Returns a dict on success, None if the platform is unreachable or
+    credentials are missing/invalid.
+    """
+    from app.crypto import crypto
+    from app.ssh_helper import AsyncSSHClient
+
+    password: str | None = None
+    private_key: str | None = None
+
+    try:
+        auth = str(platform.auth_method.value if hasattr(platform.auth_method, "value") else platform.auth_method)
+        if auth == "password":
+            if not platform.encrypted_password:
+                return None
+            password = crypto.decrypt_string(platform.encrypted_password)
+        elif auth == "private_key":
+            if platform.ssh_key_id:
+                with SessionLocal() as db:
+                    from app.models import SSHKey
+                    key = db.query(SSHKey).filter(SSHKey.id == platform.ssh_key_id).first()
+                    if key and key.encrypted_private_key:
+                        private_key = crypto.decrypt_string(key.encrypted_private_key)
+            elif platform.encrypted_private_key:
+                private_key = crypto.decrypt_string(platform.encrypted_private_key)
+
+        if not password and not private_key:
+            return None
+    except Exception as exc:
+        logger.warning("[refresh] Credential error for platform %s: %s", platform.name, exc)
+        return None
+
+    info: dict[str, Any] = {}
+    try:
+        async with AsyncSSHClient(
+            host=platform.host,
+            port=platform.port,
+            username=platform.username,
+            password=password,
+            private_key=private_key,
+            known_host_fingerprint=platform.known_host_fingerprint,
+        ) as ssh:
+            async def run(cmd: str) -> str:
+                _, out, _ = await ssh.execute_command(cmd)
+                return out.strip()
+
+            info["hostname"]     = await run("hostname")
+            info["os_release"]   = await run("cat /etc/os-release 2>/dev/null || echo 'Unknown'")
+            info["kernel"]       = await run("uname -r")
+            info["uptime"]       = await run("uptime -p 2>/dev/null || uptime")
+            info["cpu"]          = await run(
+                "lscpu | grep 'Model name' | cut -d':' -f2 | xargs"
+            ) + " (" + await run("nproc") + " cores)"
+            info["memory"]       = await run(
+                "free -h | grep Mem | awk '{print $2\" total, \"$3\" used, \"$4\" free\"}'"
+            )
+            info["disk"]         = await run(
+                "df -h / | tail -1 | awk '{print $2\" total, \"$3\" used, \"$4\" free, \"$5\" used%\"}'"
+            )
+            info["load_average"] = await run("cat /proc/loadavg | awk '{print $1\" \"$2\" \"$3}'")
+            info["refreshed_at"] = datetime.utcnow().isoformat()
+
+            fingerprint = ssh.get_host_fingerprint()
+            if fingerprint:
+                info["host_fingerprint"] = fingerprint
+
+    except Exception as exc:
+        logger.warning("[refresh] SSH error for platform %s (%s): %s", platform.name, platform.host, exc)
+        return None
+
+    return info
+
+
+async def refresh_platform(platform_id: str) -> dict[str, Any] | None:
+    """
+    Refresh system_info for a single platform and persist it to the DB.
+
+    Returns the collected info dict, or None if the platform was unreachable.
+    """
+    with SessionLocal() as db:
+        platform: Platform | None = db.query(Platform).filter(Platform.id == platform_id).first()
+        if not platform:
+            return None
+
+        info = await collect_system_info(platform)
+        if info is not None:
+            platform.system_info = info
+            # Store fingerprint if we got a fresh one
+            if "host_fingerprint" in info and not platform.known_host_fingerprint:
+                platform.known_host_fingerprint = info["host_fingerprint"]
+            db.commit()
+            logger.info("[refresh] Updated system_info for platform %s", platform.name)
+
+    return info
+
+
+async def _refresh_all_platforms() -> None:
+    """Refresh system_info for every platform in the DB concurrently."""
+    with SessionLocal() as db:
+        platform_ids = [str(p.id) for p in db.query(Platform.id).all()]
+
+    if not platform_ids:
+        return
+
+    logger.info("[refresh] Refreshing system_info for %d platform(s)", len(platform_ids))
+    results = await asyncio.gather(
+        *[refresh_platform(pid) for pid in platform_ids],
+        return_exceptions=True,
+    )
+    ok = sum(1 for r in results if isinstance(r, dict))
+    logger.info("[refresh] system_info refresh complete: %d/%d succeeded", ok, len(platform_ids))
+
+
+async def run_system_info_refresher() -> None:
+    """
+    Periodic loop that refreshes Platform.system_info every hour.
+    Run alongside run_scheduler() via asyncio.gather in the worker.
+    """
+    logger.info("[refresh] Starting system_info refresher (interval: %ds)", SYSTEM_INFO_INTERVAL)
+    # Initial delay — let the worker settle before hammering SSH on startup
+    await asyncio.sleep(30)
+    while True:
+        try:
+            await _refresh_all_platforms()
+        except Exception:
+            logger.exception("[refresh] Unexpected error during platform refresh")
+        await asyncio.sleep(SYSTEM_INFO_INTERVAL)

@@ -429,7 +429,7 @@ async def run_job(request: Request) -> JSONResponse:
             user=user.username if user else "system",
             action="run",
             object_type="automation_job",
-            object_id=job_id,
+            object_id=str(job_id),
             meta={"triggered_by": "manual", "enqueued": len(enqueued)},
         )
     finally:
