@@ -51,6 +51,10 @@
                 <option value="">— select —</option>
             </select>
         </div>
+        <button id="createVmBtn" class="toolbar-icon-btn primary">
+            <span class="material-symbols-rounded" aria-hidden="true">add</span>
+            <span data-i18n="createVm">Create VM</span>
+        </button>
         <button id="installBtn" class="toolbar-icon-btn" disabled>
             <span class="material-symbols-rounded" aria-hidden="true">build</span>
             <span data-i18n="installLibvirtBtn">Install libvirt</span>
@@ -80,6 +84,72 @@
                 <tr><td colspan="7" class="table-empty-state" data-i18n="vmSelectPlatform">Select a platform to load VMs.</td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Create VM Modal -->
+<div id="createVmModal" class="modal" style="display:none">
+    <div class="modal-content" style="max-width:560px">
+        <div class="modal-header">
+            <h2 class="modal-title">
+                <span class="material-symbols-rounded" aria-hidden="true">add_circle</span>
+                <span data-i18n="createVmTitle">Create Virtual Machine</span>
+            </h2>
+            <button class="modal-close" onclick="closeCreateVmModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Выбор платформы внутри модального окна -->
+            <div class="form-group">
+                <label class="form-label" data-i18n="platformLabel">Platform *</label>
+                <select id="vmModalPlatformSelect" class="form-input">
+                    <option value="">— select —</option>
+                </select>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--md-outline-variant);margin:4px 0 16px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="vmNameLabel">Name *</label>
+                    <input type="text" id="vmName" class="form-input" placeholder="my-vm">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="vmMemoryLabel">Memory (MiB) *</label>
+                    <input type="number" id="vmMemory" class="form-input" placeholder="2048" min="128">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="vmVcpuLabel">vCPUs *</label>
+                    <input type="number" id="vmVcpu" class="form-input" placeholder="2" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="vmBridgeLabel">Network bridge</label>
+                    <input type="text" id="vmBridge" class="form-input" placeholder="virbr0" value="virbr0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="vmDiskPathLabel">Disk image path *</label>
+                <input type="text" id="vmDiskPath" class="form-input"
+                       placeholder="/var/lib/libvirt/images/my-vm.qcow2">
+                <span style="font:var(--md-label-small);color:var(--md-on-surface-variant);margin-top:4px;display:block"
+                      data-i18n="vmDiskPathHint"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="vmCdromLabel">CD-ROM ISO path *</label>
+                <input type="text" id="vmCdrom" class="form-input"
+                       placeholder="/var/lib/libvirt/images/ubuntu-24.04.iso">
+                <span style="font:var(--md-label-small);color:var(--md-on-surface-variant);margin-top:4px;display:block"
+                      data-i18n="vmCdromHint"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="vmMacLabel">MAC address (optional)</label>
+                <input type="text" id="vmMac" class="form-input"
+                       placeholder="52:54:00:xx:xx:xx">
+                <span style="font:var(--md-label-small);color:var(--md-on-surface-variant);margin-top:4px;display:block"
+                      data-i18n="vmMacHint"></span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeCreateVmModal()" data-i18n="cancel">Cancel</button>
+            <button id="confirmCreateVmBtn" class="btn btn-primary" data-i18n="createVm">Create VM</button>
+        </div>
     </div>
 </div>
 
@@ -258,6 +328,69 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
     const data = await resp.json();
     showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
     if (resp.ok) loadVMs(currentPlatformId);
+});
+
+// ── Create VM Modal ──────────────────────────────────────────────────────────
+
+function openCreateVmModal() {
+    // Клонируем список платформ из тулбара
+    const toolbarSel = document.getElementById('platformSelect');
+    const modalSel   = document.getElementById('vmModalPlatformSelect');
+    modalSel.innerHTML = toolbarSel.innerHTML;
+    if (currentPlatformId) modalSel.value = currentPlatformId;
+
+    // Сбрасываем поля
+    ['vmName','vmDiskPath','vmCdrom','vmMac'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('vmMemory').value = '2048';
+    document.getElementById('vmVcpu').value   = '2';
+    document.getElementById('vmBridge').value = 'virbr0';
+
+    document.getElementById('createVmModal').style.display = 'flex';
+}
+function closeCreateVmModal() { document.getElementById('createVmModal').style.display = 'none'; }
+
+document.getElementById('createVmBtn').addEventListener('click', openCreateVmModal);
+document.getElementById('createVmModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeCreateVmModal(); });
+
+document.getElementById('confirmCreateVmBtn').addEventListener('click', async () => {
+    const platformId = document.getElementById('vmModalPlatformSelect').value;
+    const name       = document.getElementById('vmName').value.trim();
+    const memory     = parseInt(document.getElementById('vmMemory').value);
+    const vcpu       = parseInt(document.getElementById('vmVcpu').value);
+    const disk_path  = document.getElementById('vmDiskPath').value.trim();
+    const cdrom_iso_path = document.getElementById('vmCdrom').value.trim();
+    const bridge     = document.getElementById('vmBridge').value.trim() || 'virbr0';
+    const mac_address = document.getElementById('vmMac').value.trim() || null;
+
+    if (!platformId)    { showToast(t('selectPlatformRequired'), 'error'); return; }
+    if (!name)          { showToast(t('vmNameLabel') + ' required', 'error'); return; }
+    if (!memory || memory < 128) { showToast(t('vmMemoryLabel') + ' ≥ 128', 'error'); return; }
+    if (!vcpu  || vcpu  < 1)    { showToast(t('vmVcpuLabel')   + ' ≥ 1',   'error'); return; }
+    if (!disk_path)     { showToast(t('vmDiskPathLabel') + ' required', 'error'); return; }
+    if (!cdrom_iso_path) { showToast(t('vmCdromLabel') + ' required', 'error'); return; }
+
+    const btn = document.getElementById('confirmCreateVmBtn');
+    btn.disabled = true;
+    try {
+        const resp = await fetch(`/api/virt/${platformId}/vms/create`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ name, memory, vcpu, disk_path, cdrom_iso_path, bridge, mac_address })
+        });
+        const data = await resp.json();
+        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        if (resp.ok) {
+            closeCreateVmModal();
+            if (platformId !== currentPlatformId) {
+                document.getElementById('platformSelect').value = platformId;
+                document.getElementById('installBtn').disabled = false;
+                loadVMs(platformId);
+            } else {
+                loadVMs(currentPlatformId);
+            }
+        }
+    } finally {
+        btn.disabled = false;
+    }
 });
 
 // Platform selector

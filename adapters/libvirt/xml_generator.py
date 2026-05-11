@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
-from virt_base.application.models import VMConfig
+from adapters.libvirt.models import VMConfig
 
 class VMXMLGenerator:
     def __init__(self, config: VMConfig):

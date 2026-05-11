@@ -12,6 +12,10 @@
     .capacity-bar-track { height: 4px; background: var(--md-surface-container-highest); border-radius: 2px; overflow: hidden; }
     .capacity-bar-fill  { height: 100%; background: var(--md-primary); border-radius: 2px; transition: width .3s; }
     .capacity-label { font: var(--md-label-small); color: var(--md-on-surface-variant); }
+    .modal-section-divider {
+        border: none; border-top: 1px solid var(--md-outline-variant);
+        margin: 4px 0 16px;
+    }
 </style>
 {% endblock %}
 
@@ -31,7 +35,7 @@
                 <option value="">— select —</option>
             </select>
         </div>
-        <button id="addPoolBtn" class="toolbar-icon-btn primary" disabled>
+        <button id="addPoolBtn" class="toolbar-icon-btn primary">
             <span class="material-symbols-rounded" aria-hidden="true">add</span>
             <span data-i18n="addPool">Add Pool</span>
         </button>
@@ -71,6 +75,14 @@
             <button class="modal-close" onclick="closeAddModal()">&times;</button>
         </div>
         <div class="modal-body">
+            <!-- Выбор платформы внутри модального окна -->
+            <div class="form-group">
+                <label class="form-label" data-i18n="platformLabel">Platform *</label>
+                <select id="modalPlatformSelect" class="form-input">
+                    <option value="">— select —</option>
+                </select>
+            </div>
+            <hr class="modal-section-divider">
             <div class="form-group">
                 <label class="form-label" data-i18n="poolNameLabel">Name *</label>
                 <input type="text" id="poolName" class="form-input" placeholder="default">
@@ -133,7 +145,7 @@
 let currentPlatformId = null;
 
 async function loadPlatforms() {
-    const sel = document.getElementById('platformSelect');
+    const toolbarSel = document.getElementById('platformSelect');
     try {
         const resp = await fetch('/api/platforms/?limit=200');
         if (!resp.ok) return;
@@ -142,19 +154,23 @@ async function loadPlatforms() {
             const opt = document.createElement('option');
             opt.value = p.id;
             opt.textContent = p.name + ' (' + p.host + ')';
-            sel.appendChild(opt);
+            toolbarSel.appendChild(opt);
         });
         const pid = new URLSearchParams(location.search).get('platform_id');
-        if (pid) { sel.value = pid; onPlatformChange(pid); }
+        if (pid) { toolbarSel.value = pid; onPlatformChange(pid); }
     } catch(e) { console.error(e); }
 }
 
 function onPlatformChange(pid) {
     currentPlatformId = pid;
-    document.getElementById('addPoolBtn').disabled = !pid;
-    if (pid) loadPools(pid);
-    else document.getElementById('poolsBody').innerHTML =
-        `<tr><td colspan="7" class="table-empty-state">${t('poolSelectPlatform')}</td></tr>`;
+    if (pid) {
+        history.replaceState({}, '', `?platform_id=${pid}`);
+        loadPools(pid);
+    } else {
+        history.replaceState({}, '', location.pathname);
+        document.getElementById('poolsBody').innerHTML =
+            `<tr><td colspan="7" class="table-empty-state">${t('poolSelectPlatform')}</td></tr>`;
+    }
 }
 
 async function loadPools(platformId) {
@@ -214,6 +230,7 @@ function renderRow(p) {
 }
 
 async function activatePool(name) {
+    if (!currentPlatformId) return;
     const resp = await fetch(`/api/virt/${currentPlatformId}/pools/activate`, {
         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
     });
@@ -223,6 +240,7 @@ async function activatePool(name) {
 }
 
 async function deactivatePool(name) {
+    if (!currentPlatformId) return;
     const resp = await fetch(`/api/virt/${currentPlatformId}/pools/deactivate`, {
         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
     });
@@ -231,29 +249,70 @@ async function deactivatePool(name) {
     if (resp.ok) loadPools(currentPlatformId);
 }
 
-// Add pool modal
-document.getElementById('addPoolBtn').addEventListener('click', () => { document.getElementById('addPoolModal').style.display = 'flex'; });
+// ── Add Pool Modal ────────────────────────────────────────────────────────────
+
+function openAddModal() {
+    // Клонируем список платформ из тулбара в модальное окно
+    const toolbarSel = document.getElementById('platformSelect');
+    const modalSel   = document.getElementById('modalPlatformSelect');
+    modalSel.innerHTML = toolbarSel.innerHTML;
+    if (currentPlatformId) modalSel.value = currentPlatformId;
+
+    // Сбрасываем поля формы
+    document.getElementById('poolName').value   = '';
+    document.getElementById('poolType').selectedIndex = 0;
+    document.getElementById('poolSource').value = '';
+    document.getElementById('poolTarget').value = '';
+    document.getElementById('poolHost').value   = '';
+
+    document.getElementById('addPoolModal').style.display = 'flex';
+}
+
 function closeAddModal() { document.getElementById('addPoolModal').style.display = 'none'; }
+
+document.getElementById('addPoolBtn').addEventListener('click', openAddModal);
 document.getElementById('addPoolModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
+
 document.getElementById('createPoolBtn').addEventListener('click', async () => {
-    const name = document.getElementById('poolName').value.trim();
-    const pool_type = document.getElementById('poolType').value;
-    if (!name) { showToast(t('poolNameLabel') + ' required', 'error'); return; }
-    const resp = await fetch(`/api/virt/${currentPlatformId}/pools/create`, {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-            name, pool_type,
-            source: document.getElementById('poolSource').value.trim() || null,
-            target: document.getElementById('poolTarget').value.trim() || null,
-            host:   document.getElementById('poolHost').value.trim()   || null,
-        })
-    });
-    const data = await resp.json();
-    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
-    if (resp.ok) { closeAddModal(); loadPools(currentPlatformId); }
+    const platformId = document.getElementById('modalPlatformSelect').value;
+    const name       = document.getElementById('poolName').value.trim();
+    const pool_type  = document.getElementById('poolType').value;
+
+    if (!platformId) { showToast(t('selectPlatformRequired'), 'error'); return; }
+    if (!name)       { showToast(t('poolNameLabel') + ' required', 'error'); return; }
+
+    const btn = document.getElementById('createPoolBtn');
+    btn.disabled = true;
+    try {
+        const resp = await fetch(`/api/virt/${platformId}/pools/create`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                name, pool_type,
+                source: document.getElementById('poolSource').value.trim() || null,
+                target: document.getElementById('poolTarget').value.trim() || null,
+                host:   document.getElementById('poolHost').value.trim()   || null,
+            })
+        });
+        const data = await resp.json();
+        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        if (resp.ok) {
+            closeAddModal();
+            // Если созданный пул на текущей платформе — обновляем таблицу
+            if (platformId === currentPlatformId) {
+                loadPools(currentPlatformId);
+            } else {
+                // Переключаем тулбар на платформу из модального окна
+                document.getElementById('platformSelect').value = platformId;
+                onPlatformChange(platformId);
+            }
+        }
+    } finally {
+        btn.disabled = false;
+    }
 });
 
-// Delete pool modal
+// ── Delete Pool Modal ─────────────────────────────────────────────────────────
+
 let pendingDeleteName = null;
 function openDeleteModal(name) {
     pendingDeleteName = name;
@@ -274,12 +333,9 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
     if (resp.ok) loadPools(currentPlatformId);
 });
 
-document.getElementById('platformSelect').addEventListener('change', e => {
-    const pid = e.target.value;
-    if (pid) history.replaceState({}, '', `?platform_id=${pid}`);
-    else history.replaceState({}, '', location.pathname);
-    onPlatformChange(pid);
-});
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+
+document.getElementById('platformSelect').addEventListener('change', e => onPlatformChange(e.target.value));
 document.getElementById('refreshBtn').addEventListener('click', () => { if (currentPlatformId) loadPools(currentPlatformId); });
 
 function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

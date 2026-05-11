@@ -1,7 +1,7 @@
 import libvirt
 from .dto import Domain, VirDomainInfo, domain_state_list
-from virt_base.application.generator2 import VMXMLGenerator
-from virt_base.application.models import CPUUsageStats, HostInfo, VMConfig
+from adapters.libvirt.xml_generator import VMXMLGenerator
+from adapters.libvirt.models import CPUUsageStats, HostInfo, VMConfig
 
 
 

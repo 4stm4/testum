@@ -139,6 +139,20 @@ const translations = {
         liveMonitor: 'Live Monitor',
         runInstall: 'Run Install',
 
+        // Create VM
+        createVm: 'Create VM',
+        createVmTitle: 'Create Virtual Machine',
+        vmNameLabel: 'Name *',
+        vmMemoryLabel: 'Memory (MiB) *',
+        vmVcpuLabel: 'vCPUs *',
+        vmDiskPathLabel: 'Disk image path *',
+        vmDiskPathHint: 'Full path to existing .qcow2 file on the hypervisor',
+        vmCdromLabel: 'CD-ROM ISO path *',
+        vmCdromHint: 'Full path to ISO file on the hypervisor',
+        vmBridgeLabel: 'Network bridge',
+        vmMacLabel: 'MAC address (optional)',
+        vmMacHint: 'Leave empty to generate automatically',
+
         // Storage Pools page
         virtPoolsSubtitle: 'Manage libvirt storage pools on your platforms.',
         addPool: 'Add Pool',
@@ -154,6 +168,9 @@ const translations = {
         createPool: 'Create Pool',
         deletePoolTitle: 'Delete Pool',
         deletePoolBody: 'This will undefine and delete the pool from the hypervisor.',
+        selectPlatformRequired: 'Select a platform',
+        selectPoolRequired: 'Select a pool',
+        loadingPools: 'Loading pools…',
 
         // Volumes page
         virtVolumesSubtitle: 'Manage storage volumes inside libvirt pools.',
@@ -423,6 +440,20 @@ const translations = {
         liveMonitor: 'Монитор',
         runInstall: 'Запустить установку',
 
+        // Create VM
+        createVm: 'Создать ВМ',
+        createVmTitle: 'Создать виртуальную машину',
+        vmNameLabel: 'Имя *',
+        vmMemoryLabel: 'Память (МиБ) *',
+        vmVcpuLabel: 'vCPU *',
+        vmDiskPathLabel: 'Путь к образу диска *',
+        vmDiskPathHint: 'Полный путь к существующему .qcow2 файлу на гипервизоре',
+        vmCdromLabel: 'Путь к ISO (CD-ROM) *',
+        vmCdromHint: 'Полный путь к ISO-файлу на гипервизоре',
+        vmBridgeLabel: 'Сетевой мост',
+        vmMacLabel: 'MAC-адрес (необязательно)',
+        vmMacHint: 'Оставьте пустым для автогенерации',
+
         // Storage Pools page
         virtPoolsSubtitle: 'Управление пулами хранилищ libvirt на ваших платформах.',
         addPool: 'Добавить пул',
@@ -438,6 +469,9 @@ const translations = {
         createPool: 'Создать пул',
         deletePoolTitle: 'Удалить пул',
         deletePoolBody: 'Пул будет удалён из конфигурации гипервизора.',
+        selectPlatformRequired: 'Выберите платформу',
+        selectPoolRequired: 'Выберите пул',
+        loadingPools: 'Загрузка пулов…',
 
         // Volumes page
         virtVolumesSubtitle: 'Управление томами внутри пулов libvirt.',

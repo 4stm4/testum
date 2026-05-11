@@ -59,7 +59,7 @@ async def list_vms(request: Request):
         return JSONResponse({"error": "Platform not found"}, status_code=404)
     db.close()
     try:
-        from virt_base.adapters.libvirt import VMManager
+        from adapters.libvirt import VMManager
         vms = await asyncio.to_thread(lambda: VMManager(uri).list_all())
         result = []
         for vm in vms:
@@ -81,6 +81,55 @@ async def list_vms(request: Request):
 
 
 @require_roles(*ALL_ROLES)
+async def create_vm(request: Request):
+    platform_id = request.path_params["platform_id"]
+    platform, uri, db = _get_platform(platform_id)
+    if platform is None:
+        return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
+    body = await request.json()
+    name          = body.get("name", "").strip()
+    memory        = body.get("memory")
+    vcpu          = body.get("vcpu")
+    disk_path     = body.get("disk_path", "").strip()
+    cdrom_iso_path = body.get("cdrom_iso_path", "").strip()
+    bridge        = body.get("bridge", "virbr0").strip() or "virbr0"
+    mac_address   = body.get("mac_address", "").strip() or None
+
+    if not name:
+        return JSONResponse({"error": "name is required"}, status_code=400)
+    if not memory or int(memory) <= 0:
+        return JSONResponse({"error": "memory (MiB) must be > 0"}, status_code=400)
+    if not vcpu or int(vcpu) <= 0:
+        return JSONResponse({"error": "vcpu must be > 0"}, status_code=400)
+    if not disk_path:
+        return JSONResponse({"error": "disk_path is required"}, status_code=400)
+    if not cdrom_iso_path:
+        return JSONResponse({"error": "cdrom_iso_path is required"}, status_code=400)
+
+    try:
+        from adapters.libvirt import VMManager
+        from adapters.libvirt.models import VMConfig
+        if mac_address is None:
+            mac_address = VMConfig.generate_mac_address()
+        config = VMConfig(
+            name=name,
+            memory=int(memory),
+            vcpu=int(vcpu),
+            disk_size=int(body.get("disk_size") or 1),  # не используется генератором, нужен модели
+            disk_path=disk_path,
+            cdrom_iso_path=cdrom_iso_path,
+            bridge=bridge,
+            mac_address=mac_address,
+        )
+        await asyncio.to_thread(lambda: VMManager(uri).create_virtual_machine(config))
+        return JSONResponse({"message": f"VM {name!r} defined successfully"})
+    except Exception as exc:
+        logger.exception("create_vm failed for platform %s", platform_id)
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@require_roles(*ALL_ROLES)
 async def start_vm(request: Request):
     platform_id = request.path_params["platform_id"]
     platform, uri, db = _get_platform(platform_id)
@@ -92,7 +141,7 @@ async def start_vm(request: Request):
     if not name:
         return JSONResponse({"error": "name is required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import VMManager
+        from adapters.libvirt import VMManager
         msg = await asyncio.to_thread(lambda: VMManager(uri).run(name))
         return JSONResponse({"message": msg})
     except Exception as exc:
@@ -112,7 +161,7 @@ async def stop_vm(request: Request):
     if not name:
         return JSONResponse({"error": "name is required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import VMManager
+        from adapters.libvirt import VMManager
         msg = await asyncio.to_thread(lambda: VMManager(uri).stop(name))
         return JSONResponse({"message": msg})
     except Exception as exc:
@@ -132,7 +181,7 @@ async def delete_vm(request: Request):
     if not name:
         return JSONResponse({"error": "name is required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import VMManager
+        from adapters.libvirt import VMManager
         msg = await asyncio.to_thread(lambda: VMManager(uri).delete(name))
         return JSONResponse({"message": msg})
     except Exception as exc:
@@ -151,7 +200,7 @@ async def list_pools(request: Request):
     db.close()
     states = [int(s) for s in request.query_params.getlist("state")] or [2]  # default: ACTIVE
     try:
-        from virt_base.adapters.libvirt import StoragePoolManager
+        from adapters.libvirt import StoragePoolManager
         pools = await asyncio.to_thread(lambda: StoragePoolManager(uri).list_all(states))
         result = [
             {
@@ -187,7 +236,7 @@ async def create_pool(request: Request):
     if not name or not pool_type:
         return JSONResponse({"error": "name and pool_type are required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import StoragePoolManager
+        from adapters.libvirt import StoragePoolManager
         await asyncio.to_thread(lambda: StoragePoolManager(uri).create(
             name=name,
             pool_type=pool_type,
@@ -213,7 +262,7 @@ async def activate_pool(request: Request):
     if not name:
         return JSONResponse({"error": "name is required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import StoragePoolManager
+        from adapters.libvirt import StoragePoolManager
         await asyncio.to_thread(lambda: StoragePoolManager(uri).activate(name))
         return JSONResponse({"message": f"Pool {name} activated"})
     except Exception as exc:
@@ -233,7 +282,7 @@ async def deactivate_pool(request: Request):
     if not name:
         return JSONResponse({"error": "name is required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import StoragePoolManager
+        from adapters.libvirt import StoragePoolManager
         await asyncio.to_thread(lambda: StoragePoolManager(uri).deactivate(name))
         return JSONResponse({"message": f"Pool {name} deactivated"})
     except Exception as exc:
@@ -253,7 +302,7 @@ async def delete_pool(request: Request):
     if not name:
         return JSONResponse({"error": "name is required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import StoragePoolManager
+        from adapters.libvirt import StoragePoolManager
         await asyncio.to_thread(lambda: StoragePoolManager(uri).delete(name))
         return JSONResponse({"message": f"Pool {name} deleted"})
     except Exception as exc:
@@ -272,7 +321,7 @@ async def pool_usage(request: Request):
     if not name:
         return JSONResponse({"error": "name query param is required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import StoragePoolManager
+        from adapters.libvirt import StoragePoolManager
         usage = await asyncio.to_thread(lambda: StoragePoolManager(uri).monitor_usage(name))
         return JSONResponse(usage)
     except Exception as exc:
@@ -293,7 +342,7 @@ async def list_volumes(request: Request):
     if not pool_name:
         return JSONResponse({"error": "pool_name query param is required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import VolumesManager
+        from adapters.libvirt import VolumesManager
         volumes = await asyncio.to_thread(lambda: VolumesManager(uri).list_all(pool_name))
         result = [
             {"name": v.name, "type": v.type, "capacity_gb": v.capacity, "allocation_gb": v.allocation}
@@ -320,7 +369,7 @@ async def create_volume(request: Request):
     if not all([name, pool_name, path, capacity]):
         return JSONResponse({"error": "name, pool_name, path, capacity are required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import VolumesManager
+        from adapters.libvirt import VolumesManager
         await asyncio.to_thread(lambda: VolumesManager(uri).create(
             pool_name=pool_name, name=name, path=path, capacity=int(capacity)
         ))
@@ -343,7 +392,7 @@ async def delete_volume(request: Request):
     if not name or not pool_name:
         return JSONResponse({"error": "name and pool_name are required"}, status_code=400)
     try:
-        from virt_base.adapters.libvirt import VolumesManager
+        from adapters.libvirt import VolumesManager
         await asyncio.to_thread(lambda: VolumesManager(uri).delete(name=name, pool_name=pool_name))
         return JSONResponse({"message": f"Volume {name} deleted from pool {pool_name}"})
     except Exception as exc:
@@ -361,7 +410,7 @@ async def host_capabilities(request: Request):
         return JSONResponse({"error": "Platform not found"}, status_code=404)
     db.close()
     try:
-        from virt_base.adapters.libvirt import HostManager
+        from adapters.libvirt import HostManager
         caps = await asyncio.to_thread(lambda: HostManager(uri).get_capabilities())
         return JSONResponse(caps)
     except Exception as exc:
@@ -377,22 +426,19 @@ async def firewall_status(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
-    password, _ = _resolve_credentials(platform, db)
+    password, private_key = _resolve_credentials(platform, db)
     db.close()
-    if password is None:
-        return JSONResponse(
-            {"error": "Platform has no password credential; firewall status requires password auth"},
-            status_code=400,
-        )
     try:
-        from virt_base.adapters.ufw.firewall import FirewallManager
+        from adapters.ufw.firewall import FirewallManager
         fw = FirewallManager(
             hostname=platform.host,
             port=platform.port,
             username=platform.username,
             password=password,
+            private_key=private_key,
+            known_host_fingerprint=platform.known_host_fingerprint,
         )
-        status = await asyncio.to_thread(fw.status)
+        status = await fw.status()
         return JSONResponse(status)
     except Exception as exc:
         logger.exception("firewall_status failed")
@@ -603,6 +649,7 @@ async def install_libvirt(request: Request):
 
 virt_router = Router(routes=[
     Route("/{platform_id}/vms",              list_vms,           methods=["GET"]),
+    Route("/{platform_id}/vms/create",       create_vm,          methods=["POST"]),
     Route("/{platform_id}/vms/start",        start_vm,           methods=["POST"]),
     Route("/{platform_id}/vms/stop",         stop_vm,            methods=["POST"]),
     Route("/{platform_id}/vms/delete",       delete_vm,          methods=["POST"]),
