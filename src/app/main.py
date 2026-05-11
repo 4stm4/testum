@@ -14,15 +14,15 @@ from starlette.responses import JSONResponse, RedirectResponse
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-from app.api.automations import automations_router
-from app.api.virt import virt_router
-from app.api.audit import audit_router
-from app.api.backup import backup_router
-from app.api.gitops import gitops_router
-from app.api.keys import keys_router
-from app.api.platforms import platforms_router, tasks_router
-from app.api.scripts import scripts_router
-from app.api.users import users_router
+from ports.api.automations import automations_router
+from ports.api.virt import virt_router
+from ports.api.audit import audit_router
+from ports.api.backup import backup_router
+from ports.api.gitops import gitops_router
+from ports.api.keys import keys_router
+from ports.api.platforms import platforms_router, tasks_router
+from ports.api.scripts import scripts_router
+from ports.api.users import users_router
 from app.auth import AuthMiddleware
 from app.config import config
 from app import db as app_db
