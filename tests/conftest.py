@@ -15,11 +15,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-# Ensure the repository root (which contains the ``app`` package) is importable when
-# the tests are executed in isolated environments such as Portainer or CI runners
-# that do not automatically add it to ``PYTHONPATH``.
-ROOT_DIR = Path(__file__).resolve().parents[1]
+# Ensure src/ (which contains the ``app`` package) is importable.
+ROOT_DIR = Path(__file__).resolve().parents[1] / "src"
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 

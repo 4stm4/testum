@@ -3,6 +3,7 @@ FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app/src \
     PYJOBKIT_ENGINE=app.task_engine:engine
 
 WORKDIR /app
@@ -18,6 +19,6 @@ RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.worker.txt
 
 # Copy the worker code (engine + executors)
-COPY app/ ./app/
+COPY src/ ./src/
 
 CMD ["python", "-m", "app.worker_launcher"]

@@ -25,14 +25,14 @@ logs:
 	docker-compose logs -f
 
 test:
-	docker-compose run --rm app sh -c "pip install --no-cache-dir -r requirements.dev.txt && pytest tests/ -v --cov=app --cov-report=term-missing"
+	docker-compose run --rm app sh -c "pip install --no-cache-dir -r requirements.dev.txt && pytest tests/ -v --cov=src/app --cov-report=term-missing"
 
 lint:
-	docker-compose run --rm app sh -c "pip install --no-cache-dir -r requirements.dev.txt && flake8 app/ --max-line-length=120 --exclude=__pycache__"
-	docker-compose run --rm app sh -c "pip install --no-cache-dir -r requirements.dev.txt && black app/ --check"
+	docker-compose run --rm app sh -c "pip install --no-cache-dir -r requirements.dev.txt && flake8 src/ --max-line-length=120 --exclude=__pycache__"
+	docker-compose run --rm app sh -c "pip install --no-cache-dir -r requirements.dev.txt && black src/ --check"
 
 format:
-	docker-compose run --rm app sh -c "pip install --no-cache-dir -r requirements.dev.txt && black app/"
+	docker-compose run --rm app sh -c "pip install --no-cache-dir -r requirements.dev.txt && black src/"
 
 migrate:
 	docker-compose exec app alembic upgrade head
@@ -45,7 +45,7 @@ generate-key:
 
 clean:
 	docker-compose down -v
-	rm -rf app/__pycache__ app/*/__pycache__
+	find src -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 shell:
 	docker-compose exec app /bin/bash

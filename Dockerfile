@@ -4,7 +4,8 @@ ARG INSTALL_DEV=false
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app/src
 
 WORKDIR /app
 
@@ -21,7 +22,7 @@ RUN pip install --upgrade pip \
     && if [ "$INSTALL_DEV" = "true" ]; then pip install --no-cache-dir -r requirements.dev.txt; fi
 
 # Copy application code
-COPY app/ ./app/
+COPY src/ ./src/
 COPY migrations/ ./migrations/
 COPY alembic.ini .
 COPY entrypoint.sh .
