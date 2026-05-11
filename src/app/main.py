@@ -5,6 +5,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 import jwt
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -45,8 +46,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+_PROJECT_ROOT = Path(__file__).parent.parent.parent  # src/app -> src -> project root
+
 # Templates
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=str(_PROJECT_ROOT / "templates"))
 
 
 # Middleware
@@ -555,7 +558,7 @@ routes = [
     Mount("/api/backup", backup_router),
     Mount("/api/gitops", gitops_router),
     Mount("/api/virt", virt_router),
-    Mount("/static", StaticFiles(directory="app/static"), name="static"),
+    Mount("/static", StaticFiles(directory=str(_PROJECT_ROOT / "static")), name="static"),
 ]
 
 app = Starlette(
