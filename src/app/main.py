@@ -46,10 +46,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-_PROJECT_ROOT = Path(__file__).parent.parent.parent  # src/app -> src -> project root
+_WEB_PORT = Path(__file__).parent.parent / "ports" / "web"  # src/app -> src/ports/web
 
 # Templates
-templates = Jinja2Templates(directory=str(_PROJECT_ROOT / "templates"))
+templates = Jinja2Templates(directory=str(_WEB_PORT / "templates"))
 
 
 # Middleware
@@ -558,7 +558,7 @@ routes = [
     Mount("/api/backup", backup_router),
     Mount("/api/gitops", gitops_router),
     Mount("/api/virt", virt_router),
-    Mount("/static", StaticFiles(directory=str(_PROJECT_ROOT / "static")), name="static"),
+    Mount("/static", StaticFiles(directory=str(_WEB_PORT / "static")), name="static"),
 ]
 
 app = Starlette(
