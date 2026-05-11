@@ -111,6 +111,7 @@ const translations = {
         virtVms: 'Virtual Machines',
         virtPools: 'Storage Pools',
         virtVolumes: 'Volumes',
+        virtUfw: 'Firewall (UFW)',
 
         // Virt pages — common
         platformLabel: 'Platform:',
@@ -184,6 +185,27 @@ const translations = {
         createVolume: 'Create Volume',
         deleteVolumeTitle: 'Delete Volume',
         deleteVolumeBody: 'Permanently delete this volume? This cannot be undone.',
+
+        // UFW Firewall page
+        virtUfwSubtitle: 'Manage UFW firewall rules on remote platforms.',
+        ufwStatusActive: 'Active', ufwStatusInactive: 'Inactive',
+        ufwDefaultIncoming: 'Default incoming:', ufwDefaultOutgoing: 'Default outgoing:',
+        ufwLogging: 'Logging:',
+        ufwRuleColNum: '#', ufwRuleColTo: 'To', ufwRuleColAction: 'Action', ufwRuleColFrom: 'From',
+        ufwNoRules: 'No rules defined.',
+        ufwAddRule: 'Add Rule',
+        ufwAddRuleTitle: 'Add UFW Rule',
+        ufwActionLabel: 'Action *', ufwTargetLabel: 'Port / Service *',
+        ufwTargetHint: 'e.g. 22, 80, 443, 8080/tcp, ssh, http, https',
+        ufwProtoLabel: 'Protocol', ufwFromIpLabel: 'Source IP / Subnet',
+        ufwFromIpHint: 'e.g. 192.168.1.0/24, 10.0.0.5 — leave empty for Anywhere',
+        ufwDirectionLabel: 'Direction',
+        ufwEnableBtn: 'Enable', ufwDisableBtn: 'Disable', ufwReloadBtn: 'Reload',
+        ufwDefaultTitle: 'Default Policies',
+        ufwDefaultIncomingLabel: 'Incoming', ufwDefaultOutgoingLabel: 'Outgoing',
+        ufwDeleteRuleTitle: 'Delete Rule',
+        ufwDeleteRuleBody: 'Delete rule #{{n}}? This cannot be undone.',
+        ufwSelectPlatform: 'Select a platform to load firewall status.',
 
         system: 'System',
         users: 'Users',
@@ -412,6 +434,7 @@ const translations = {
         virtVms: 'Виртуальные машины',
         virtPools: 'Пулы хранилищ',
         virtVolumes: 'Тома',
+        virtUfw: 'Файрвол (UFW)',
 
         // Virt pages — common
         platformLabel: 'Платформа:',
@@ -485,6 +508,27 @@ const translations = {
         createVolume: 'Создать том',
         deleteVolumeTitle: 'Удалить том',
         deleteVolumeBody: 'Удалить том безвозвратно? Это действие нельзя отменить.',
+
+        // UFW Firewall page
+        virtUfwSubtitle: 'Управление правилами UFW на удалённых платформах.',
+        ufwStatusActive: 'Активен', ufwStatusInactive: 'Неактивен',
+        ufwDefaultIncoming: 'Политика входящих:', ufwDefaultOutgoing: 'Политика исходящих:',
+        ufwLogging: 'Логирование:',
+        ufwRuleColNum: '№', ufwRuleColTo: 'Назначение', ufwRuleColAction: 'Действие', ufwRuleColFrom: 'Источник',
+        ufwNoRules: 'Правила не определены.',
+        ufwAddRule: 'Добавить правило',
+        ufwAddRuleTitle: 'Добавить правило UFW',
+        ufwActionLabel: 'Действие *', ufwTargetLabel: 'Порт / Сервис *',
+        ufwTargetHint: 'Например: 22, 80, 443, 8080/tcp, ssh, http, https',
+        ufwProtoLabel: 'Протокол', ufwFromIpLabel: 'Исходный IP / подсеть',
+        ufwFromIpHint: 'Например: 192.168.1.0/24, 10.0.0.5 — оставьте пустым для Anywhere',
+        ufwDirectionLabel: 'Направление',
+        ufwEnableBtn: 'Включить', ufwDisableBtn: 'Выключить', ufwReloadBtn: 'Перезагрузить',
+        ufwDefaultTitle: 'Политики по умолчанию',
+        ufwDefaultIncomingLabel: 'Входящие', ufwDefaultOutgoingLabel: 'Исходящие',
+        ufwDeleteRuleTitle: 'Удалить правило',
+        ufwDeleteRuleBody: 'Удалить правило №{{n}}? Это действие нельзя отменить.',
+        ufwSelectPlatform: 'Выберите платформу для загрузки состояния файрвола.',
 
         system: 'Система',
         users: 'Пользователи',

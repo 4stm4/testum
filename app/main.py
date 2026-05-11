@@ -289,6 +289,10 @@ async def virt_volumes_page(request: Request):
     return templates.TemplateResponse("virt_volumes.html", build_template_context(request, "virt_volumes"))
 
 
+async def virt_ufw_page(request: Request):
+    return templates.TemplateResponse("virt_ufw.html", build_template_context(request, "virt_ufw"))
+
+
 async def job_detail_page(request: Request):
     """Job detail page for a specific task."""
     task_id = request.path_params.get("task_id")
@@ -526,6 +530,7 @@ routes = [
     Route("/jobs/{task_id}", job_detail_page),
     Route("/virt/vms", virt_vms_page),
     Route("/virt/pools", virt_pools_page),
+    Route("/virt/ufw", virt_ufw_page),
     Route("/virt/volumes", virt_volumes_page),
     Route("/audit", audit_page),
     Route("/users", users_page),

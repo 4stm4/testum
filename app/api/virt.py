@@ -420,28 +420,141 @@ async def host_capabilities(request: Request):
 
 # ── Firewall ──────────────────────────────────────────────────────────────────
 
-@require_roles(*ALL_ROLES)
-async def firewall_status(request: Request):
-    platform_id = request.path_params["platform_id"]
-    platform, uri, db = _get_platform(platform_id)
+def _get_firewall(platform_id: str):
+    """Return (FirewallManager, db) or (None, None) if platform not found."""
+    from adapters.ufw.firewall import FirewallManager
+    platform, _, db = _get_platform(platform_id)
     if platform is None:
-        return JSONResponse({"error": "Platform not found"}, status_code=404)
+        return None, None
     password, private_key = _resolve_credentials(platform, db)
     db.close()
+    return FirewallManager(
+        hostname=platform.host,
+        port=platform.port,
+        username=platform.username,
+        password=password,
+        private_key=private_key,
+        known_host_fingerprint=platform.known_host_fingerprint,
+    ), None
+
+
+@require_roles(*ALL_ROLES)
+async def firewall_status(request: Request):
+    fw, _ = _get_firewall(request.path_params["platform_id"])
+    if fw is None:
+        return JSONResponse({"error": "Platform not found"}, status_code=404)
     try:
-        from adapters.ufw.firewall import FirewallManager
-        fw = FirewallManager(
-            hostname=platform.host,
-            port=platform.port,
-            username=platform.username,
-            password=password,
-            private_key=private_key,
-            known_host_fingerprint=platform.known_host_fingerprint,
-        )
-        status = await fw.status()
-        return JSONResponse(status)
+        return JSONResponse(await fw.status())
     except Exception as exc:
         logger.exception("firewall_status failed")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@require_roles(*ALL_ROLES)
+async def firewall_enable(request: Request):
+    fw, _ = _get_firewall(request.path_params["platform_id"])
+    if fw is None:
+        return JSONResponse({"error": "Platform not found"}, status_code=404)
+    try:
+        return JSONResponse(await fw.enable())
+    except Exception as exc:
+        logger.exception("firewall_enable failed")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@require_roles(*ALL_ROLES)
+async def firewall_disable(request: Request):
+    fw, _ = _get_firewall(request.path_params["platform_id"])
+    if fw is None:
+        return JSONResponse({"error": "Platform not found"}, status_code=404)
+    try:
+        return JSONResponse(await fw.disable())
+    except Exception as exc:
+        logger.exception("firewall_disable failed")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@require_roles(*ALL_ROLES)
+async def firewall_reload(request: Request):
+    fw, _ = _get_firewall(request.path_params["platform_id"])
+    if fw is None:
+        return JSONResponse({"error": "Platform not found"}, status_code=404)
+    try:
+        return JSONResponse(await fw.reload())
+    except Exception as exc:
+        logger.exception("firewall_reload failed")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@require_roles(*ALL_ROLES)
+async def firewall_add_rule(request: Request):
+    fw, _ = _get_firewall(request.path_params["platform_id"])
+    if fw is None:
+        return JSONResponse({"error": "Platform not found"}, status_code=404)
+    body    = await request.json()
+    action  = body.get("action", "allow").lower()   # allow | deny | reject | limit
+    target  = body.get("target", "").strip()
+    proto   = body.get("proto", "any")               # tcp | udp | any
+    from_ip = body.get("from_ip", "").strip() or None
+    direction = body.get("direction", "in")          # in | out
+
+    if not target:
+        return JSONResponse({"error": "target (port or service) is required"}, status_code=400)
+    if action not in ("allow", "deny", "reject", "limit"):
+        return JSONResponse({"error": "action must be allow | deny | reject | limit"}, status_code=400)
+
+    try:
+        if action == "limit":
+            result = await fw.limit(target, proto=proto if proto != "any" else None)
+        elif action == "allow":
+            result = await fw.allow(target, proto=proto if proto != "any" else None,
+                                    from_ip=from_ip, direction=direction)
+        elif action == "deny":
+            result = await fw.deny(target, proto=proto if proto != "any" else None,
+                                   from_ip=from_ip, direction=direction)
+        else:
+            result = await fw.reject(target, proto=proto if proto != "any" else None,
+                                     from_ip=from_ip, direction=direction)
+        return JSONResponse(result, status_code=400 if "error" in result else 200)
+    except Exception as exc:
+        logger.exception("firewall_add_rule failed")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@require_roles(*ALL_ROLES)
+async def firewall_delete_rule(request: Request):
+    fw, _ = _get_firewall(request.path_params["platform_id"])
+    if fw is None:
+        return JSONResponse({"error": "Platform not found"}, status_code=404)
+    body = await request.json()
+    number = body.get("number")
+    if not number:
+        return JSONResponse({"error": "rule number is required"}, status_code=400)
+    try:
+        result = await fw.delete_rule(int(number))
+        return JSONResponse(result, status_code=400 if "error" in result else 200)
+    except Exception as exc:
+        logger.exception("firewall_delete_rule failed")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@require_roles(*ALL_ROLES)
+async def firewall_set_default(request: Request):
+    fw, _ = _get_firewall(request.path_params["platform_id"])
+    if fw is None:
+        return JSONResponse({"error": "Platform not found"}, status_code=404)
+    body      = await request.json()
+    direction = body.get("direction", "")   # incoming | outgoing
+    policy    = body.get("policy", "")      # allow | deny | reject
+    if direction not in ("incoming", "outgoing", "routed"):
+        return JSONResponse({"error": "direction: incoming | outgoing | routed"}, status_code=400)
+    if policy not in ("allow", "deny", "reject"):
+        return JSONResponse({"error": "policy: allow | deny | reject"}, status_code=400)
+    try:
+        result = await fw.set_default(direction, policy)
+        return JSONResponse(result, status_code=400 if "error" in result else 200)
+    except Exception as exc:
+        logger.exception("firewall_set_default failed")
         return JSONResponse({"error": str(exc)}, status_code=500)
 
 
@@ -662,7 +775,13 @@ virt_router = Router(routes=[
     Route("/{platform_id}/volumes",          list_volumes,       methods=["GET"]),
     Route("/{platform_id}/volumes/create",   create_volume,      methods=["POST"]),
     Route("/{platform_id}/volumes/delete",   delete_volume,      methods=["POST"]),
-    Route("/{platform_id}/host/capabilities", host_capabilities, methods=["GET"]),
-    Route("/{platform_id}/firewall/status",  firewall_status,    methods=["GET"]),
-    Route("/{platform_id}/install",          install_libvirt,    methods=["POST"]),
+    Route("/{platform_id}/host/capabilities",    host_capabilities,    methods=["GET"]),
+    Route("/{platform_id}/firewall/status",      firewall_status,      methods=["GET"]),
+    Route("/{platform_id}/firewall/enable",      firewall_enable,      methods=["POST"]),
+    Route("/{platform_id}/firewall/disable",     firewall_disable,     methods=["POST"]),
+    Route("/{platform_id}/firewall/reload",      firewall_reload,      methods=["POST"]),
+    Route("/{platform_id}/firewall/rule/add",    firewall_add_rule,    methods=["POST"]),
+    Route("/{platform_id}/firewall/rule/delete", firewall_delete_rule, methods=["POST"]),
+    Route("/{platform_id}/firewall/default",     firewall_set_default, methods=["POST"]),
+    Route("/{platform_id}/install",              install_libvirt,      methods=["POST"]),
 ])
