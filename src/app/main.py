@@ -34,7 +34,7 @@ from app.security import hash_password, verify_password
 from app.updater import UpdateError, get_update_info, perform_update
 from app.db import SessionLocal
 from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun, TaskStatusEnum
-from app.ws_taskiq import task_stream_websocket
+from ports.ws.ws_taskiq import task_stream_websocket
 from app.task_engine import backend, engine
 
 

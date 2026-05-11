@@ -642,7 +642,7 @@ def _detect_os_id(os_release: str) -> str:
 
 async def _bg_install_libvirt(platform_id: str, task_id: str) -> None:
     """Background task: SSH into platform, detect OS, run install steps, update TaskRun."""
-    from app.ssh_helper import AsyncSSHClient
+    from adapters.ssh.client import AsyncSSHClient
 
     db = SessionLocal()
     try:

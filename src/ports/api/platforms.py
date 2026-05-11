@@ -23,7 +23,7 @@ from app.models import (
 )
 from app.pagination import get_pagination_params
 from app.rbac import ALL_ROLES, get_request_user, require_roles
-from app.schemas import (
+from ports.api.schemas import (
     DeployKeysRequest,
     PlatformCreate,
     PlatformResponse,
@@ -91,7 +91,7 @@ async def create_platform(request: Request):
         user = get_request_user(request)
 
         if config.APP_ENV != "testing":
-            from app.ssh_helper import AsyncSSHClient
+            from adapters.ssh.client import AsyncSSHClient
 
             # Prepare SSH credentials
             password = platform_data.password if platform_data.auth_method == "password" else None
@@ -474,7 +474,7 @@ async def get_platform_info(request: Request):
             elif platform.encrypted_private_key:
                 private_key = crypto.decrypt_string(platform.encrypted_private_key)
         
-        from app.ssh_helper import AsyncSSHClient
+        from adapters.ssh.client import AsyncSSHClient
 
         ssh_kwargs = {
             "host": platform.host,

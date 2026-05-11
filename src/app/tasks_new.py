@@ -11,7 +11,7 @@ from app.config import config
 from app.crypto import crypto
 from app.db import SessionLocal
 from app.models import Platform, SSHKey, TaskRun, TaskStatusEnum
-from app.ssh_helper import AsyncSSHClient
+from adapters.ssh.client import AsyncSSHClient
 from pyjobkit.contracts import ExecContext, Executor
 
 logger = logging.getLogger(__name__)

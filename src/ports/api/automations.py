@@ -20,7 +20,7 @@ from app.models import (
     Platform,
     UserRole,
 )
-from app.schemas import (
+from ports.api.schemas import (
     AutomationJobCreate,
     AutomationJobResponse,
     AutomationJobTargetResponse,

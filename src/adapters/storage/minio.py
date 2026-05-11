@@ -7,7 +7,7 @@ import logging
 import boto3
 from botocore.client import Config
 
-from infrastructure.config import config
+from app.config import config
 
 logger = logging.getLogger(__name__)
 

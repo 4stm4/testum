@@ -121,10 +121,10 @@ async def _collect_system_info(
     platform,
     storage: Storage,
 ) -> Optional[dict]:
-    from adapters.ssh.asyncssh_client import AsyncSSHClient
+    from adapters.ssh.client import AsyncSSHClient
     from adapters.postgres.session import SessionLocal
     from adapters.postgres.orm_models import PlatformRow, SSHKeyRow
-    from infrastructure.crypto import crypto
+    from app.crypto import crypto
 
     password: Optional[str] = None
     private_key: Optional[str] = None

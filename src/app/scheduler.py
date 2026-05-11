@@ -181,7 +181,7 @@ async def collect_system_info(platform: Platform) -> dict[str, Any] | None:
     credentials are missing/invalid.
     """
     from app.crypto import crypto
-    from app.ssh_helper import AsyncSSHClient
+    from adapters.ssh.client import AsyncSSHClient
 
     password: str | None = None
     private_key: str | None = None

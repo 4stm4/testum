@@ -13,7 +13,7 @@ from typing import Any, Dict
 import httpx
 
 from core.interfaces.storage import Storage
-from infrastructure.config import config
+from app.config import config
 
 logger = logging.getLogger(__name__)
 

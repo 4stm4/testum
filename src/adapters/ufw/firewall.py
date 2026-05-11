@@ -1,5 +1,5 @@
 """Async UFW adapter using AsyncSSHClient (asyncssh). No paramiko required."""
-from app.ssh_helper import AsyncSSHClient
+from adapters.ssh.client import AsyncSSHClient
 from adapters.ufw.status_parser import parse_ufw_numbered, UFWStatusResult
 
 

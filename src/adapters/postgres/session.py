@@ -3,7 +3,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from infrastructure.config import config
+from app.config import config
 
 _is_sqlite = config.DATABASE_URL.startswith("sqlite")
 

@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 from pyjobkit.contracts import ExecContext, Executor
 
-from adapters.ssh.asyncssh_client import AsyncSSHClient
+from adapters.ssh.client import AsyncSSHClient
 from adapters.storage.minio import MinioArtifactStore
 from core.domain.enums import TaskStatus
 from core.interfaces.notifier import Notifier
@@ -24,7 +24,7 @@ def _load_platform_creds(storage: Storage, platform_id: str) -> dict:
     """Return SSH connection kwargs by decrypting platform credentials."""
     from adapters.postgres.session import SessionLocal
     from adapters.postgres.orm_models import PlatformRow, SSHKeyRow
-    from infrastructure.crypto import crypto
+    from app.crypto import crypto
 
     with SessionLocal() as db:
         row = db.query(PlatformRow).filter(PlatformRow.id == platform_id).first()

@@ -14,7 +14,7 @@ from app.db import get_db
 from app.models import User, UserRole
 from app.pagination import get_pagination_params
 from app.rbac import ALL_ROLES, get_request_user, require_roles
-from app.schemas import UserCreate, UserResponse, UserUpdate
+from ports.api.schemas import UserCreate, UserResponse, UserUpdate
 from app.security import hash_password
 
 logger = logging.getLogger(__name__)
