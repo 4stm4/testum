@@ -32,7 +32,7 @@ from app.rbac import get_request_user
 from app.security import hash_password, verify_password
 from app.updater import UpdateError, get_update_info, perform_update
 from app.db import SessionLocal
-from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun
+from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun, TaskStatusEnum
 from app.ws_taskiq import task_stream_websocket
 from app.task_engine import backend, engine
 
@@ -64,6 +64,29 @@ middleware = [
 
 
 # Bootstrap helpers
+def _mark_stale_tasks_failed() -> None:
+    """Mark any tasks left in RUNNING/PENDING state from a previous process as FAILED.
+
+    Background tasks (e.g. libvirt install) are fire-and-forget; if the server
+    was killed mid-run they stay RUNNING forever.  On startup we flip them to
+    FAILED so the UI doesn't show a permanently spinning job.
+    """
+    from datetime import datetime as _dt
+    with app_db.SessionLocal() as db:
+        stale = (
+            db.query(TaskRun)
+            .filter(TaskRun.status.in_([TaskStatusEnum.RUNNING, TaskStatusEnum.PENDING]))
+            .all()
+        )
+        if stale:
+            for task in stale:
+                task.status = TaskStatusEnum.FAILED
+                task.finished_at = task.finished_at or _dt.utcnow()
+                task.stdout = (task.stdout or "") + "\n[Marked failed on server restart]\n"
+            db.commit()
+            logger.warning("Marked %d stale task(s) as FAILED on startup", len(stale))
+
+
 def ensure_default_admin_user() -> None:
     """Ensure there is at least one administrator user."""
 
@@ -544,6 +567,7 @@ _background_tasks: list = []
 async def startup_event() -> None:
     """Initialize application services."""
     ensure_default_admin_user()
+    _mark_stale_tasks_failed()
 
     # Start the pyjobkit worker in-process so commands and deploys work
     # without a separate worker container (useful for local dev and single-

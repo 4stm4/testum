@@ -10,7 +10,7 @@ from starlette.routing import Route, Router
 
 from app.audit import log_audit
 from app.crypto import crypto
-from app.db import get_db, SessionLocal
+from app.db import SessionLocal
 from app.models import Platform, SSHKey, TaskRun, TaskStatusEnum, TaskTypeEnum
 from app.rbac import require_roles, ALL_ROLES, get_request_user
 
@@ -18,9 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def _get_platform(platform_id: str):
-    db = next(get_db())
+    """Fetch platform by ID and build its libvirt URI.
+
+    Returns (platform, uri, db) on success or (None, None, None) when not found.
+    The caller is responsible for calling db.close() when the session is no longer needed.
+    """
+    db = SessionLocal()
     platform = db.query(Platform).filter(Platform.id == platform_id).first()
     if platform is None:
+        db.close()
         return None, None, None
     uri = f"qemu+ssh://{platform.username}@{platform.host}/system"
     return platform, uri, db
@@ -51,6 +57,7 @@ async def list_vms(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     try:
         from virt_base.adapters.libvirt import VMManager
         vms = await asyncio.to_thread(lambda: VMManager(uri).list_all())
@@ -79,6 +86,7 @@ async def start_vm(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     if not name:
@@ -98,6 +106,7 @@ async def stop_vm(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     if not name:
@@ -117,6 +126,7 @@ async def delete_vm(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     if not name:
@@ -138,6 +148,7 @@ async def list_pools(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     states = [int(s) for s in request.query_params.getlist("state")] or [2]  # default: ACTIVE
     try:
         from virt_base.adapters.libvirt import StoragePoolManager
@@ -169,6 +180,7 @@ async def create_pool(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     pool_type = body.get("pool_type")
@@ -195,6 +207,7 @@ async def activate_pool(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     if not name:
@@ -214,6 +227,7 @@ async def deactivate_pool(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     if not name:
@@ -233,6 +247,7 @@ async def delete_pool(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     if not name:
@@ -252,6 +267,7 @@ async def pool_usage(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     name = request.query_params.get("name")
     if not name:
         return JSONResponse({"error": "name query param is required"}, status_code=400)
@@ -272,6 +288,7 @@ async def list_volumes(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     pool_name = request.query_params.get("pool_name")
     if not pool_name:
         return JSONResponse({"error": "pool_name query param is required"}, status_code=400)
@@ -294,6 +311,7 @@ async def create_volume(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     pool_name = body.get("pool_name")
@@ -318,6 +336,7 @@ async def delete_volume(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     body = await request.json()
     name = body.get("name")
     pool_name = body.get("pool_name")
@@ -340,6 +359,7 @@ async def host_capabilities(request: Request):
     platform, uri, db = _get_platform(platform_id)
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
+    db.close()
     try:
         from virt_base.adapters.libvirt import HostManager
         caps = await asyncio.to_thread(lambda: HostManager(uri).get_capabilities())
@@ -358,6 +378,7 @@ async def firewall_status(request: Request):
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
     password, _ = _resolve_credentials(platform, db)
+    db.close()
     if password is None:
         return JSONResponse(
             {"error": "Platform has no password credential; firewall status requires password auth"},
@@ -461,7 +482,7 @@ def _detect_os_id(os_release: str) -> str:
 
 
 async def _bg_install_libvirt(platform_id: str, task_id: str) -> None:
-    """Background task: SSH install, stream output into TaskRun.stdout, update status."""
+    """Background task: SSH into platform, detect OS, run install steps, update TaskRun."""
     from app.ssh_helper import AsyncSSHClient
 
     db = SessionLocal()
@@ -476,13 +497,11 @@ async def _bg_install_libvirt(platform_id: str, task_id: str) -> None:
         db.commit()
 
         def _append(text: str) -> None:
-            """Append text to task stdout and flush to DB."""
             task.stdout = (task.stdout or "") + text
-            db.commit()
 
         platform = db.query(Platform).filter(Platform.id == platform_id).first()
         if not platform:
-            _append("[Platform not found]\n")
+            task.stdout = "[Platform not found]\n"
             task.status = TaskStatusEnum.FAILED
             task.finished_at = datetime.utcnow()
             db.commit()
@@ -499,14 +518,13 @@ async def _bg_install_libvirt(platform_id: str, task_id: str) -> None:
                 private_key=private_key,
                 known_host_fingerprint=platform.known_host_fingerprint,
             ) as ssh:
-                # 1. detect OS
                 rc, stdout, stderr = await ssh.execute_command("cat /etc/os-release")
                 os_id = _detect_os_id(stdout) if rc == 0 else "unknown"
                 _append(f"=== Detected OS: {os_id} ===\n")
+                db.commit()
 
                 steps = _INSTALL_STEPS.get(os_id, _DEFAULT_INSTALL_STEPS)
 
-                # 2. run steps, stream each result to DB
                 failed = False
                 for cmd in steps:
                     _append(f"\n$ {cmd}\n")
@@ -518,12 +536,13 @@ async def _bg_install_libvirt(platform_id: str, task_id: str) -> None:
                     if rc != 0:
                         _append(f"[exit code {rc}]\n")
                         failed = True
+                    db.commit()  # one commit per command, not per append
 
-                # 3. verify
                 rc, stdout, stderr = await ssh.execute_command("virsh version 2>&1", timeout=30)
                 _append(f"\n=== virsh version ===\n{stdout or stderr}\n")
                 if rc != 0:
                     failed = True
+                db.commit()
 
             task.status = TaskStatusEnum.FAILED if failed else TaskStatusEnum.SUCCESS
 
@@ -548,7 +567,6 @@ async def install_libvirt(request: Request):
     if platform is None:
         return JSONResponse({"error": "Platform not found"}, status_code=404)
 
-    # Create a tracked job
     task_run = TaskRun(
         id=uuid.uuid4(),
         type=TaskTypeEnum.RUN_COMMAND,
@@ -561,7 +579,6 @@ async def install_libvirt(request: Request):
     db.refresh(task_run)
     task_id = str(task_run.id)
 
-    # Audit log
     user = get_request_user(request)
     log_audit(
         db,
@@ -571,8 +588,8 @@ async def install_libvirt(request: Request):
         object_id=str(platform.id),
         meta={"task_id": task_id},
     )
+    db.close()
 
-    # Fire-and-forget background task
     asyncio.create_task(_bg_install_libvirt(str(platform.id), task_id))
 
     return JSONResponse({
