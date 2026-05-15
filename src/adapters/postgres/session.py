@@ -7,11 +7,16 @@ from app.config import config
 
 _is_sqlite = config.DATABASE_URL.startswith("sqlite")
 
+def _sync_url(url: str) -> str:
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
+
 _connect_args = {"check_same_thread": False} if _is_sqlite else {}
 _pool_kwargs = {} if _is_sqlite else {"pool_size": 10, "max_overflow": 20}
 
 engine = create_engine(
-    config.DATABASE_URL,
+    _sync_url(config.DATABASE_URL),
     pool_pre_ping=True,
     connect_args=_connect_args,
     **_pool_kwargs,
