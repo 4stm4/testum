@@ -1,440 +1,257 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Testum{% endblock %}</title>
-    <script>
-        (function() {
-            try {
-                var stored = localStorage.getItem('testum-theme');
-                var theme = stored === 'light' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', theme);
-                document.documentElement.style.colorScheme = theme;
-            } catch (error) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                document.documentElement.style.colorScheme = 'dark';
-            }
-        })();
-    </script>
-    <link rel="stylesheet" href="/static/fonts/fonts.css">
-    <link rel="stylesheet" href="/static/material.css">
-    <link rel="stylesheet" href="/static/app.css?v=3">
-    <style>
-        body {
-            min-height: 100vh;
-        }
-        
-        body.modal-open {
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-        }
-
-        .main-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 280px;
-            background: var(--md-surface-container-low);
-            border-right: 1px solid var(--md-outline-variant);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 20px 16px;
-            border-bottom: 1px solid var(--md-outline-variant);
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .sidebar-logo a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            color: var(--md-primary);
-            font: var(--md-title-large);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: opacity 0.2s ease;
-        }
-
-        .sidebar-logo a:hover {
-            opacity: 0.8;
-        }
-
-        .sidebar-logo .material-symbols-rounded {
-            font-size: 28px;
-            line-height: 1;
-            display: block;
-            width: 28px;
-            height: 28px;
-        }
-
-        .version {
-            background: var(--md-surface-container-highest);
-            padding: 4px 10px;
-            border-radius: 100px;
-            font: var(--md-label-small);
-            color: var(--md-on-surface-variant);
-            margin-left: auto;
-        }
-
-        .sidebar-controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 0;
-        }
-
-        .controls-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .controls-divider {
-            width: 1px;
-            height: 32px;
-            background: var(--md-outline-variant);
-            margin: 0 4px;
-        }
-
-        .md-icon-button {
-            background: var(--md-surface-container-high);
-            color: var(--md-on-surface);
-            width: 40px;
-            height: 40px;
-            border-radius: 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 500;
-            font-family: 'Roboto', sans-serif;
-        }
-
-        .md-icon-button .material-symbols-rounded {
-            font-size: 20px;
-            line-height: 1;
-            overflow: visible;
-            flex-shrink: 0;
-        }
-
-        .md-icon-button:hover {
-            background: var(--md-primary-container);
-            transform: scale(1.1);
-        }
-
-        .sidebar-section {
-            padding: 16px 8px;
-            flex: 1;
-        }
-
-        .sidebar-section:last-of-type {
-            flex: 0;
-        }
-
-        .sidebar-title {
-            color: var(--md-on-surface-variant);
-            font: var(--md-label-small);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 0 16px;
-            margin-bottom: 8px;
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            color: var(--md-on-surface-variant);
-            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-            font: var(--md-label-large);
-            border-radius: 100px;
-            margin-bottom: 4px;
-        }
-
-        .sidebar-link:hover {
-            background: color-mix(in srgb, var(--md-primary) 8%, transparent);
-            color: var(--md-on-surface);
-        }
-
-        .sidebar-link.active {
-            background: var(--md-secondary-container);
-            color: var(--md-on-secondary-container);
-        }
-
-        .sidebar-link-main {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sidebar-icon {
-            width: 28px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .sidebar-icon .material-symbols-rounded {
-            font-size: 22px;
-            line-height: 1;
-            display: block;
-            width: 22px;
-            height: 22px;
-        }
-
-        .sidebar-count {
-            background: var(--md-surface-container-highest);
-            color: var(--md-on-surface-variant);
-            font: var(--md-label-small);
-            padding: 2px 8px;
-            border-radius: 100px;
-            min-width: 24px;
-            text-align: center;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .sidebar-link.active .sidebar-count {
-            background: var(--md-on-secondary-container);
-            color: var(--md-secondary-container);
-        }
-
-        .sidebar-footer {
-            padding: 16px;
-            border-top: 1px solid var(--md-outline-variant);
-        }
-
-        .logout-btn {
-            background: var(--md-error-container);
-            color: var(--md-on-error-container);
-            padding: 8px 16px;
-            border-radius: 100px;
-            border: none;
-            cursor: pointer;
-            font: var(--md-label-medium);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-            text-decoration: none;
-            height: 40px;
-        }
-
-        .logout-btn:hover {
-            background: color-mix(in srgb, var(--md-error) 20%, var(--md-error-container));
-            transform: translateY(-2px);
-            box-shadow: var(--md-elevation-2);
-        }
-
-        .content {
-            flex: 1;
-            padding: 32px;
-        }
-
-        .page-header {
-            margin-bottom: 32px;
-        }
-
-        .page-title {
-            font: var(--md-headline-large);
-            color: var(--md-on-surface);
-            margin-bottom: 8px;
-        }
-
-        .page-subtitle {
-            font: var(--md-body-large);
-            color: var(--md-on-surface-variant);
-        }
-
-        .footer {
-            margin-top: 48px;
-            text-align: center;
-            color: var(--md-on-surface-variant);
-            font: var(--md-body-small);
-            padding: 16px;
-        }
-
-        @media (max-width: 1024px) {
-            .main-layout {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--md-outline-variant);
-            }
-
-            .sidebar-header {
-                padding: 16px;
-            }
-
-            .sidebar-logo {
-                margin-bottom: 12px;
-            }
-
-            .sidebar-controls {
-                margin-bottom: 12px;
-            }
-        }
-    </style>
-    {% block extra_styles %}{% endblock %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}testum_{% endblock %}</title>
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/terminal.css">
+  <link rel="stylesheet" href="/static/components.css">
+  {% block extra_styles %}{% endblock %}
 </head>
 <body>
-    {% set active_page = active_page | default('') %}
-    
-    <div class="main-layout">
-        <nav class="sidebar">
-            <!-- Sidebar Header with Logo and Controls -->
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <a href="/">
-                        <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
-                        <span data-i18n="welcomeTitle">Testum</span>
-                    </a>
-                    <span class="version">v0.1.0</span>
-                </div>
-                <div class="sidebar-controls">
-                    <div class="controls-group">
-                        <button id="themeToggle" class="md-icon-button" title="Toggle Theme" aria-label="Toggle Theme">
-                            <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span>
-                        </button>
-                        <button id="langToggle" class="md-icon-button" title="Toggle Language" aria-label="Toggle Language">
-                            <span aria-hidden="true">EN</span>
-                        </button>
-                    </div>
-                    <div class="controls-divider"></div>
-                    <a href="/api/auth/logout" class="logout-btn">
-                        <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-                        <span data-i18n="logout">Logout</span>
-                    </a>
-                </div>
-            </div>
+  {% set active_page = active_page | default('') %}
+  {% set current_user = current_user | default(None) %}
 
-            <!-- Navigation Links -->
-            <div class="sidebar-section">
-                <div class="sidebar-title" data-i18n="resources">Resources</div>
-                <a href="/keys" class="sidebar-link{% if active_page == 'keys' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">vpn_key</span></span>
-                        <span data-i18n="sshKeys">SSH Keys</span>
-                    </span>
-                    <span class="sidebar-count">{{ sidebar_counts['keys'] }}</span>
-                </a>
-                <a href="/platforms" class="sidebar-link{% if active_page == 'platforms' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">dns</span></span>
-                        <span data-i18n="platforms">Platforms</span>
-                    </span>
-                    <span class="sidebar-count">{{ sidebar_counts['platforms'] }}</span>
-                </a>
-                <a href="/scripts" class="sidebar-link{% if active_page == 'scripts' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">code_blocks</span></span>
-                        <span data-i18n="scripts">Scripts</span>
-                    </span>
-                    <span class="sidebar-count">{{ sidebar_counts['scripts'] }}</span>
-                </a>
-                <a href="/automations" class="sidebar-link{% if active_page == 'automations' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">smart_toy</span></span>
-                        <span data-i18n="automations">Automations</span>
-                    </span>
-                    <span class="sidebar-count">{{ sidebar_counts['automations'] }}</span>
-                </a>
-                <a href="/jobs" class="sidebar-link{% if active_page == 'jobs' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">assignment</span></span>
-                        <span data-i18n="jobs">Jobs</span>
-                    </span>
-                    <span class="sidebar-count">{{ sidebar_counts['jobs'] }}</span>
-                </a>
-            </div>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <nav class="sb">
+      <!-- Brand -->
+      <div class="sb-brand">
+        <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+          <div class="glyph s32">&gt;_</div>
+          <div>
+            <div class="wordmark" style="font-size:17px;">testum<span class="cur"></span></div>
+            <div class="by-4stm4">/<b>4stm4</b></div>
+          </div>
+        </a>
+      </div>
 
-            <div class="sidebar-section">
-                <div class="sidebar-title" data-i18n="virtualization">Virtualization</div>
-                <a href="/virt/vms" class="sidebar-link{% if active_page == 'virt_vms' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">computer</span></span>
-                        <span data-i18n="virtVms">Virtual Machines</span>
-                    </span>
-                </a>
-                <a href="/virt/pools" class="sidebar-link{% if active_page == 'virt_pools' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">storage</span></span>
-                        <span data-i18n="virtPools">Storage Pools</span>
-                    </span>
-                </a>
-                <a href="/virt/volumes" class="sidebar-link{% if active_page == 'virt_volumes' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">hard_drive</span></span>
-                        <span data-i18n="virtVolumes">Volumes</span>
-                    </span>
-                </a>
-                <a href="/virt/ufw" class="sidebar-link{% if active_page == 'virt_ufw' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">shield</span></span>
-                        <span data-i18n="virtUfw">Firewall (UFW)</span>
-                    </span>
-                </a>
-            </div>
+      <!-- Overview -->
+      <div class="sb-section-label">Overview</div>
+      <a href="/" class="sb-link{% if active_page == '' or active_page == 'dashboard' %} active{% endif %}">
+        <span class="sb-link-inner">
+          <span class="sb-pip"></span>
+          <span data-i18n="dashboard">Operations</span>
+        </span>
+      </a>
+      <a href="/jobs" class="sb-link{% if active_page == 'jobs' %} active{% endif %}">
+        <span class="sb-link-inner">
+          <span class="sb-pip"></span>
+          <span data-i18n="jobs">Jobs</span>
+        </span>
+        <span class="count">{{ sidebar_counts['jobs'] }}</span>
+      </a>
+      <a href="/audit" class="sb-link{% if active_page == 'audit' %} active{% endif %}">
+        <span class="sb-link-inner">
+          <span class="sb-pip"></span>
+          <span data-i18n="auditLogs">Audit log</span>
+        </span>
+      </a>
 
-            <div class="sidebar-section">
-                <div class="sidebar-title" data-i18n="system">System</div>
-                <a href="/users" class="sidebar-link{% if active_page == 'users' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">group</span></span>
-                        <span data-i18n="users">Users</span>
-                    </span>
-                </a>
-                <a href="/audit" class="sidebar-link{% if active_page == 'audit' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">history</span></span>
-                        <span data-i18n="auditLogs">Audit Logs</span>
-                    </span>
-                </a>
-                <a href="/settings" class="sidebar-link{% if active_page == 'settings' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">settings</span></span>
-                        <span data-i18n="settings">Settings</span>
-                    </span>
-                </a>
-                <a href="/health" class="sidebar-link{% if active_page == 'health' %} active{% endif %}">
-                    <span class="sidebar-link-main">
-                        <span class="sidebar-icon"><span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span></span>
-                        <span data-i18n="healthCheck">Health Check</span>
-                    </span>
-                </a>
-            </div>
+      <!-- Resources -->
+      <div class="sb-section-label">Resources</div>
+      <a href="/platforms" class="sb-link{% if active_page == 'platforms' %} active{% endif %}">
+        <span class="sb-link-inner">
+          <span class="sb-pip"></span>
+          <span data-i18n="platforms">Platforms</span>
+        </span>
+        <span class="count">{{ sidebar_counts['platforms'] }}</span>
+      </a>
+      <a href="/keys" class="sb-link{% if active_page == 'keys' %} active{% endif %}">
+        <span class="sb-link-inner">
+          <span class="sb-pip"></span>
+          <span data-i18n="sshKeys">SSH keys</span>
+        </span>
+        <span class="count">{{ sidebar_counts['keys'] }}</span>
+      </a>
+      <a href="/scripts" class="sb-link{% if active_page == 'scripts' %} active{% endif %}">
+        <span class="sb-link-inner">
+          <span class="sb-pip"></span>
+          <span data-i18n="scripts">Scripts</span>
+        </span>
+        <span class="count">{{ sidebar_counts['scripts'] }}</span>
+      </a>
+      <a href="/automations" class="sb-link{% if active_page == 'automations' %} active{% endif %}">
+        <span class="sb-link-inner">
+          <span class="sb-pip"></span>
+          <span data-i18n="automations">Automations</span>
+        </span>
+        <span class="count">{{ sidebar_counts['automations'] }}</span>
+      </a>
 
-            <!-- Sidebar Footer (empty or for future use) -->
-            <div class="sidebar-footer">
-            </div>
-        </nav>
+      <!-- System -->
+      <div class="sb-section-label">System</div>
+      <a href="/users" class="sb-link{% if active_page == 'users' %} active{% endif %}">
+        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="users">Users</span></span>
+      </a>
+      <a href="/settings" class="sb-link{% if active_page == 'settings' %} active{% endif %}">
+        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="settings">Settings</span></span>
+      </a>
+      <a href="/health" class="sb-link{% if active_page == 'health' %} active{% endif %}">
+        <span class="sb-link-inner"><span class="sb-pip"></span><span>Health</span></span>
+      </a>
 
-        <main class="content">
-            {% block content %}{% endblock %}
-        </main>
+      <!-- Footer -->
+      <div class="sb-footer">
+        <div class="sb-avatar" id="sb-avatar">A</div>
+        <div>
+          <div class="sb-user-name" id="sb-username">admin</div>
+          <div class="sb-user-meta" id="sb-role">admin · EN</div>
+        </div>
+        <button class="sb-lang-btn" id="langToggle" aria-label="Toggle language">RU</button>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="app-content">
+      <main class="app-main">
+        {% block content %}{% endblock %}
+      </main>
+      <footer class="app-footer">
+        <span><span style="color:var(--signal)">$</span> testum v0.2.0 · main</span>
+        <span>4stm4/testum · MIT</span>
+      </footer>
     </div>
+  </div>
 
-    <script src="/static/testum.js?v=7"></script>
-    {% block scripts %}{% endblock %}
+  <!-- Snackbar -->
+  <div class="snackbar" id="snackbar"></div>
+
+  <!-- Run command modal -->
+  <div class="modal-overlay" id="runModal">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title"><span style="color:var(--signal)">$</span> <span data-i18n="runCommand">Run command</span></span>
+        <button class="iconbtn" onclick="closeRunModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label" data-i18n="targetPlatform">Target platform</label>
+          <select class="input" id="modal-platform-select">
+            <option value="">— select platform —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label" data-i18n="command">Command</label>
+          <div class="cmd-input">
+            <span class="pmt">$</span>
+            <input type="text" id="modal-cmd" placeholder="uptime" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Timeout (s)</label>
+          <input type="number" class="input" id="modal-timeout" value="60" min="1" max="3600" style="width:120px;">
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeRunModal()" data-i18n="cancel">Cancel</button>
+        <button class="btn btn-signal" onclick="submitRunModal()"><span style="font-size:11px">▶</span> <span data-i18n="run">Run</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/testum.js?v=8"></script>
+  <script>
+    // Snackbar
+    function showSnack(msg, type='') {
+      const s = document.getElementById('snackbar');
+      s.textContent = msg;
+      s.className = 'snackbar show ' + type;
+      clearTimeout(s._t);
+      s._t = setTimeout(() => { s.className = 'snackbar ' + type; }, 3200);
+    }
+
+    // Run modal
+    function openRunModal(platformId) {
+      const sel = document.getElementById('modal-platform-select');
+      if (platformId) sel.value = platformId;
+      document.getElementById('runModal').classList.add('open');
+      setTimeout(() => document.getElementById('modal-cmd').focus(), 100);
+    }
+    function closeRunModal() {
+      document.getElementById('runModal').classList.remove('open');
+    }
+    async function submitRunModal() {
+      const platformId = document.getElementById('modal-platform-select').value;
+      const cmd = document.getElementById('modal-cmd').value.trim();
+      const timeout = parseInt(document.getElementById('modal-timeout').value) || 60;
+      if (!platformId) { showSnack('Select a platform', 'err'); return; }
+      if (!cmd) { showSnack('Enter a command', 'err'); return; }
+      try {
+        const r = await fetch(`/api/platforms/${platformId}/run_command`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ command: cmd, timeout })
+        });
+        const d = await r.json();
+        if (r.ok) {
+          closeRunModal();
+          showSnack('✓ Job started', 'ok');
+          if (d.task_run_id) setTimeout(() => window.location.href = `/tasks/${d.task_run_id}`, 800);
+        } else {
+          showSnack('✗ ' + (d.error || 'Failed'), 'err');
+        }
+      } catch(e) { showSnack('✗ Network error', 'err'); }
+    }
+    document.getElementById('runModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('runModal')) closeRunModal();
+    });
+
+    // Populate run modal platform list
+    async function loadPlatformsForModal() {
+      try {
+        const r = await fetch('/api/platforms/');
+        if (r.ok) {
+          const ps = await r.json();
+          const sel = document.getElementById('modal-platform-select');
+          ps.forEach(p => {
+            const o = document.createElement('option');
+            o.value = p.id; o.textContent = p.name + ' (' + p.host + ')';
+            sel.appendChild(o);
+          });
+        }
+      } catch(e) {}
+    }
+    loadPlatformsForModal();
+
+    // Sidebar user info
+    async function loadSidebarUser() {
+      try {
+        const r = await fetch('/api/users/me');
+        if (r.ok) {
+          const u = await r.json();
+          const el = document.getElementById('sb-username');
+          const rol = document.getElementById('sb-role');
+          const av = document.getElementById('sb-avatar');
+          if (el) el.textContent = u.username || 'admin';
+          if (av) av.textContent = (u.username || 'A')[0].toUpperCase();
+          const lang = localStorage.getItem('testum-lang') || 'en';
+          if (rol) rol.textContent = (u.role || 'admin') + ' · ' + lang.toUpperCase();
+        }
+      } catch(e) {}
+    }
+    loadSidebarUser();
+
+    // Language toggle
+    const langBtn = document.getElementById('langToggle');
+    if (langBtn) {
+      const curLang = localStorage.getItem('testum-lang') || 'en';
+      document.documentElement.setAttribute('lang', curLang);
+      langBtn.textContent = curLang === 'en' ? 'RU' : 'EN';
+      langBtn.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('lang') || 'en';
+        const next = cur === 'en' ? 'ru' : 'en';
+        document.documentElement.setAttribute('lang', next);
+        try { localStorage.setItem('testum-lang', next); } catch(e) {}
+        langBtn.textContent = next === 'en' ? 'RU' : 'EN';
+        const rolEl = document.getElementById('sb-role');
+        if (rolEl) {
+          const parts = rolEl.textContent.split(' · ');
+          rolEl.textContent = parts[0] + ' · ' + next.toUpperCase();
+        }
+      });
+    }
+  </script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

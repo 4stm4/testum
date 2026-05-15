@@ -1,657 +1,427 @@
 {% extends "layout.html" %}
 {% set active_page = 'automations' %}
 
-{% block title %}Automations - Testum{% endblock %}
+{% block title %}Automations_ — testum{% endblock %}
 
 {% block extra_styles %}
-    <style>
-        .job-card {
-            background: var(--md-surface-container);
-            border: 1px solid var(--md-outline-variant);
-            border-radius: 16px;
-            padding: 20px 24px;
-            display: grid;
-            gap: 14px;
-        }
-
-        .job-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-        }
-
-        .job-title {
-            font: var(--md-title-medium);
-            color: var(--md-on-surface);
-            margin: 0 0 4px;
-        }
-
-        .job-description {
-            font: var(--md-body-small);
-            color: var(--md-on-surface-variant);
-            margin: 0;
-        }
-
-        .job-chips {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            flex-shrink: 0;
-        }
-
-        .job-meta {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            font: var(--md-body-small);
-            color: var(--md-on-surface-variant);
-        }
-
-        .job-command {
-            background: var(--md-surface-container-highest);
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-family: 'Roboto Mono', monospace;
-            font-size: 0.8em;
-            white-space: pre-wrap;
-            word-break: break-all;
-            color: var(--md-on-surface);
-            max-height: 80px;
-            overflow: hidden;
-        }
-
-        .job-targets {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .job-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .jobs-grid {
-            display: grid;
-            gap: 16px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 30px;
-            color: var(--md-on-surface-variant);
-            border: 1px dashed var(--md-outline-variant);
-            border-radius: 16px;
-            font: var(--md-body-large);
-        }
-
-        /* Modal overrides for wide automation form */
-        #jobModal .modal-content {
-            max-width: 680px;
-        }
-
-        .form-section {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .switch-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: var(--md-surface-container-highest);
-            border: 1px solid var(--md-outline-variant);
-            border-radius: 12px;
-            padding: 12px 16px;
-        }
-
-        .switch-row span {
-            font: var(--md-body-medium);
-            color: var(--md-on-surface);
-        }
-
-        .form-helper {
-            font: var(--md-body-small);
-            color: var(--md-on-surface-variant);
-            margin: 0;
-        }
-
-        .radio-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .radio-option {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--md-surface-container-highest);
-            border: 1px solid var(--md-outline-variant);
-            border-radius: 12px;
-            padding: 10px 14px;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-
-        .radio-option:has(input:checked) {
-            border-color: var(--md-primary);
-            background: color-mix(in srgb, var(--md-primary) 8%, var(--md-surface-container-highest));
-        }
-
-        .radio-option input {
-            width: auto;
-        }
-
-        .notify-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        details > summary {
-            cursor: pointer;
-            font: var(--md-label-large);
-            color: var(--md-on-surface-variant);
-            user-select: none;
-            padding: 10px 0;
-        }
-
-        details[open] > summary {
-            color: var(--md-on-surface);
-        }
-    </style>
+<style>
+  .auto-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5);
+    display: grid;
+    gap: var(--sp-3);
+  }
+  .auto-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--sp-4);
+  }
+  .auto-title {
+    font-size: var(--t-md);
+    font-weight: 700;
+    color: var(--fg);
+    margin: 0 0 var(--sp-1);
+  }
+  .auto-desc {
+    font-size: var(--t-xs);
+    color: var(--fg-dim);
+  }
+  .auto-command {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--sp-2) var(--sp-3);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--fg-muted);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 64px;
+    overflow: hidden;
+  }
+  .auto-meta {
+    display: flex;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: var(--t-xs);
+    color: var(--fg-dim);
+  }
+  .auto-actions {
+    display: flex;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .autos-grid { display: grid; gap: var(--sp-4); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+  .switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--sp-3) var(--sp-4);
+  }
+  .switch-row span { font-size: var(--t-body); color: var(--fg); }
+</style>
 {% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <div class="page-header-info">
-            <h1 class="page-title">
-                <span class="material-symbols-rounded" aria-hidden="true">smart_toy</span>
-                <span data-i18n="automations">Automations</span>
-            </h1>
-        </div>
-        <div class="page-actions">
-            <button class="toolbar-icon-btn primary" onclick="openJobModal()">
-                <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                <span>Add Automation</span>
-            </button>
-        </div>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">Automations<span class="cur"></span></div>
+    <div class="pg-sub" id="autos-sub">—</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-signal" onclick="openJobModal()">+ Add Automation</button>
+  </div>
+</div>
+
+<div class="autos-grid" id="jobsList">
+  <div class="empty-state"><span class="prompt">$</span> loading…</div>
+</div>
+
+<!-- Create Automation Modal -->
+<div class="modal-overlay" id="jobModal">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-head">
+      <span class="modal-title">New Automation</span>
+      <button class="iconbtn" onclick="closeJobModal()">✕</button>
     </div>
-
-    <div id="message" class="message" aria-live="polite"></div>
-
-    <div class="jobs-grid" id="jobsList">
-        <div class="empty-state">Loading…</div>
-    </div>
-
-    <!-- Create Automation Modal -->
-    <div id="jobModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="jobModalTitle">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="jobModalTitle">New Automation</h2>
-                <button class="modal-close" onclick="closeJobModal()" aria-label="Close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-section">
-
-                    <div class="form-field">
-                        <label for="jobName">Name</label>
-                        <input id="jobName" placeholder="Nightly security baseline" />
-                    </div>
-
-                    <div class="form-field">
-                        <label for="jobDescription">Description</label>
-                        <textarea id="jobDescription" rows="2" placeholder="What does this automation do?"></textarea>
-                    </div>
-
-                    <div class="form-field">
-                        <label>Execution type</label>
-                        <div class="radio-group">
-                            <label class="radio-option">
-                                <input type="radio" name="executionType" value="command" checked />
-                                <span class="material-symbols-rounded" style="font-size:18px;">terminal</span>
-                                <span>Shell command</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="executionType" value="script" />
-                                <span class="material-symbols-rounded" style="font-size:18px;">code_blocks</span>
-                                <span>Script</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div id="commandField" class="form-field">
-                        <label for="jobCommand">Command</label>
-                        <textarea id="jobCommand" rows="3" placeholder="#!/bin/bash&#10;apt update && apt upgrade -y"></textarea>
-                    </div>
-
-                    <div id="scriptField" class="form-field" style="display:none;">
-                        <label for="jobScript">Script</label>
-                        <select id="jobScript"></select>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label for="jobTrigger">Trigger</label>
-                            <select id="jobTrigger">
-                                <option value="manual">Manual</option>
-                                <option value="cron">Cron schedule</option>
-                                <option value="github_push">GitHub push</option>
-                                <option value="webhook">Webhook</option>
-                            </select>
-                        </div>
-                        <div id="cronField" class="form-field" style="display:none;">
-                            <label for="jobCron">Cron expression</label>
-                            <input id="jobCron" placeholder="0 3 * * *" />
-                        </div>
-                    </div>
-
-                    <div id="githubFields" class="form-field" style="display:none;">
-                        <label for="jobRepo">GitHub repository</label>
-                        <input id="jobRepo" placeholder="https://github.com/org/repo" />
-                        <label for="jobBranch" style="margin-top:8px;">Branch</label>
-                        <input id="jobBranch" placeholder="main" />
-                    </div>
-
-                    <div id="webhookField" class="form-field" style="display:none;">
-                        <label for="jobSecret">Webhook secret</label>
-                        <div style="display:flex; gap:8px;">
-                            <input id="jobSecret" placeholder="auto-generated" style="flex:1;" />
-                            <button id="generateSecret" type="button" class="toolbar-icon-btn" style="flex-shrink:0;">Generate</button>
-                        </div>
-                    </div>
-
-                    <div class="switch-row">
-                        <span>Run on all platforms</span>
-                        <input type="checkbox" id="jobRunAll" />
-                    </div>
-
-                    <div id="platformField" class="form-field">
-                        <label for="jobPlatforms">Target platforms</label>
-                        <select id="jobPlatforms" multiple size="4"></select>
-                    </div>
-
-                    <div class="form-field">
-                        <label for="jobTimeout">Timeout (seconds)</label>
-                        <input id="jobTimeout" type="number" min="60" max="86400" value="900" />
-                    </div>
-
-                    <div class="form-field">
-                        <label for="jobEnv">Environment variables (KEY=VALUE)</label>
-                        <textarea id="jobEnv" rows="2" placeholder="IMAGE=registry.example.com/app:latest&#10;DEPLOY_ENV=staging"></textarea>
-                    </div>
-
-                    <details class="form-field">
-                        <summary>Notifications</summary>
-                        <div class="notify-grid" style="margin-top:12px;">
-                            <div class="form-field">
-                                <label for="notifyEmailTo">Email recipients</label>
-                                <input id="notifyEmailTo" placeholder="ops@example.com" />
-                            </div>
-                            <div class="form-field">
-                                <label for="notifyEmailOn">Send on</label>
-                                <select id="notifyEmailOn">
-                                    <option value="">— disabled —</option>
-                                    <option value="always">Any completion</option>
-                                    <option value="failure">Failure</option>
-                                    <option value="success">Success</option>
-                                </select>
-                            </div>
-                            <div class="form-field">
-                                <label for="notifyWebhookUrl">Webhook URL</label>
-                                <input id="notifyWebhookUrl" placeholder="https://hooks.example.com/notify" />
-                            </div>
-                            <div class="form-field">
-                                <label for="notifyWebhookOn">Send on</label>
-                                <select id="notifyWebhookOn">
-                                    <option value="">— disabled —</option>
-                                    <option value="always">Any completion</option>
-                                    <option value="failure">Failure</option>
-                                    <option value="success">Success</option>
-                                </select>
-                            </div>
-                        </div>
-                    </details>
-
-                    <details class="form-field">
-                        <summary>Advanced</summary>
-                        <div class="form-section" style="margin-top:12px;">
-                            <div class="form-row">
-                                <div class="form-field">
-                                    <label for="jobRetries">Retries on error</label>
-                                    <input id="jobRetries" type="number" min="0" max="10" value="0" />
-                                </div>
-                                <div class="form-field">
-                                    <label for="jobRetryDelay">Retry delay (sec)</label>
-                                    <input id="jobRetryDelay" type="number" min="0" max="3600" value="60" />
-                                </div>
-                            </div>
-                            <div class="form-field">
-                                <label for="jobTags">Tags</label>
-                                <input id="jobTags" placeholder="security, nightly" />
-                            </div>
-                            <div class="form-field">
-                                <label for="jobNotes">Notes</label>
-                                <textarea id="jobNotes" rows="2" placeholder="Run after DB sync, check dashboards…"></textarea>
-                            </div>
-                            <div class="switch-row">
-                                <span>Require manual approval before run</span>
-                                <input type="checkbox" id="jobApproval" />
-                            </div>
-                        </div>
-                    </details>
-
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="toolbar-icon-btn" onclick="closeJobModal()">Cancel</button>
-                <button class="toolbar-icon-btn primary" id="createJob">
-                    <span class="material-symbols-rounded" aria-hidden="true">save</span>
-                    <span>Save automation</span>
-                </button>
-            </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:var(--sp-4);">
+      <div class="field">
+        <label class="field-label">Name</label>
+        <input id="jobName" class="input" placeholder="Nightly security baseline">
+      </div>
+      <div class="field">
+        <label class="field-label">Description</label>
+        <textarea id="jobDescription" class="input" rows="2" placeholder="What does this automation do?" style="resize:vertical;"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Execution type</label>
+        <div style="display:flex;gap:var(--sp-3);">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;background:var(--surface-3);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 14px;flex:1;">
+            <input type="radio" name="executionType" value="command" checked> &gt;_ Shell command
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;background:var(--surface-3);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 14px;flex:1;">
+            <input type="radio" name="executionType" value="script"> {} Script
+          </label>
         </div>
+      </div>
+      <div id="commandField" class="field">
+        <label class="field-label">Command</label>
+        <textarea id="jobCommand" class="input" rows="3" placeholder="#!/bin/bash&#10;apt update && apt upgrade -y" style="resize:vertical;"></textarea>
+      </div>
+      <div id="scriptField" class="field" style="display:none;">
+        <label class="field-label">Script</label>
+        <select id="jobScript" class="input"></select>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label class="field-label">Trigger</label>
+          <select id="jobTrigger" class="input">
+            <option value="manual">Manual</option>
+            <option value="cron">Cron schedule</option>
+            <option value="github_push">GitHub push</option>
+            <option value="webhook">Webhook</option>
+          </select>
+        </div>
+        <div id="cronField" class="field" style="display:none;">
+          <label class="field-label">Cron expression</label>
+          <input id="jobCron" class="input" placeholder="0 3 * * *">
+        </div>
+      </div>
+      <div id="githubFields" class="field" style="display:none;">
+        <label class="field-label">GitHub repository</label>
+        <input id="jobRepo" class="input" placeholder="https://github.com/org/repo" style="margin-bottom:var(--sp-2);">
+        <label class="field-label">Branch</label>
+        <input id="jobBranch" class="input" placeholder="main">
+      </div>
+      <div id="webhookField" class="field" style="display:none;">
+        <label class="field-label">Webhook secret</label>
+        <div style="display:flex;gap:var(--sp-2);">
+          <input id="jobSecret" class="input" placeholder="auto-generated">
+          <button id="generateSecret" type="button" class="btn btn-ghost" style="flex-shrink:0;">Generate</button>
+        </div>
+      </div>
+      <div class="switch-row">
+        <span>Run on all platforms</span>
+        <input type="checkbox" id="jobRunAll">
+      </div>
+      <div id="platformField" class="field">
+        <label class="field-label">Target platforms</label>
+        <select id="jobPlatforms" class="input" multiple size="4"></select>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label class="field-label">Timeout (seconds)</label>
+          <input id="jobTimeout" class="input" type="number" min="60" max="86400" value="900">
+        </div>
+        <div class="field">
+          <label class="field-label">Retries on error</label>
+          <input id="jobRetries" class="input" type="number" min="0" max="10" value="0">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Environment variables (KEY=VALUE)</label>
+        <textarea id="jobEnv" class="input" rows="2" placeholder="IMAGE=registry.example.com/app:latest" style="resize:vertical;"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Tags</label>
+        <input id="jobTags" class="input" placeholder="security, nightly">
+      </div>
     </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeJobModal()">Cancel</button>
+      <button class="btn btn-signal" id="createJob">+ Save automation</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        const jobsListEl = document.getElementById('jobsList');
-        const runAllCheckbox = document.getElementById('jobRunAll');
-        const platformsSelect = document.getElementById('jobPlatforms');
-        const triggerSelect = document.getElementById('jobTrigger');
-        const executionRadios = document.querySelectorAll('input[name="executionType"]');
-        const commandField = document.getElementById('commandField');
-        const scriptField = document.getElementById('scriptField');
-        const cronField = document.getElementById('cronField');
-        const githubFields = document.getElementById('githubFields');
-        const webhookField = document.getElementById('webhookField');
+<script>
+const jobsListEl = document.getElementById('jobsList');
+const runAllCheckbox = document.getElementById('jobRunAll');
+const platformsSelect = document.getElementById('jobPlatforms');
+const triggerSelect = document.getElementById('jobTrigger');
+const executionRadios = document.querySelectorAll('input[name="executionType"]');
+const commandField = document.getElementById('commandField');
+const scriptField = document.getElementById('scriptField');
+const cronField = document.getElementById('cronField');
+const githubFields = document.getElementById('githubFields');
+const webhookField = document.getElementById('webhookField');
 
-        function openJobModal() {
-            document.getElementById('jobModal').classList.add('active');
-            document.body.classList.add('modal-open');
-        }
+function openJobModal() {
+  document.getElementById('jobModal').classList.add('open');
+}
+function closeJobModal() {
+  document.getElementById('jobModal').classList.remove('open');
+}
+document.getElementById('jobModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('jobModal')) closeJobModal();
+});
 
-        function closeJobModal() {
-            document.getElementById('jobModal').classList.remove('active');
-            document.body.classList.remove('modal-open');
-        }
+async function loadPlatforms() {
+  const response = await fetch('/api/platforms/');
+  if (!response.ok) return;
+  const platforms = await response.json();
+  platformsSelect.innerHTML = platforms.map(p => `<option value="${p.id}">${p.name} (${p.host})</option>`).join('');
+}
 
-        document.getElementById('jobModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('jobModal')) closeJobModal();
-        });
+async function loadScriptsForModal() {
+  const response = await fetch('/api/scripts/');
+  if (!response.ok) return;
+  const scripts = await response.json();
+  if (scripts.length === 0) {
+    document.getElementById('jobScript').innerHTML = `<option value="">no scripts available</option>`;
+    return;
+  }
+  document.getElementById('jobScript').innerHTML = scripts.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
 
-        async function loadPlatforms() {
-            const response = await fetch('/api/platforms/');
-            if (!response.ok) return;
-            const platforms = await response.json();
-            platformsSelect.innerHTML = platforms.map(p => `<option value="${p.id}">${p.name} (${p.host})</option>`).join('');
-        }
+async function loadJobs() {
+  try {
+    const response = await fetch('/api/automations/');
+    if (!response.ok) {
+      jobsListEl.innerHTML = `<div class="empty-state">✗ failed to load automations</div>`;
+      return;
+    }
+    const jobs = await response.json();
+    document.getElementById('autos-sub').textContent = jobs.length + ' automations';
+    if (jobs.length === 0) {
+      jobsListEl.innerHTML = `<div class="empty-state"><span class="prompt">$</span> no automations yet — add one ↗</div>`;
+      return;
+    }
+    jobsListEl.innerHTML = jobs.map(renderJobCard).join('');
+  } catch (err) {
+    jobsListEl.innerHTML = `<div class="empty-state">✗ ${err.message}</div>`;
+  }
+}
 
-        async function loadScripts() {
-            const response = await fetch('/api/scripts/');
-            if (!response.ok) return;
-            const scripts = await response.json();
-            if (scripts.length === 0) {
-                document.getElementById('jobScript').innerHTML = `<option value="">${t('noScriptsAvailable')}</option>`;
-                return;
-            }
-            document.getElementById('jobScript').innerHTML = scripts.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        }
+function renderJobCard(job) {
+  const triggerLabels = {
+    manual: 'Manual',
+    cron: `Cron: ${job.cron_expression || ''}`,
+    github_push: 'GitHub push',
+    webhook: 'Webhook'
+  };
+  const targets = job.run_on_all_platforms
+    ? '<span class="pill pill-muted">All platforms</span>'
+    : (job.targets||[]).map(t => `<span class="pill pill-muted">${t.platform_name || t.platform_id}</span>`).join('');
+  const statusCls = job.is_enabled ? 'ok' : 'muted';
+  const statusLabel = job.is_enabled ? 'ENABLED' : 'PAUSED';
+  const commandPreview = job.execution_type === 'command'
+    ? `<div class="auto-command">${(job.command || '').slice(0, 300)}</div>`
+    : `<div class="auto-command">script: ${job.script_id || '—'}</div>`;
+  const toggleLabel = job.is_enabled ? '⏸ Pause' : '▶ Enable';
 
-        async function loadJobs() {
-            try {
-                const response = await fetch('/api/automations/');
-                if (!response.ok) {
-                    jobsListEl.innerHTML = `<div class="empty-state">${t('failedToLoadAutomations')}</div>`;
-                    return;
-                }
-                const jobs = await response.json();
-                if (jobs.length === 0) {
-                    jobsListEl.innerHTML = `<div class="empty-state">${t('noAutomationsFound')}</div>`;
-                    return;
-                }
-                jobsListEl.innerHTML = jobs.map(renderJobCard).join('');
-            } catch (err) {
-                jobsListEl.innerHTML = `<div class="empty-state">${t('errorPrefix')}${err.message}</div>`;
-            }
-        }
+  return `
+    <article class="auto-card" data-id="${job.id}">
+      <div class="auto-header">
+        <div>
+          <div class="auto-title">${job.name}</div>
+          <div class="auto-desc">${job.description || ''}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <span class="pill pill-${statusCls}">${statusLabel}</span>
+          <span class="pill pill-muted">${triggerLabels[job.trigger_type] || job.trigger_type}</span>
+        </div>
+      </div>
+      ${commandPreview}
+      <div class="auto-meta">
+        <span>Targets:</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">${targets || '<span>—</span>'}</div>
+        <span style="margin-left:auto;">Last run: ${job.last_run_at ? new Date(job.last_run_at).toLocaleString() : '—'}</span>
+      </div>
+      <div class="auto-actions">
+        <button class="btn btn-ghost" style="font-size:11px;" data-action="toggle">${toggleLabel}</button>
+        <button class="btn btn-err" style="font-size:11px;" data-action="delete">✕ Delete</button>
+      </div>
+    </article>
+  `;
+}
 
-        function renderJobCard(job) {
-            const triggerLabels = {
-                manual: 'Manual',
-                cron: `Cron: ${job.cron_expression || ''}`,
-                github_push: 'GitHub push',
-                webhook: 'Webhook'
-            };
-            const targets = job.run_on_all_platforms
-                ? '<span class="chip">All platforms</span>'
-                : job.targets.map(t => `<span class="chip">${t.platform_name || t.platform_id}</span>`).join('');
-            const tags = job.tags && job.tags.length
-                ? job.tags.map(tag => `<span class="chip">#${tag}</span>`).join('')
-                : '';
-            const statusChip = job.is_enabled
-                ? '<span class="status-chip success">ENABLED</span>'
-                : '<span class="status-chip failed">PAUSED</span>';
-            const commandPreview = job.execution_type === 'command'
-                ? `<div class="job-command">${escapeHtml((job.command || '').slice(0, 300))}</div>`
-                : `<div class="job-command">Script: ${job.script_id || '—'}</div>`;
-            const toggleIcon = job.is_enabled ? 'pause_circle' : 'play_circle';
-            const toggleLabel = job.is_enabled ? 'Pause' : 'Enable';
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
-            return `
-                <article class="job-card" data-id="${job.id}">
-                    <div class="job-header">
-                        <div>
-                            <h3 class="job-title">${escapeHtml(job.name)}</h3>
-                            <p class="job-description">${escapeHtml(job.description || '')}</p>
-                        </div>
-                        <div class="job-chips">
-                            ${statusChip}
-                            <span class="chip">${triggerLabels[job.trigger_type] || job.trigger_type}</span>
-                        </div>
-                    </div>
-                    ${commandPreview}
-                    <div class="job-meta">
-                        <span>Targets: </span>
-                        <div class="job-targets">${targets || '<span>—</span>'}</div>
-                        ${tags ? `<div style="display:flex;gap:4px;">${tags}</div>` : ''}
-                    </div>
-                    <div class="job-actions">
-                        <button class="toolbar-icon-btn" data-action="toggle">
-                            <span class="material-symbols-rounded" aria-hidden="true">${toggleIcon}</span>
-                            <span>${toggleLabel}</span>
-                        </button>
-                        <button class="toolbar-icon-btn" data-action="delete" style="color:var(--md-error);">
-                            <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-                            <span>Delete</span>
-                        </button>
-                        <span style="margin-left:auto; font:var(--md-body-small); color:var(--md-on-surface-variant);">
-                            Last run: ${job.last_run_at ? new Date(job.last_run_at).toLocaleString() : '—'}
-                        </span>
-                    </div>
-                </article>
-            `;
-        }
+jobsListEl.addEventListener('click', async (event) => {
+  const button = event.target.closest('button[data-action]');
+  if (!button) return;
+  const action = button.dataset.action;
+  const card = button.closest('.auto-card');
+  const jobId = card?.dataset.id;
+  if (!jobId) return;
 
-        function escapeHtml(str) {
-            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        }
+  if (action === 'delete') {
+    showSnack('Click again to confirm delete');
+    button.textContent = '✓ confirm';
+    button.onclick = async () => {
+      const response = await fetch(`/api/automations/${jobId}`, { method: 'DELETE' });
+      if (response.ok) { showSnack('✓ Deleted', 'ok'); loadJobs(); }
+      else showSnack('✗ Failed to delete', 'err');
+    };
+    return;
+  }
 
-        jobsListEl.addEventListener('click', async (event) => {
-            const button = event.target.closest('button[data-action]');
-            if (!button) return;
-            const action = button.dataset.action;
-            const card = button.closest('.job-card');
-            const jobId = card?.dataset.id;
-            if (!jobId) return;
+  if (action === 'toggle') {
+    const isEnabled = button.textContent.trim().startsWith('⏸');
+    const response = await fetch(`/api/automations/${jobId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_enabled: !isEnabled })
+    });
+    if (response.ok) loadJobs();
+    else showSnack('✗ Failed to update', 'err');
+  }
+});
 
-            if (action === 'delete') {
-                if (!confirm('Delete this automation?')) return;
-                const response = await fetch(`/api/automations/${jobId}`, { method: 'DELETE' });
-                if (response.ok) loadJobs();
-                else alert('Failed to delete automation');
-                return;
-            }
+function parseEnv(input) {
+  const result = {};
+  for (const line of input.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const [key, ...rest] = trimmed.split('=');
+    if (!key || rest.length === 0) continue;
+    result[key.trim()] = rest.join('=').trim();
+  }
+  return result;
+}
 
-            if (action === 'toggle') {
-                const isEnabled = button.querySelector('span:last-child').textContent.trim() === 'Pause';
-                const response = await fetch(`/api/automations/${jobId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ is_enabled: !isEnabled })
-                });
-                if (response.ok) loadJobs();
-                else alert('Failed to update automation');
-            }
-        });
+function parseList(input) {
+  return input ? input.split(',').map(i => i.trim()).filter(Boolean) : [];
+}
 
-        function parseEnv(input) {
-            const result = {};
-            for (const line of input.split('\n')) {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith('#')) continue;
-                const [key, ...rest] = trimmed.split('=');
-                if (!key || rest.length === 0) continue;
-                result[key.trim()] = rest.join('=').trim();
-            }
-            return result;
-        }
+function updateExecutionFields() {
+  const value = document.querySelector('input[name="executionType"]:checked').value;
+  commandField.style.display = value === 'command' ? '' : 'none';
+  scriptField.style.display = value === 'script' ? '' : 'none';
+}
 
-        function parseList(input) {
-            return input ? input.split(',').map(i => i.trim()).filter(Boolean) : [];
-        }
+function updateTriggerFields() {
+  const value = triggerSelect.value;
+  cronField.style.display = value === 'cron' ? '' : 'none';
+  githubFields.style.display = value === 'github_push' ? '' : 'none';
+  webhookField.style.display = value === 'webhook' ? '' : 'none';
+}
 
-        function buildNotificationSettings() {
-            const settings = {};
-            const emailTo = parseList(document.getElementById('notifyEmailTo').value);
-            const emailOn = document.getElementById('notifyEmailOn').value;
-            if (emailOn && emailTo.length > 0) settings.email = { to: emailTo, on: emailOn };
-            const webhookUrl = document.getElementById('notifyWebhookUrl').value.trim();
-            const webhookOn = document.getElementById('notifyWebhookOn').value;
-            if (webhookOn && webhookUrl) settings.webhook = { url: webhookUrl, on: webhookOn };
-            return Object.keys(settings).length ? settings : null;
-        }
+executionRadios.forEach(r => r.addEventListener('change', updateExecutionFields));
+triggerSelect.addEventListener('change', updateTriggerFields);
+runAllCheckbox.addEventListener('change', () => { platformsSelect.disabled = runAllCheckbox.checked; });
+document.getElementById('generateSecret').addEventListener('click', () => {
+  document.getElementById('jobSecret').value = Array.from(crypto.getRandomValues(new Uint8Array(24)))
+    .map(v => v.toString(16).padStart(2,'0')).join('').slice(0, 48);
+});
 
-        function resetForm() {
-            ['jobName','jobDescription','jobCommand','jobCron','jobRepo','jobBranch',
-             'jobSecret','jobEnv','notifyEmailTo','notifyWebhookUrl','jobTags','jobNotes'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = '';
-            });
-            ['notifyEmailOn','notifyWebhookOn'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('jobScript').selectedIndex = 0;
-            triggerSelect.value = 'manual';
-            runAllCheckbox.checked = false;
-            document.getElementById('jobApproval').checked = false;
-            document.getElementById('jobTimeout').value = 900;
-            document.getElementById('jobRetries').value = 0;
-            document.getElementById('jobRetryDelay').value = 60;
-            Array.from(platformsSelect.options).forEach(opt => opt.selected = false);
-            document.querySelector('input[name="executionType"][value="command"]').checked = true;
-            updateExecutionFields();
-            updateTriggerFields();
-        }
+document.getElementById('createJob').addEventListener('click', async () => {
+  const name = document.getElementById('jobName').value.trim();
+  if (!name) { showSnack('✗ Enter automation name', 'err'); return; }
 
-        function updateExecutionFields() {
-            const value = document.querySelector('input[name="executionType"]:checked').value;
-            commandField.style.display = value === 'command' ? '' : 'none';
-            scriptField.style.display = value === 'script' ? '' : 'none';
-        }
+  const executionType = document.querySelector('input[name="executionType"]:checked').value;
+  const triggerType = triggerSelect.value;
+  const commandValue = document.getElementById('jobCommand').value.trim();
+  const scriptValue = document.getElementById('jobScript').value;
+  const cronValue = document.getElementById('jobCron').value.trim();
+  const secretValue = document.getElementById('jobSecret').value.trim();
 
-        function updateTriggerFields() {
-            const value = triggerSelect.value;
-            cronField.style.display = value === 'cron' ? '' : 'none';
-            githubFields.style.display = value === 'github_push' ? '' : 'none';
-            webhookField.style.display = value === 'webhook' ? '' : 'none';
-        }
+  if (executionType === 'command' && !commandValue) { showSnack('✗ Enter a command', 'err'); return; }
+  if (executionType === 'script' && !scriptValue) { showSnack('✗ Select a script', 'err'); return; }
+  if (triggerType === 'cron' && !cronValue) { showSnack('✗ Enter a cron expression', 'err'); return; }
+  if (triggerType === 'webhook' && !secretValue) { showSnack('✗ Enter a webhook secret', 'err'); return; }
+  if (!runAllCheckbox.checked && Array.from(platformsSelect.selectedOptions).length === 0) {
+    showSnack('✗ Select at least one platform or enable "Run on all platforms"', 'err');
+    return;
+  }
 
-        executionRadios.forEach(r => r.addEventListener('change', updateExecutionFields));
-        triggerSelect.addEventListener('change', updateTriggerFields);
-        runAllCheckbox.addEventListener('change', () => { platformsSelect.disabled = runAllCheckbox.checked; });
-        document.getElementById('generateSecret').addEventListener('click', () => {
-            document.getElementById('jobSecret').value = Array.from(crypto.getRandomValues(new Uint8Array(24)))
-                .map(v => v.toString(16).padStart(2,'0')).join('').slice(0, 48);
-        });
+  const payload = {
+    name,
+    description: document.getElementById('jobDescription').value.trim() || null,
+    execution_type: executionType,
+    command: executionType === 'command' ? commandValue : null,
+    script_id: executionType === 'script' ? scriptValue || null : null,
+    trigger_type: triggerType,
+    cron_expression: triggerType === 'cron' ? cronValue : null,
+    repository_url: triggerType === 'github_push' ? document.getElementById('jobRepo').value.trim() : null,
+    repository_branch: triggerType === 'github_push' ? document.getElementById('jobBranch').value.trim() : null,
+    webhook_secret: triggerType === 'webhook' ? secretValue : null,
+    run_on_all_platforms: runAllCheckbox.checked,
+    target_platform_ids: runAllCheckbox.checked ? [] : Array.from(platformsSelect.selectedOptions).map(o => o.value),
+    environment: parseEnv(document.getElementById('jobEnv').value),
+    tags: parseList(document.getElementById('jobTags').value),
+    timeout_seconds: Number(document.getElementById('jobTimeout').value || 900),
+    max_retries: Number(document.getElementById('jobRetries').value || 0),
+    is_enabled: true
+  };
 
-        document.getElementById('createJob').addEventListener('click', async () => {
-            const name = document.getElementById('jobName').value.trim();
-            if (!name) { alert('Enter automation name'); return; }
+  try {
+    const response = await fetch('/api/automations/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      showSnack(`✗ ${err.error || response.statusText}`, 'err');
+      return;
+    }
+    closeJobModal();
+    loadJobs();
+    showSnack('✓ Automation created', 'ok');
+  } catch (error) {
+    showSnack(`✗ ${error.message}`, 'err');
+  }
+});
 
-            const executionType = document.querySelector('input[name="executionType"]:checked').value;
-            const triggerType = triggerSelect.value;
-            const commandValue = document.getElementById('jobCommand').value.trim();
-            const scriptValue = document.getElementById('jobScript').value;
-            const cronValue = document.getElementById('jobCron').value.trim();
-            const secretValue = document.getElementById('jobSecret').value.trim();
-
-            if (executionType === 'command' && !commandValue) { alert('Enter a command'); return; }
-            if (executionType === 'script' && !scriptValue) { alert('Select a script'); return; }
-            if (triggerType === 'cron' && !cronValue) { alert('Enter a cron expression'); return; }
-            if (triggerType === 'webhook' && !secretValue) { alert('Enter a webhook secret'); return; }
-            if (!runAllCheckbox.checked && Array.from(platformsSelect.selectedOptions).length === 0) {
-                alert('Select at least one platform or enable "Run on all platforms"');
-                return;
-            }
-
-            const payload = {
-                name,
-                description: document.getElementById('jobDescription').value.trim() || null,
-                execution_type: executionType,
-                command: executionType === 'command' ? commandValue : null,
-                script_id: executionType === 'script' ? scriptValue || null : null,
-                trigger_type: triggerType,
-                cron_expression: triggerType === 'cron' ? cronValue : null,
-                repository_url: triggerType === 'github_push' ? document.getElementById('jobRepo').value.trim() : null,
-                repository_branch: triggerType === 'github_push' ? document.getElementById('jobBranch').value.trim() : null,
-                webhook_secret: triggerType === 'webhook' ? secretValue : null,
-                run_on_all_platforms: runAllCheckbox.checked,
-                target_platform_ids: runAllCheckbox.checked ? [] : Array.from(platformsSelect.selectedOptions).map(o => o.value),
-                environment: parseEnv(document.getElementById('jobEnv').value),
-                notification_settings: buildNotificationSettings(),
-                tags: parseList(document.getElementById('jobTags').value),
-                require_approval: document.getElementById('jobApproval').checked,
-                timeout_seconds: Number(document.getElementById('jobTimeout').value || 900),
-                max_retries: Number(document.getElementById('jobRetries').value || 0),
-                retry_delay_seconds: Number(document.getElementById('jobRetryDelay').value || 60),
-                is_enabled: true
-            };
-
-            try {
-                const response = await fetch('/api/automations/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    alert(`Failed to create automation: ${err.error || response.statusText}`);
-                    return;
-                }
-                closeJobModal();
-                resetForm();
-                loadJobs();
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            }
-        });
-
-        loadPlatforms();
-        loadScripts();
-        loadJobs();
-        updateExecutionFields();
-        updateTriggerFields();
-    </script>
+loadPlatforms();
+loadScriptsForModal();
+loadJobs();
+updateExecutionFields();
+updateTriggerFields();
+</script>
 {% endblock %}

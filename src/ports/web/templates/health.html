@@ -1,55 +1,54 @@
 {% extends "layout.html" %}
 {% set active_page = 'health' %}
 
-{% block title %}Health Check - Testum{% endblock %}
+{% block title %}Health_ — testum{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="page-header-info">
-        <h1 class="page-title">
-            <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
-            <span data-i18n="healthCheck">Health Check</span>
-        </h1>
-    </div>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">Health<span class="cur"></span></div>
+    <div class="pg-sub">System status</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-ghost" onclick="loadHealthStatus()">↻ Refresh</button>
+  </div>
 </div>
 
-<div class="card" id="healthStatusCard">
-    <div class="card-title" data-i18n="currentStatus">Current status</div>
-    <div class="card-description">
-        <p>
-            <strong data-i18n="statusLabel">Status:</strong>
-            <span id="healthStatusValue">{{ health.status }}</span>
-        </p>
-        <p>
-            <strong data-i18n="timestampLabel">Last checked:</strong>
-            <span id="healthTimestampValue">{{ health.timestamp }}</span>
-        </p>
+<div class="card" id="healthStatusCard" style="max-width:480px;">
+  <div class="card-header">
+    <span class="card-title" data-i18n="currentStatus">Current status</span>
+    <span class="dot dot-off" id="healthDot"></span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:var(--sp-3);">
+    <div>
+      <div style="font-size:var(--t-xs);color:var(--fg-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:var(--sp-1);" data-i18n="statusLabel">Status</div>
+      <div style="font-size:var(--t-xl);font-weight:700;" id="healthStatusValue">{{ health.status }}</div>
     </div>
+    <div>
+      <div style="font-size:var(--t-xs);color:var(--fg-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:var(--sp-1);" data-i18n="timestampLabel">Last checked</div>
+      <div style="font-family:var(--font-mono);font-size:var(--t-sm);color:var(--fg-muted);" id="healthTimestampValue">{{ health.timestamp }}</div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    async function loadHealthStatus() {
-        try {
-            const response = await fetch('/health', {
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            if (!response.ok) {
-                throw new Error('Failed to fetch health status');
-            }
-            const data = await response.json();
-            document.getElementById('healthStatusValue').textContent = data.status;
-            document.getElementById('healthTimestampValue').textContent = new Date(data.timestamp).toLocaleString();
-        } catch (error) {
-            console.error('Health check failed', error);
-            document.getElementById('healthStatusValue').textContent = 'unavailable';
-            document.getElementById('healthTimestampValue').textContent = '—';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', loadHealthStatus);
+async function loadHealthStatus() {
+  try {
+    const response = await fetch('/health', { headers: { 'Accept': 'application/json' } });
+    if (!response.ok) throw new Error('Failed to fetch health status');
+    const data = await response.json();
+    document.getElementById('healthStatusValue').textContent = data.status;
+    document.getElementById('healthTimestampValue').textContent = new Date(data.timestamp).toLocaleString();
+    const dot = document.getElementById('healthDot');
+    dot.className = 'dot ' + (data.status === 'ok' || data.status === 'healthy' ? 'dot-ok' : 'dot-err');
+  } catch (error) {
+    document.getElementById('healthStatusValue').textContent = 'unavailable';
+    document.getElementById('healthTimestampValue').textContent = '—';
+    document.getElementById('healthDot').className = 'dot dot-err';
+  }
+}
+document.addEventListener('DOMContentLoaded', loadHealthStatus);
 </script>
 {% endblock %}

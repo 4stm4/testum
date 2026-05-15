@@ -1,364 +1,249 @@
 {% extends "layout.html" %}
 {% set active_page = 'users' %}
 
-{% block title %}Users - Testum{% endblock %}
+{% block title %}Users_ — testum{% endblock %}
 
 {% block extra_styles %}
-    <style>
-        .users-table-actions {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .role-chip.admin {
-            background: var(--md-error-container);
-            color: var(--md-on-error-container);
-        }
-
-        .role-chip.operator {
-            background: var(--md-primary-container);
-            color: var(--md-on-primary-container);
-        }
-
-        .role-chip.viewer {
-            background: var(--md-surface-container-highest);
-            color: var(--md-on-surface-variant);
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-top: 8px;
-        }
-
-        .message-banner {
-            display: none;
-        }
-
-        .message-banner.visible {
-            display: block;
-        }
-    </style>
+<style>
+  .role-chip.admin   { background: color-mix(in srgb, var(--err)    15%, transparent); color: var(--err); }
+  .role-chip.operator{ background: color-mix(in srgb, var(--signal) 15%, transparent); color: var(--signal); }
+  .role-chip.viewer  { background: var(--surface-3); color: var(--fg-dim); }
+</style>
 {% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <div class="page-header-info">
-            <h1 class="page-title">
-                <span class="material-symbols-rounded" aria-hidden="true">group</span>
-                <span data-i18n="users">Users</span>
-            </h1>
-            <p class="page-subtitle" data-i18n="usersSubtitle">Invite teammates, assign roles, and control access to Testum.</p>
-        </div>
-        <div class="page-actions">
-            <button class="toolbar-icon-btn primary" onclick="openUserModal()">
-                <span class="material-symbols-rounded" aria-hidden="true">person_add</span>
-                <span data-i18n="addUser">Add User</span>
-            </button>
-        </div>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">Users<span class="cur"></span></div>
+    <div class="pg-sub" data-i18n="usersSubtitle">Invite teammates, assign roles, and control access</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-signal" onclick="openUserModal()">+ <span data-i18n="addUser">Add User</span></button>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table class="tbl" id="usersTable">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>Last Login</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="usersTableBody">
+      <tr>
+        <td colspan="7" class="empty-state">$ loading users…</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- User Modal -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="modalTitle">Add User</span>
+      <button class="iconbtn" onclick="closeUserModal()">✕</button>
     </div>
-
-    <div id="message" class="message-banner" aria-live="polite"></div>
-
-    <div class="card table-card">
-        <div class="card-header">
-            <h2 class="card-title">System Users</h2>
+    <div class="modal-body">
+      <form id="userForm">
+        <input type="hidden" id="userId">
+        <div class="field">
+          <label class="field-label">Username *</label>
+          <input type="text" class="input" id="username" required minlength="3" maxlength="150">
         </div>
-        <div class="table-wrapper">
-            <table class="data-table" id="usersTable">
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th>Last Login</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTableBody">
-                    <tr>
-                        <td colspan="7" class="table-empty-state" data-i18n="loadingUsers">Loading users…</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input type="email" class="input" id="email">
         </div>
-    </div>
-
-    <!-- User Modal -->
-    <div id="userModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Add User</h2>
-                <button class="modal-close" onclick="closeUserModal()">&times;</button>
+        <div class="field" id="passwordGroup">
+          <label class="field-label">Password *</label>
+          <input type="password" class="input" id="password" minlength="6">
+        </div>
+        <div id="changePasswordGroup" style="display:none;">
+          <details>
+            <summary style="cursor:pointer;font-size:var(--t-xs);text-transform:uppercase;letter-spacing:1.5px;color:var(--signal);user-select:none;padding:var(--sp-2) 0;">Change password</summary>
+            <div class="field" style="margin-top:var(--sp-3);">
+              <label class="field-label">New password</label>
+              <input type="password" class="input" id="newPassword" minlength="6" placeholder="Leave blank to keep current">
             </div>
-            <div class="modal-body">
-                <form id="userForm">
-                    <input type="hidden" id="userId">
-                    
-                    <div class="form-group">
-                        <label for="username">Username *</label>
-                        <input type="text" id="username" required minlength="3" maxlength="150">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email">
-                    </div>
-
-                    <div class="form-group" id="passwordGroup">
-                        <label for="password">Password *</label>
-                        <input type="password" id="password" minlength="6">
-                    </div>
-
-                    <div id="changePasswordGroup" style="display:none;">
-                        <details>
-                            <summary style="cursor:pointer; font: var(--md-label-medium); color: var(--md-primary); user-select:none;">Change password</summary>
-                            <div class="form-group" style="margin-top:12px;">
-                                <label for="newPassword">New password</label>
-                                <input type="password" id="newPassword" minlength="6" placeholder="Leave blank to keep current">
-                            </div>
-                            <div class="form-group">
-                                <label for="confirmPassword">Confirm new password</label>
-                                <input type="password" id="confirmPassword" minlength="6">
-                            </div>
-                        </details>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="role">Role *</label>
-                        <select id="role" required>
-                            <option value="viewer">Viewer (Read-only)</option>
-                            <option value="operator" selected>Operator (Read/Write)</option>
-                            <option value="admin">Admin (Full access)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="isActive" checked>
-                            Active
-                        </label>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-ghost" onclick="closeUserModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save</button>
-                    </div>
-                </form>
+            <div class="field">
+              <label class="field-label">Confirm new password</label>
+              <input type="password" class="input" id="confirmPassword" minlength="6">
             </div>
+          </details>
         </div>
+        <div class="field">
+          <label class="field-label">Role *</label>
+          <select class="input" id="role" required>
+            <option value="viewer">Viewer (Read-only)</option>
+            <option value="operator" selected>Operator (Read/Write)</option>
+            <option value="admin">Admin (Full access)</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--sp-2);">
+          <input type="checkbox" id="isActive" checked>
+          <label for="isActive" style="font-size:var(--t-sm);color:var(--fg-muted);">Active</label>
+        </div>
+      </form>
     </div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost" onclick="closeUserModal()">Cancel</button>
+      <button type="button" class="btn btn-signal" id="saveUserBtn">Save</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        const API_BASE = '/api/users';
+<script>
+const API_BASE = '/api/users';
 
-        function showMessage(text, type = 'success') {
-            const msg = document.getElementById('message');
-            msg.className = 'message-banner visible';
+function openUserModal(user = null) {
+  const form = document.getElementById('userForm');
+  const title = document.getElementById('modalTitle');
+  const passwordGroup = document.getElementById('passwordGroup');
+  form.reset();
+  document.getElementById('userId').value = '';
 
-            const iconName = type === 'error' ? 'error' : type === 'success' ? 'check_circle' : 'info';
-            const variantClass = {
-                success: 'alert-success',
-                error: 'alert-error',
-                info: 'alert-info'
-            }[type] || 'alert-info';
+  if (user) {
+    title.textContent = 'Edit User';
+    document.getElementById('userId').value = user.id;
+    document.getElementById('username').value = user.username;
+    document.getElementById('email').value = user.email || '';
+    document.getElementById('role').value = user.role;
+    document.getElementById('isActive').checked = user.is_active;
+    passwordGroup.style.display = 'none';
+    document.getElementById('password').required = false;
+    document.getElementById('changePasswordGroup').style.display = 'block';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+  } else {
+    title.textContent = 'Add User';
+    passwordGroup.style.display = '';
+    document.getElementById('password').required = true;
+    document.getElementById('changePasswordGroup').style.display = 'none';
+  }
+  document.getElementById('userModal').classList.add('open');
+}
 
-            msg.innerHTML = `
-                <div class="message-item ${variantClass}">
-                    <span class="material-symbols-rounded" aria-hidden="true">${iconName}</span>
-                    <span class="message-text">${text}</span>
-                </div>
-            `;
+function closeUserModal() {
+  document.getElementById('userModal').classList.remove('open');
+}
 
-            if (msg.dataset.timeoutId) {
-                clearTimeout(Number(msg.dataset.timeoutId));
-            }
+document.getElementById('userModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('userModal')) closeUserModal();
+});
 
-            const timeoutId = window.setTimeout(() => {
-                msg.classList.remove('visible');
-                msg.innerHTML = '';
-                delete msg.dataset.timeoutId;
-            }, 5000);
-            msg.dataset.timeoutId = timeoutId;
-        }
+async function loadUsers() {
+  try {
+    const response = await fetch(`${API_BASE}/`);
+    const data = await response.json();
+    const tbody = document.getElementById('usersTableBody');
 
-        function openUserModal(user = null) {
-            const modal = document.getElementById('userModal');
-            const form = document.getElementById('userForm');
-            const title = document.getElementById('modalTitle');
-            const passwordGroup = document.getElementById('passwordGroup');
+    if (!data.items || data.items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state">$ no users found_</td></tr>`;
+      return;
+    }
 
-            form.reset();
-            document.getElementById('userId').value = '';
+    tbody.innerHTML = data.items.map(user => {
+      const roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+      const statusCls = user.is_active ? 'ok' : 'muted';
+      const statusText = user.is_active ? 'Active' : 'Inactive';
+      const createdDate = new Date(user.created_at).toLocaleDateString();
+      const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
 
-            if (user) {
-                title.textContent = t('editUser');
-                document.getElementById('userId').value = user.id;
-                document.getElementById('username').value = user.username;
-                document.getElementById('email').value = user.email || '';
-                document.getElementById('role').value = user.role;
-                document.getElementById('isActive').checked = user.is_active;
-                passwordGroup.style.display = 'none';
-                document.getElementById('password').required = false;
-                document.getElementById('changePasswordGroup').style.display = 'block';
-                document.getElementById('newPassword').value = '';
-                document.getElementById('confirmPassword').value = '';
-            } else {
-                title.textContent = t('addUser');
-                passwordGroup.style.display = 'block';
-                document.getElementById('password').required = true;
-                document.getElementById('changePasswordGroup').style.display = 'none';
-            }
+      return `
+        <tr>
+          <td><strong>${user.username}</strong></td>
+          <td style="color:var(--fg-muted);">${user.email || '—'}</td>
+          <td><span class="pill role-chip ${user.role}">${roleLabel}</span></td>
+          <td><span class="pill pill-${statusCls}">${statusText}</span></td>
+          <td class="tbl-mono">${createdDate}</td>
+          <td class="tbl-mono">${lastLogin}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;" onclick='editUser(${JSON.stringify(user)})'>edit</button>
+              <button class="btn btn-err" style="font-size:11px;padding:4px 8px;" onclick="deleteUser('${user.id}', '${user.username}')">✕</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (error) {
+    showSnack('✗ Failed to load users: ' + error.message, 'err');
+  }
+}
 
-            modal.classList.add('active');
-            document.body.classList.add('modal-open');
-        }
+function editUser(user) {
+  openUserModal(user);
+}
 
-        function closeUserModal() {
-            const modal = document.getElementById('userModal');
-            modal.classList.remove('active');
-            document.body.classList.remove('modal-open');
-        }
+async function deleteUser(userId, username) {
+  showSnack(`Delete "${username}"? Click again to confirm.`);
+  const btn = event.target;
+  btn.textContent = '✓';
+  btn.onclick = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/${userId}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (response.ok) { showSnack('✓ User deleted', 'ok'); loadUsers(); }
+      else showSnack('✗ ' + (result.error || 'Failed'), 'err');
+    } catch (error) {
+      showSnack('✗ ' + error.message, 'err');
+    }
+  };
+}
 
-        async function loadUsers() {
-            try {
-                const response = await fetch(`${API_BASE}/`);
-                const data = await response.json();
-                const tbody = document.getElementById('usersTableBody');
+document.getElementById('saveUserBtn').addEventListener('click', async () => {
+  const userId = document.getElementById('userId').value;
+  const isEdit = !!userId;
 
-                if (!data.items || data.items.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="table-empty-state">${t('noUsersFound')}</td></tr>`;
-                    return;
-                }
+  const payload = {
+    username: document.getElementById('username').value,
+    email: document.getElementById('email').value || null,
+    role: document.getElementById('role').value,
+    is_active: document.getElementById('isActive').checked,
+  };
 
-                tbody.innerHTML = data.items.map(user => {
-                    const roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-                    const statusClass = user.is_active ? 'status-chip success' : 'status-chip inactive';
-                    const statusText = user.is_active ? 'Active' : 'Inactive';
-                    const createdDate = new Date(user.created_at).toLocaleDateString();
-                    const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
+  if (!isEdit) {
+    payload.password = document.getElementById('password').value;
+  } else {
+    const newPw = document.getElementById('newPassword').value;
+    const confirmPw = document.getElementById('confirmPassword').value;
+    if (newPw) {
+      if (newPw !== confirmPw) { showSnack('✗ Passwords do not match', 'err'); return; }
+      if (newPw.length < 6) { showSnack('✗ Password too short (min 6)', 'err'); return; }
+      payload.password = newPw;
+    }
+  }
 
-                    return `
-                        <tr>
-                            <td><strong>${user.username}</strong></td>
-                            <td>${user.email || '—'}</td>
-                            <td><span class="chip role-chip ${user.role}">${roleLabel}</span></td>
-                            <td><span class="${statusClass}">${statusText}</span></td>
-                            <td>${createdDate}</td>
-                            <td>${lastLogin}</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="icon-button" onclick='editUser(${JSON.stringify(user)})' title="Edit">
-                                        <span class="material-symbols-rounded" aria-hidden="true">edit</span>
-                                        <span class="visually-hidden">Edit ${user.username}</span>
-                                    </button>
-                                    <button class="icon-button danger" onclick="deleteUser('${user.id}', '${user.username}')" title="Delete">
-                                        <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-                                        <span class="visually-hidden">Delete ${user.username}</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            } catch (error) {
-                showMessage('Failed to load users: ' + error.message, 'error');
-            }
-        }
+  try {
+    const url = isEdit ? `${API_BASE}/${userId}` : `${API_BASE}/`;
+    const method = isEdit ? 'PUT' : 'POST';
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    if (response.ok) {
+      showSnack(isEdit ? '✓ User updated' : '✓ User created', 'ok');
+      closeUserModal();
+      loadUsers();
+    } else {
+      showSnack('✗ ' + (result.error || 'Failed'), 'err');
+    }
+  } catch (error) {
+    showSnack('✗ ' + error.message, 'err');
+  }
+});
 
-        function editUser(user) {
-            openUserModal(user);
-        }
-
-        async function deleteUser(userId, username) {
-            if (!confirm(`Delete user "${username}"?`)) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/${userId}`, { method: 'DELETE' });
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage(t('userDeleted'));
-                    loadUsers();
-                } else {
-                    showMessage(result.error || t('failedToLoad'), 'error');
-                }
-            } catch (error) {
-                showMessage(t('errorPrefix') + error.message, 'error');
-            }
-        }
-
-        document.getElementById('userForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const userId = document.getElementById('userId').value;
-            const isEdit = !!userId;
-
-            const payload = {
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value || null,
-                role: document.getElementById('role').value,
-                is_active: document.getElementById('isActive').checked,
-            };
-
-            if (!isEdit) {
-                payload.password = document.getElementById('password').value;
-            } else {
-                const newPw = document.getElementById('newPassword').value;
-                const confirmPw = document.getElementById('confirmPassword').value;
-                if (newPw) {
-                    if (newPw !== confirmPw) {
-                        showMessage(t('passwordsMismatch'), 'error');
-                        return;
-                    }
-                    if (newPw.length < 6) {
-                        showMessage(t('passwordTooShort'), 'error');
-                        return;
-                    }
-                    payload.password = newPw;
-                }
-            }
-
-            try {
-                const url = isEdit ? `${API_BASE}/${userId}` : `${API_BASE}/`;
-                const method = isEdit ? 'PUT' : 'POST';
-
-                const response = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage(isEdit ? t('userUpdated') : t('userCreated'));
-                    closeUserModal();
-                    loadUsers();
-                } else {
-                    showMessage(result.error || t('failedToLoad'), 'error');
-                }
-            } catch (error) {
-                showMessage(t('errorPrefix') + error.message, 'error');
-            }
-        });
-
-        // Close modal on outside click
-        window.onclick = (event) => {
-            const modal = document.getElementById('userModal');
-            if (event.target === modal) {
-                closeUserModal();
-            }
-        };
-
-        loadUsers();
-    </script>
+loadUsers();
+</script>
 {% endblock %}

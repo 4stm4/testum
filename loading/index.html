@@ -1,293 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Testum - Starting...</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
-            color: #cdd6f4;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .material-symbols-rounded {
-            font-family: 'Material Symbols Rounded';
-            font-weight: normal;
-            font-style: normal;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .container {
-            text-align: center;
-            max-width: 600px;
-            width: 100%;
-        }
-
-        .logo {
-            font-size: 5em;
-            margin-bottom: 20px;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            color: #89b4fa;
-        }
-
-        .subtitle {
-            font-size: 1.2em;
-            color: #a6adc8;
-            margin-bottom: 40px;
-        }
-
-        .status {
-            background: #181825;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            border: 1px solid #313244;
-        }
-
-        .status-text {
-            font-size: 1.1em;
-            margin-bottom: 20px;
-            color: #89b4fa;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #313244;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 15px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #89b4fa 0%, #7aa2f7 100%);
-            border-radius: 4px;
-            animation: progress 3s ease-in-out infinite;
-            width: 70%;
-        }
-
-        @keyframes progress {
-            0% { width: 30%; }
-            50% { width: 70%; }
-            100% { width: 30%; }
-        }
-
-        .steps {
-            text-align: left;
-            color: #6c7086;
-            font-size: 0.95em;
-        }
-
-        .step {
-            padding: 8px 0;
-            display: flex;
-            align-items: center;
-        }
-
-        .step.active {
-            color: #89b4fa;
-        }
-
-        .step.done {
-            color: #a6e3a1;
-        }
-
-        .step-icon {
-            margin-right: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-        }
-
-        .step-icon .material-symbols-rounded {
-            font-size: 22px;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #313244;
-            border-top-color: #89b4fa;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .footer {
-            margin-top: 40px;
-            color: #6c7086;
-            font-size: 0.9em;
-        }
-
-        .version {
-            display: inline-block;
-            background: #313244;
-            padding: 4px 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.85em;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>testum_ · starting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+      --bg:#0A090D; --s1:#14131A; --s2:#1B1A22; --s3:#25232D; --s4:#2E2C38; --s5:#3A3845;
+      --fg:#F0EEF5; --fg-m:#9B98A8; --fg-d:#5C5A68;
+      --signal:#B9FF66; --line:#2E2C38;
+      --font:'JetBrains Mono',monospace;
+    }
+    body{
+      font-family:var(--font);background:var(--bg);color:var(--fg);
+      display:flex;align-items:center;justify-content:center;
+      min-height:100vh;padding:20px;
+      background-image:radial-gradient(ellipse 70% 50% at 50% 20%,
+        color-mix(in srgb,var(--signal) 6%,transparent),transparent 70%);
+    }
+    .wrap{width:100%;max-width:480px;}
+    .brand{display:flex;align-items:center;gap:14px;margin-bottom:32px;}
+    .glyph{
+      width:48px;height:48px;background:var(--s2);border:1px solid var(--line);
+      border-radius:10px;display:flex;align-items:center;justify-content:center;
+      color:var(--signal);font-size:20px;font-weight:700;
+    }
+    .wordmark{font-size:26px;font-weight:700;letter-spacing:-0.06em;}
+    .cur{display:inline-block;width:0.5em;height:0.9em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    .by{font-size:10px;color:var(--fg-d);margin-top:2px;}
+    .by b{color:var(--fg-m);}
+    .card{background:var(--s1);border:1px solid var(--s4);border-radius:16px;padding:28px;}
+    .status-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--fg-d);margin-bottom:6px;}
+    .status-line{font-size:14px;color:var(--fg);margin-bottom:20px;min-height:21px;}
+    .status-line .p{color:var(--signal);}
+    .prog-track{height:2px;background:var(--s4);border-radius:1px;overflow:hidden;margin-bottom:24px;}
+    .prog-fill{height:100%;background:var(--signal);border-radius:1px;width:30%;animation:prog 2.5s ease-in-out infinite;}
+    @keyframes prog{0%{width:20%}50%{width:75%}100%{width:20%}}
+    .steps{display:flex;flex-direction:column;gap:8px;}
+    .step{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--fg-d);}
+    .step.done{color:var(--fg-m);}
+    .step.active{color:var(--fg);}
+    .step-ico{width:14px;height:14px;border-radius:50%;flex-shrink:0;background:var(--s4);}
+    .step.done .step-ico{background:var(--signal);}
+    .step.active .step-ico{background:transparent;border:2px solid var(--signal);box-shadow:0 0 6px var(--signal);}
+    .footer{margin-top:20px;display:flex;justify-content:space-between;font-size:10px;color:var(--fg-d);}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo"><span class="material-symbols-rounded" aria-hidden="true">terminal</span></div>
-        <h1>Testum</h1>
-        <p class="subtitle">Remote SSH Execution Platform</p>
-
-        <div class="status">
-            <div class="status-text" id="statusText">Starting application...</div>
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
-
-            <div class="steps">
-                <div class="step done">
-                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">task_alt</span></span>
-                    <span>Docker containers started</span>
-                </div>
-                <div class="step done">
-                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">task_alt</span></span>
-                    <span>PostgreSQL database ready</span>
-                </div>
-                <div class="step done">
-                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">task_alt</span></span>
-                    <span>Redis cache ready</span>
-                </div>
-                <div class="step active" id="step-git">
-                    <span class="step-icon"><span class="spinner"></span></span>
-                    <span>Cloning repository from GitHub...</span>
-                </div>
-                <div class="step" id="step-deps">
-                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">radio_button_unchecked</span></span>
-                    <span>Installing dependencies...</span>
-                </div>
-                <div class="step" id="step-migrations">
-                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">radio_button_unchecked</span></span>
-                    <span>Running database migrations...</span>
-                </div>
-                <div class="step" id="step-app">
-                    <span class="step-icon"><span class="material-symbols-rounded" aria-hidden="true">radio_button_unchecked</span></span>
-                    <span>Starting web server...</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>This may take 1-2 minutes on first startup</p>
-            <div class="version">v0.1.0-alpha</div>
-        </div>
+  <div class="wrap">
+    <div class="brand">
+      <div class="glyph">&gt;_</div>
+      <div>
+        <div class="wordmark">testum<span class="cur"></span></div>
+        <div class="by">a <b>4stm4</b> tool</div>
+      </div>
     </div>
-
-    <script>
-        // Auto-refresh every 3 seconds to check if app is ready
-        let checkCount = 0;
-        const maxChecks = 120; // 6 minutes max
-
-        function checkAppStatus() {
-            checkCount++;
-            
-            // Update status text
-            const statusText = document.getElementById('statusText');
-            const elapsed = Math.floor(checkCount * 3 / 60);
-            const seconds = (checkCount * 3) % 60;
-            statusText.textContent = `Starting application... (${elapsed}m ${seconds}s elapsed)`;
-
-            // Simulate step progression
-            if (checkCount > 5) {
-                updateStep('step-git', 'done');
-                updateStep('step-deps', 'active');
-            }
-            if (checkCount > 10) {
-                updateStep('step-deps', 'done');
-                updateStep('step-migrations', 'active');
-            }
-            if (checkCount > 15) {
-                updateStep('step-migrations', 'done');
-                updateStep('step-app', 'active');
-            }
-
-            // Try to fetch from app on port 8001
-            fetch('http://' + window.location.hostname + ':8001/health')
-                .then(response => {
-                    if (response.ok) {
-                        // App is ready, redirect to app port
-                        statusText.textContent = 'Application ready! Redirecting...';
-                        setTimeout(() => {
-                            window.location.href = 'http://' + window.location.hostname + ':8001/login';
-                        }, 1000);
-                    } else {
-                        // Still loading
-                        if (checkCount < maxChecks) {
-                            setTimeout(checkAppStatus, 3000);
-                        } else {
-                            statusText.textContent = 'Startup is taking longer than expected. Please check logs.';
-                            statusText.style.color = '#f38ba8';
-                        }
-                    }
-                })
-                .catch(() => {
-                    // App not ready yet, check again
-                    if (checkCount < maxChecks) {
-                        setTimeout(checkAppStatus, 3000);
-                    } else {
-                        statusText.textContent = 'Startup is taking longer than expected. Please check logs.';
-                        statusText.style.color = '#f38ba8';
-                    }
-                });
-        }
-
-        function updateStep(stepId, status) {
-            const step = document.getElementById(stepId);
-            if (!step) return;
-
-            step.className = `step ${status}`;
-            const icon = step.querySelector('.step-icon');
-
-            if (status === 'done') {
-                icon.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">task_alt</span>';
-            } else if (status === 'active') {
-                icon.innerHTML = '<span class="spinner"></span>';
-            } else {
-                icon.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">radio_button_unchecked</span>';
-            }
-        }
-
-        // Start checking after 3 seconds
-        setTimeout(checkAppStatus, 3000);
-    </script>
+    <div class="card">
+      <div class="status-label">Boot sequence</div>
+      <div class="status-line"><span class="p">$</span> <span id="statusText">starting up…</span></div>
+      <div class="prog-track"><div class="prog-fill"></div></div>
+      <div class="steps">
+        <div class="step done"><div class="step-ico"></div><span>postgres ready</span></div>
+        <div class="step done"><div class="step-ico"></div><span>minio ready</span></div>
+        <div class="step active" id="step-app"><div class="step-ico"></div><span>waiting for app…</span></div>
+      </div>
+      <div class="footer">
+        <span>v0.2.0 · main</span>
+        <span>4stm4/testum · MIT</span>
+      </div>
+    </div>
+  </div>
+  <script>
+    let n=0;
+    const msgs=['starting up…','loading modules…','checking db…','waiting for app…'];
+    function poll(){
+      n++;
+      document.getElementById('statusText').textContent=msgs[n%msgs.length];
+      const proto=window.location.protocol, host=window.location.hostname;
+      fetch(proto+'//'+host+':8001/health',{cache:'no-store'})
+        .then(r=>{
+          if(r.ok){
+            document.getElementById('statusText').textContent='ready — redirecting…';
+            document.getElementById('step-app').className='step done';
+            setTimeout(()=>{window.location.href=proto+'//'+host+':8001/login';},800);
+          } else setTimeout(poll,2000);
+        }).catch(()=>setTimeout(poll,2000));
+    }
+    setTimeout(poll,1200);
+  </script>
 </body>
 </html>

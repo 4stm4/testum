@@ -1,403 +1,133 @@
 {% extends "layout.html" %}
-{% set active_page = active_page or '' %}
-
-{% block title %}Dashboard - Testum{% endblock %}
-
-{% block extra_styles %}
-    <style>
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 32px;
-        }
-
-        .stat-card {
-            background: var(--md-surface-container);
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-            border: 1px solid var(--md-outline-variant);
-        }
-
-        .stat-card:hover {
-            background: var(--md-surface-container-high);
-            transform: translateY(-4px);
-            box-shadow: var(--md-elevation-2);
-        }
-
-        .stat-value {
-            font: var(--md-display-medium);
-            color: var(--md-primary);
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            font: var(--md-body-medium);
-            color: var(--md-on-surface-variant);
-        }
-
-        .platforms-section {
-            margin-top: 48px;
-        }
-
-        .platforms-header {
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .platforms-header h2 {
-            font: var(--md-headline-medium);
-            color: var(--md-on-surface);
-        }
-
-        .platforms-link {
-            font: var(--md-label-large);
-            color: var(--md-primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 8px 16px;
-            border-radius: 100px;
-            transition: all 0.2s ease;
-        }
-
-        .platforms-link:hover {
-            background: color-mix(in srgb, var(--md-primary) 8%, transparent);
-        }
-
-        .platforms-list {
-            display: grid;
-            gap: 16px;
-        }
-
-        .platform-card {
-            background: var(--md-surface-container-low);
-            border: 1px solid var(--md-outline-variant);
-            border-radius: 16px;
-            padding: 20px;
-            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-        }
-
-        .platform-card:hover {
-            border-color: var(--md-primary);
-            box-shadow: var(--md-elevation-2);
-        }
-
-        .platform-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 12px;
-        }
-
-        .platform-name {
-            font: var(--md-title-large);
-            color: var(--md-on-surface);
-            margin-bottom: 4px;
-        }
-
-        .platform-host {
-            font: var(--md-body-medium);
-            color: var(--md-on-surface-variant);
-        }
-
-        .platform-badge {
-            background: var(--md-primary-container);
-            color: var(--md-on-primary-container);
-            padding: 6px 12px;
-            border-radius: 100px;
-            font: var(--md-label-small);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .platform-badge .material-symbols-rounded {
-            font-size: 18px;
-        }
-
-        .platform-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .info-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .info-label {
-            font: var(--md-label-small);
-            color: var(--md-on-surface-variant);
-        }
-
-        .info-value {
-            font: var(--md-body-medium);
-            color: var(--md-on-surface);
-        }
-
-        .status-online {
-            color: var(--md-success);
-            font-weight: 500;
-        }
-
-        .status-offline {
-            color: var(--md-error);
-            font-weight: 500;
-        }
-
-        .status-loading {
-            color: var(--md-on-surface-variant);
-            font-weight: 500;
-        }
-
-        .status-error {
-            color: var(--md-tertiary);
-            font-weight: 500;
-        }
-
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-indicator .material-symbols-rounded {
-            font-size: 18px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 64px 20px;
-            color: var(--md-on-surface-variant);
-        }
-
-        .empty-state-icon {
-            margin-bottom: 16px;
-            opacity: 0.5;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .empty-state-icon .material-symbols-rounded {
-            font-size: 64px;
-        }
-
-        .empty-state-text {
-            font: var(--md-body-large);
-            margin-bottom: 16px;
-        }
-    </style>
-{% endblock %}
+{% block title %}Operations_ — testum{% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <h1 class="page-title" data-i18n="dashboard">Dashboard</h1>
-    </div>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">Operations<span class="cur"></span></div>
+    <div class="pg-sub" id="fleet-status">loading fleet…</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-ghost" onclick="refreshFleet()">↻ <span data-i18n="refresh">Refresh</span></button>
+    <button class="btn btn-signal" onclick="openRunModal()">
+      &gt;_ <span data-i18n="runCommand">Run command</span>
+    </button>
+  </div>
+</div>
 
-    <div class="stats">
-        <div class="stat-card">
-            <div class="stat-value">{{ sidebar_counts['keys'] }}</div>
-            <div class="stat-label" data-i18n="totalKeys">SSH Keys</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">{{ sidebar_counts['platforms'] }}</div>
-            <div class="stat-label" data-i18n="totalPlatforms">Platforms</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">{{ sidebar_counts['jobs'] }}</div>
-            <div class="stat-label" data-i18n="activeTasks">Tasks</div>
-        </div>
-    </div>
+<!-- Fleet strip -->
+<div class="fleet-strip" id="fleet-strip">
+  <div class="fleet-cell">
+    <div class="fleet-cell-label">Total</div>
+    <div class="fleet-cell-val muted" id="ft-total">—</div>
+  </div>
+  <div class="fleet-cell">
+    <div class="fleet-cell-label">Online</div>
+    <div class="fleet-cell-val ok" id="ft-online">—</div>
+  </div>
+  <div class="fleet-cell">
+    <div class="fleet-cell-label">Offline</div>
+    <div class="fleet-cell-val err" id="ft-offline">—</div>
+  </div>
+  <div class="fleet-cell">
+    <div class="fleet-cell-label">Running</div>
+    <div class="fleet-cell-val warn" id="ft-running">—</div>
+  </div>
+  <div class="fleet-cell">
+    <div class="fleet-cell-label">Failed 24h</div>
+    <div class="fleet-cell-val err" id="ft-failed">—</div>
+  </div>
+</div>
 
-    <div class="platforms-section">
-        <h2 class="platforms-header">
-            <span data-i18n="connectedPlatforms">Connected Platforms</span>
-            <a class="platforms-link" href="/platforms">
-                <span data-i18n="viewAll">View All</span> →
-            </a>
-        </h2>
-        <div id="platformsList" class="platforms-list"></div>
+<!-- Two-column body -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6);">
+  <!-- Left: needs attention -->
+  <div>
+    <div class="card-title" style="margin-bottom:var(--sp-3);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:1.5px;color:var(--fg-dim);">Needs attention</div>
+    <div id="attn-list">
+      <div class="empty-state"><span class="prompt">$</span> all systems nominal_</div>
     </div>
+  </div>
+
+  <!-- Right: live jobs console -->
+  <div>
+    <div class="console">
+      <div class="console-bar">
+        <span style="color:var(--signal)">●</span>
+        <span data-i18n="liveJobs">Live jobs</span>
+        <span style="margin-left:auto;" id="jobs-count">—</span>
+      </div>
+      <div class="console-body" id="console-body">
+        <div style="color:var(--fg-dim);padding:8px 0;">$ waiting for jobs…</div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        // Load dashboard statistics
-        async function loadStats() {
-            try {
-                // Load platforms count and list
-                const platformsResponse = await fetch('/api/platforms/');
-                if (platformsResponse.ok) {
-                    const platforms = await platformsResponse.json();
-                    document.querySelectorAll('.stat-card')[1].querySelector('.stat-value').textContent = platforms.length;
-                    renderPlatforms(platforms);
-                }
+<script>
+async function refreshFleet() {
+  try {
+    const [platforms, jobs] = await Promise.all([
+      fetch('/api/platforms/').then(r=>r.json()),
+      fetch('/api/tasks/?limit=20').then(r=>r.json()).catch(()=>({items:[]}))
+    ]);
 
-                // Load SSH keys count
-                const keysResponse = await fetch('/api/keys/');
-                if (keysResponse.ok) {
-                    const keys = await keysResponse.json();
-                    document.querySelectorAll('.stat-card')[0].querySelector('.stat-value').textContent = keys.length;
-                }
+    const total = platforms.length;
+    // Platforms don't have real-time status without SSH check, use system_info presence as proxy
+    const online = platforms.filter(p => p.system_info).length;
+    const offline = total - online;
+    const taskList = Array.isArray(jobs) ? jobs : (jobs.items || []);
+    const running = taskList.filter(j => j.status === 'running').length;
+    const failed24h = taskList.filter(j => j.status === 'failed').length;
 
-                // Active tasks - count running from recent list
-                try {
-                    const tasksResp = await fetch('/api/tasks/?limit=100');
-                    if (tasksResp.ok) {
-                        const tasks = await tasksResp.json();
-                        const active = tasks.filter(t => t.status === 'running').length;
-                        document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = String(active);
-                    }
-                } catch (_) {
-                    document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = '—';
-                }
+    document.getElementById('ft-total').textContent = total;
+    document.getElementById('ft-online').textContent = online;
+    document.getElementById('ft-offline').textContent = offline;
+    document.getElementById('ft-running').textContent = running;
+    document.getElementById('ft-failed').textContent = failed24h;
+    document.getElementById('fleet-status').textContent =
+      `${online} online · ${offline} unreachable · updated just now`;
 
-            } catch (error) {
-                console.error('Failed to load stats:', error);
-            }
-        }
+    // Attention list
+    const attnEl = document.getElementById('attn-list');
+    const unreachable = platforms.filter(p => !p.system_info);
+    if (unreachable.length === 0) {
+      attnEl.innerHTML = '<div class="empty-state"><span class="prompt">$</span> all systems nominal_</div>';
+    } else {
+      attnEl.innerHTML = unreachable.map(p => `
+        <div class="attn-row">
+          <span class="dot dot-err"></span>
+          <div style="flex:1;">
+            <div style="font-size:var(--t-body);font-weight:600;">${p.name}</div>
+            <div style="font-size:var(--t-xs);color:var(--fg-dim);">${p.host}:${p.port} · unreachable</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;" onclick="openRunModal('${p.id}')">ping</button>
+        </div>`).join('');
+    }
 
-        // Render platforms list
-        async function renderPlatforms(platforms) {
-            const container = document.getElementById('platformsList');
-
-            if (platforms.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <span class="material-symbols-rounded" aria-hidden="true">dns</span>
-                        </div>
-                        <div class="empty-state-text">${t('noPlatforms')}</div>
-                        <a href="/platforms" class="md-button-filled">
-                            <span>${t('addFirstPlatform')}</span>
-                        </a>
-                    </div>
-                `;
-                return;
-            }
-
-            // Show platforms first, then load info asynchronously
-            container.innerHTML = platforms.slice(0, 5).map(p => `
-                <div class="platform-card" id="platform-${p.id}">
-                    <div class="platform-header">
-                        <div>
-                            <div class="platform-name">${p.name}</div>
-                            <div class="platform-host">${p.host}:${p.port}</div>
-                        </div>
-                        <div class="platform-badge">
-                            ${p.auth_method === 'password'
-                                ? '<span class="material-symbols-rounded" aria-hidden="true">key</span><span>Password</span>'
-                                : '<span class="material-symbols-rounded" aria-hidden="true">vpn_key</span><span>SSH Key</span>'}
-                        </div>
-                    </div>
-                    <div class="platform-info">
-                        <div class="info-item">
-                            <div class="info-label">Username</div>
-                            <div class="info-value">${p.username}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Status</div>
-                            <div class="info-value" id="status-${p.id}">
-                                <span class="status-indicator status-loading">
-                                    <span class="material-symbols-rounded" aria-hidden="true">progress_activity</span>
-                                    <span>Loading...</span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="info-${p.id}" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--md-outline-variant);">
-                        <!-- System info will be loaded here -->
-                    </div>
-                </div>
-            `).join('');
-
-            // Load system info for each platform
-            platforms.slice(0, 5).forEach(async (p) => {
-                try {
-                    const response = await fetch(`/api/platforms/${p.id}/info`);
-                    if (response.ok) {
-                        const info = await response.json();
-                        updatePlatformInfo(p.id, info);
-                    } else {
-                        document.getElementById(`status-${p.id}`).innerHTML = `
-                            <span class="status-indicator status-offline">
-                                <span class="material-symbols-rounded" aria-hidden="true">cancel</span>
-                                <span>Offline</span>
-                            </span>`;
-                    }
-                } catch (error) {
-                    document.getElementById(`status-${p.id}`).innerHTML = `
-                        <span class="status-indicator status-error">
-                            <span class="material-symbols-rounded" aria-hidden="true">error</span>
-                            <span>Error</span>
-                        </span>`;
-                }
-            });
-        }
-
-        function updatePlatformInfo(platformId, info) {
-            const statusEl = document.getElementById(`status-${platformId}`);
-            const infoEl = document.getElementById(`info-${platformId}`);
-
-            if (info.status === 'online' || info.system_info) {
-                statusEl.innerHTML = `
-                    <span class="status-indicator status-online">
-                        <span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
-                        <span>Online</span>
-                    </span>`;
-
-                // Parse OS info
-                let osName = 'Unknown OS';
-                const sysInfo = info.system_info || info;
-                if (sysInfo.os_release) {
-                    const match = sysInfo.os_release.match(/PRETTY_NAME="([^"]+)"/);
-                    if (match) osName = match[1];
-                    else osName = sysInfo.os_release.split('\n')[0];
-                }
-
-                infoEl.style.display = 'grid';
-                infoEl.style.gridTemplateColumns = 'repeat(auto-fit, minmax(180px, 1fr))';
-                infoEl.style.gap = '12px';
-                infoEl.innerHTML = `
-                    <div class="info-item">
-                        <div class="info-label">OS</div>
-                        <div class="info-value">${osName}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Kernel</div>
-                        <div class="info-value">${sysInfo.kernel || 'N/A'}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">CPU</div>
-                        <div class="info-value">${sysInfo.cpu || 'N/A'}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Memory</div>
-                        <div class="info-value">${sysInfo.memory || 'N/A'}</div>
-                    </div>
-                    ${sysInfo.disk ? `
-                    <div class="info-item">
-                        <div class="info-label">Disk</div>
-                        <div class="info-value">${sysInfo.disk}</div>
-                    </div>
-                    ` : ''}
-                `;
-            } else {
-                statusEl.innerHTML = '<span class="status-offline">● Offline</span>';
-                infoEl.style.display = 'none';
-            }
-        }
-
-        loadStats();
-    </script>
+    // Console
+    const consoleEl = document.getElementById('console-body');
+    document.getElementById('jobs-count').textContent = running + ' running';
+    if (taskList.length === 0) {
+      consoleEl.innerHTML = '<div style="color:var(--fg-dim);">$ no recent jobs_</div>';
+    } else {
+      consoleEl.innerHTML = taskList.slice(0, 12).map(j => {
+        const statusCls = j.status === 'success' ? 'ok' : j.status === 'running' ? 'warn' : j.status === 'failed' ? 'err' : 'muted';
+        const ts = j.created_at ? new Date(j.created_at).toLocaleTimeString() : '—';
+        return `<div class="console-line" style="cursor:pointer;" onclick="window.location='/tasks/${j.id}'">
+          <span class="console-ts">${ts}</span>
+          <span class="pill pill-${statusCls}" style="flex-shrink:0;">${j.status}</span>
+          <span class="console-out" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${j.type || j.kind || 'job'}</span>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) {
+    document.getElementById('fleet-status').textContent = '✗ failed to load fleet data';
+  }
+}
+refreshFleet();
+setInterval(refreshFleet, 15000);
+</script>
 {% endblock %}

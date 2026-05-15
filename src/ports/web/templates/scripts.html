@@ -1,173 +1,177 @@
 {% extends "layout.html" %}
 {% set active_page = 'scripts' %}
 
-{% block title %}Scripts Library{% endblock %}
+{% block title %}Scripts_ — testum{% endblock %}
 
 {% block extra_styles %}
-    <style>
-        .scripts-list { display:grid; gap:12px; }
-        .script-item { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:10px; padding:12px 14px; position:relative; }
-        .script-item-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; }
-        .script-item-title { font-weight:600; }
-        .script-item-language { background:var(--bg-tertiary); padding:4px 10px; border-radius:12px; font-size:0.8em; color:var(--text-secondary); }
-        .script-item-actions { position:absolute; right:10px; top:10px; display:flex; gap:8px; }
-        .form-field { margin-bottom:12px; }
-        .form-field label { display:block; margin-bottom:6px; color:var(--text-secondary); }
-        .form-field input, .form-field select, .form-field textarea { width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); }
-        .icon-btn { background:transparent; border:1px solid var(--border-color); border-radius:8px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
-        .hidden { display:none !important; }
-    </style>
+<style>
+  .scripts-grid { display:grid; gap:var(--sp-3); }
+  .script-item {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: var(--sp-4);
+    cursor: pointer;
+    transition: background var(--dur);
+    position: relative;
+  }
+  .script-item:hover { background: var(--surface-3); }
+  .script-item-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:var(--sp-2); }
+  .script-item-title { font-weight:700; font-size:var(--t-body); color:var(--fg); }
+  .script-item-description { font-size:var(--t-xs); color:var(--fg-dim); margin-bottom:var(--sp-2); }
+  .script-item-updated { font-size:var(--t-xs); color:var(--fg-dim); }
+  .script-item-actions { display:flex; gap:8px; }
+</style>
 {% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <div class="page-header-info">
-            <h1 class="page-title">
-                <span class="material-symbols-rounded" aria-hidden="true">code_blocks</span>
-                <span data-i18n="scriptsTitle">Scripts</span>
-            </h1>
-        </div>
-        <div class="page-actions">
-            <button class="toolbar-icon-btn primary" onclick="openScriptModal()">
-                <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                <span data-i18n="addScript">Add Script</span>
-            </button>
-        </div>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">Scripts<span class="cur"></span></div>
+    <div class="pg-sub" id="scripts-sub">—</div>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-signal" onclick="openScriptModal()">+ <span data-i18n="addScript">Add Script</span></button>
+  </div>
+</div>
+
+<div id="scriptsList" class="scripts-grid">
+  <div class="empty-state"><span class="prompt">$</span> loading…</div>
+</div>
+
+<!-- Script modal -->
+<div class="modal-overlay" id="scriptModal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-head">
+      <span class="modal-title" id="scriptModalTitle">Add Script</span>
+      <button class="iconbtn" onclick="closeScriptModal()">✕</button>
     </div>
-    <div id="scriptsList" class="scripts-list">
-        <div class="empty-state" data-i18n="loading">Loading...</div>
-    </div>
-    <div id="scriptModal" class="modal" role="dialog" aria-modal="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="scriptModalTitle">Add Script</h2>
-                <button class="modal-close" onclick="closeScriptModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="scriptForm">
-                    <div class="form-field">
-                        <label for="name">Name</label>
-                        <input id="name" name="name" type="text" required />
-                    </div>
-                    <div class="form-field">
-                        <label for="language">Language</label>
-                        <select id="language" name="language">
-                            <option value="bash">Bash</option>
-                            <option value="python">Python</option>
-                            <option value="powershell">PowerShell</option>
-                            <option value="ansible">Ansible</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-field">
-                        <label for="description">Description</label>
-                        <textarea id="description" name="description" rows="3"></textarea>
-                    </div>
-                    <div class="form-field">
-                        <label for="content">Content</label>
-                        <textarea id="content" name="content" rows="8" required style="font-family: 'Roboto Mono', monospace;"></textarea>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-text" onclick="closeScriptModal()" data-i18n="cancel">Cancel</button>
-                        <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
-                        <button type="button" id="deleteScriptBtn" class="btn btn-danger hidden" data-i18n="delete">Delete</button>
-                    </div>
-                </form>
-            </div>
+    <div class="modal-body">
+      <form id="scriptForm">
+        <div class="field">
+          <label class="field-label">Name</label>
+          <input id="name" name="name" type="text" class="input" required placeholder="my-script">
         </div>
+        <div class="field">
+          <label class="field-label">Language</label>
+          <select id="language" name="language" class="input">
+            <option value="bash">Bash</option>
+            <option value="python">Python</option>
+            <option value="powershell">PowerShell</option>
+            <option value="ansible">Ansible</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Description</label>
+          <textarea id="description" name="description" class="input" rows="2" style="resize:vertical;"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Content</label>
+          <textarea id="content" name="content" class="input" rows="8" required style="resize:vertical;font-family:var(--font-mono);"></textarea>
+        </div>
+      </form>
     </div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-err" id="deleteScriptBtn" style="display:none;margin-right:auto;" data-i18n="delete">Delete</button>
+      <button type="button" class="btn btn-ghost" onclick="closeScriptModal()" data-i18n="cancel">Cancel</button>
+      <button type="button" class="btn btn-signal" id="saveScriptBtn" data-i18n="save">Save</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        (function(){
-            const API_BASE = '/api/scripts';
-            let editingScriptId = null;
-            window.openScriptModal = function(script){
-                const form = document.getElementById('scriptForm');
-                form.reset();
-                editingScriptId = null;
-                document.getElementById('scriptModalTitle').textContent = script ? 'Edit Script' : 'Add Script';
-                document.getElementById('deleteScriptBtn').classList.toggle('hidden', !script);
-                if (script) {
-                    editingScriptId = script.id;
-                    form.name.value = script.name || '';
-                    form.language.value = script.language || 'bash';
-                    form.description.value = script.description || '';
-                    form.content.value = script.content || '';
-                }
-                document.getElementById('scriptModal').classList.add('active');
-                document.body.classList.add('modal-open');
-            };
-            window.closeScriptModal = function(){
-                document.getElementById('scriptModal').classList.remove('active');
-                document.body.classList.remove('modal-open');
-            };
-            document.getElementById('scriptModal').addEventListener('click', function(e){
-                if (e.target === this) closeScriptModal();
-            });
-            document.addEventListener('keydown', function(e){
-                if (e.key === 'Escape' && document.getElementById('scriptModal').classList.contains('active')) closeScriptModal();
-            });
-            async function loadScripts(){
-                const container = document.getElementById('scriptsList');
-                container.innerHTML = '';
-                try {
-                    const resp = await fetch(API_BASE);
-                    if (!resp.ok) throw new Error('Failed to load');
-                    const scripts = await resp.json();
-                    if (!scripts || !scripts.length) {
-                        container.innerHTML = `<div class="empty-state">${t('noScriptsFound')}</div>`;
-                        return;
-                    }
-                    scripts.forEach(function(script){
-                        const item = document.createElement('div');
-                        item.className = 'script-item';
-                        const header = document.createElement('div'); header.className = 'script-item-header';
-                        const title = document.createElement('div'); title.className = 'script-item-title'; title.textContent = script.name || '';
-                        const lang = document.createElement('div'); lang.className = 'script-item-language'; lang.textContent = script.language || '';
-                        header.appendChild(title); header.appendChild(lang);
-                        const desc = document.createElement('div'); desc.className = 'script-item-description'; desc.textContent = script.description || '';
-                        const updated = document.createElement('div'); updated.className = 'script-item-updated'; updated.textContent = script.updated_at ? new Date(script.updated_at).toLocaleString() : '';
-                        const actions = document.createElement('div'); actions.className = 'script-item-actions';
-                        const editBtn = document.createElement('button'); editBtn.className = 'icon-btn'; editBtn.title = t('edit'); editBtn.innerHTML = '<span class="material-symbols-rounded">edit</span>';
-                        editBtn.addEventListener('click', function(ev){ ev.stopPropagation(); openScriptModal(script); });
-                        actions.appendChild(editBtn);
-                        item.appendChild(header); item.appendChild(desc); item.appendChild(updated); item.appendChild(actions);
-                        item.addEventListener('click', function(){ openScriptModal(script); });
-                        container.appendChild(item);
-                    });
-                } catch (err) {
-                    container.innerHTML = `<div class="empty-state">${t('failedToLoad')}</div>`;
-                }
-            }
-            document.getElementById('scriptForm').addEventListener('submit', async function(e){
-                e.preventDefault();
-                const form = e.target;
-                const payload = { name: form.name.value, language: form.language.value, description: form.description.value, content: form.content.value };
-                try {
-                    const url = editingScriptId ? (API_BASE + '/' + editingScriptId) : API_BASE;
-                    const method = editingScriptId ? 'PUT' : 'POST';
-                    const resp = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!resp.ok) {
-                        const err = await resp.json().catch(() => ({}));
-                        alert(err.detail || 'Failed to save');
-                        return;
-                    }
-                    closeScriptModal();
-                    await loadScripts();
-                } catch (err) { alert('Network error'); }
-            });
-            document.getElementById('deleteScriptBtn').addEventListener('click', async function(){
-                if (!editingScriptId) return; if (!confirm('Delete this script?')) return;
-                try {
-                    const resp = await fetch(API_BASE + '/' + editingScriptId, { method: 'DELETE' });
-                    if (!resp.ok) throw new Error('delete failed');
-                    closeScriptModal();
-                    await loadScripts();
-                } catch (err) { alert('Failed to delete'); }
-            });
-            loadScripts();
-        })();
-    </script>
+<script>
+(function(){
+  const API_BASE = '/api/scripts';
+  let editingScriptId = null;
+
+  window.openScriptModal = function(script) {
+    const form = document.getElementById('scriptForm');
+    form.reset();
+    editingScriptId = null;
+    document.getElementById('scriptModalTitle').textContent = script ? 'Edit Script' : 'Add Script';
+    const delBtn = document.getElementById('deleteScriptBtn');
+    delBtn.style.display = script ? '' : 'none';
+    if (script) {
+      editingScriptId = script.id;
+      form.name.value = script.name || '';
+      form.language.value = script.language || 'bash';
+      form.description.value = script.description || '';
+      form.content.value = script.content || '';
+    }
+    document.getElementById('scriptModal').classList.add('open');
+  };
+
+  window.closeScriptModal = function() {
+    document.getElementById('scriptModal').classList.remove('open');
+  };
+
+  document.getElementById('scriptModal').addEventListener('click', function(e) {
+    if (e.target === this) closeScriptModal();
+  });
+
+  async function loadScripts() {
+    const container = document.getElementById('scriptsList');
+    container.innerHTML = '';
+    try {
+      const resp = await fetch(API_BASE);
+      if (!resp.ok) throw new Error('Failed to load');
+      const scripts = await resp.json();
+      document.getElementById('scripts-sub').textContent = scripts.length + ' scripts';
+      if (!scripts || !scripts.length) {
+        container.innerHTML = `<div class="empty-state"><span class="prompt">$</span> no scripts yet — add one ↗</div>`;
+        return;
+      }
+      container.innerHTML = scripts.map(s => `
+        <div class="script-item" onclick="openScriptModal(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+          <div class="script-item-header">
+            <div class="script-item-title">${s.name||''}</div>
+            <span class="pill pill-muted">${s.language||''}</span>
+          </div>
+          <div class="script-item-description">${s.description||''}</div>
+          <div class="script-item-updated">${s.updated_at ? new Date(s.updated_at).toLocaleString() : ''}</div>
+        </div>`).join('');
+    } catch (err) {
+      container.innerHTML = `<div class="empty-state">✗ failed to load</div>`;
+    }
+  }
+
+  document.getElementById('saveScriptBtn').addEventListener('click', async function() {
+    const form = document.getElementById('scriptForm');
+    const payload = { name: form.name.value, language: form.language.value, description: form.description.value, content: form.content.value };
+    try {
+      const url = editingScriptId ? (API_BASE + '/' + editingScriptId) : API_BASE;
+      const method = editingScriptId ? 'PUT' : 'POST';
+      const resp = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        showSnack('✗ ' + (err.detail || 'Failed to save'), 'err');
+        return;
+      }
+      closeScriptModal();
+      await loadScripts();
+      showSnack('✓ Script saved', 'ok');
+    } catch (err) { showSnack('✗ Network error', 'err'); }
+  });
+
+  document.getElementById('deleteScriptBtn').addEventListener('click', async function() {
+    if (!editingScriptId) return;
+    showSnack('Click again to confirm delete');
+    this.textContent = '✓ confirm';
+    this.onclick = async () => {
+      try {
+        const resp = await fetch(API_BASE + '/' + editingScriptId, { method: 'DELETE' });
+        if (!resp.ok) throw new Error('delete failed');
+        closeScriptModal();
+        await loadScripts();
+        showSnack('✓ Script deleted', 'ok');
+      } catch (err) { showSnack('✗ Failed to delete', 'err'); }
+    };
+  });
+
+  loadScripts();
+})();
+</script>
 {% endblock %}

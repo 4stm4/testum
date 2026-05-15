@@ -1,770 +1,289 @@
 {% extends "layout.html" %}
-{% set active_page = 'platforms' %}
-
-{% block title %}Platforms - Testum{% endblock %}
-
-{% block extra_styles %}
-    <style>
-        /* M3 Toolbar container - 64dp height, full rounded, 16dp padding */
-        .toolbar-container {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 16px;
-            height: 64px;
-            box-sizing: border-box;
-            border-radius: 9999px;
-            background: var(--md-surface-container, #2B2930);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-        }
-
-
-        .message > div {
-            padding: 15px 20px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border-left: 4px solid;
-            white-space: pre-line;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-        }
-
-        .message > div .material-symbols-rounded {
-            font-size: 24px;
-            margin-top: 2px;
-        }
-
-        .message-text {
-            flex: 1;
-        }
-
-        .message .success {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border-color: var(--success-border);
-        }
-
-        .message .error {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border-color: var(--error-border);
-        }
-
-        .platforms-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .platforms-table th,
-        .platforms-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--md-outline-variant);
-        }
-
-        .platforms-table th {
-            background: var(--md-surface-container-high);
-            font-weight: 600;
-            color: var(--md-on-surface-variant);
-            text-transform: uppercase;
-            font-size: 0.85em;
-        }
-
-        .platforms-table tr:hover {
-            background: var(--md-surface-container-highest);
-        }
-
-        .platform-name {
-            font-weight: 600;
-            color: var(--md-on-surface);
-        }
-
-        .platform-host {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.9em;
-            color: var(--md-on-surface-variant);
-        }
-
-        .platform-host .material-symbols-rounded {
-            font-size: 18px;
-        }
-
-        .auth-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .auth-password {
-            background: var(--md-primary-container);
-            color: var(--md-on-primary-container);
-        }
-
-        .auth-key {
-            background: var(--md-tertiary-container);
-            color: var(--md-on-tertiary-container);
-        }
-
-        .platform-info {
-            font-size: 0.85em;
-            color: var(--md-on-surface-variant);
-            line-height: 1.4;
-        }
-
-        .platform-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-icon {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 6px;
-            color: var(--md-on-surface-variant);
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-icon:hover {
-            background: var(--md-surface-container-highest);
-        }
-
-        .btn-icon.btn-primary:hover {
-            background: var(--md-primary-container);
-            color: var(--md-on-primary-container);
-        }
-
-        .btn-icon.btn-delete:hover {
-            background: var(--md-error-container);
-            color: var(--md-on-error-container);
-        }
-
-        .btn-icon .material-symbols-rounded {
-            font-size: 20px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--md-on-surface-variant);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
-        }
-        
-        .modal.active {
-            display: block;
-        }
-
-        .modal-content {
-            background: var(--md-surface-container-low);
-            margin: 50px auto;
-            padding: 0;
-            border: 1px solid var(--md-outline-variant);
-            border-radius: 12px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: var(--md-elevation-3);
-            position: relative;
-            z-index: 1001;
-        }
-
-        .modal-header {
-            padding: 20px 25px;
-            border-bottom: 1px solid var(--md-outline-variant);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.5em;
-            color: var(--md-on-surface);
-        }
-
-        .modal-close {
-            background: transparent;
-            border: none;
-            font-size: 28px;
-            color: var(--md-on-surface-variant);
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-        }
-
-        .modal-close:hover {
-            background: var(--md-surface-container-highest);
-            color: var(--md-error);
-        }
-
-        .modal-body {
-            padding: 25px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--md-on-surface);
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            background: var(--md-surface-container-highest);
-            border: 1px solid var(--md-outline);
-            border-radius: 6px;
-            color: var(--md-on-surface);
-            font-size: 1em;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--md-primary);
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 24px;
-        }
-
-
-        .conditional {
-            display: none;
-        }
-    </style>
-{% endblock %}
+{% block title %}Platforms_ — testum{% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <div class="page-header-info">
-            <h1 class="page-title">
-                <span class="material-symbols-rounded" aria-hidden="true">dns</span>
-                <span data-i18n="platformsTitle">Platforms</span>
-            </h1>
-        </div>
-        <div class="page-actions">
-            <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" aria-label="Add new platform">
-                <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                <span data-i18n="addNewPlatform">Add Platform</span>
-            </button>
-            <button class="toolbar-icon-btn" onclick="refreshPlatforms()" id="refreshBtn" aria-label="Refresh">
-                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-                <span data-i18n="refresh">Refresh</span>
-            </button>
-        </div>
-    </div>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">Platforms<span class="cur"></span></div>
+    <div class="pg-sub" id="plat-sub">—</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-signal" onclick="openAddPlatform()">+ <span data-i18n="addPlatform">Add platform</span></button>
+  </div>
+</div>
 
-    <div id="message" class="message"></div>
-
-    <div class="card">
-        <table class="platforms-table" id="platformsTable">
-            <thead>
-                <tr>
-                    <th>Platform Name</th>
-                    <th>Host</th>
-                    <th>Username</th>
-                    <th>Auth Method</th>
-                    <th>System Info</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="platformsTableBody">
-                <!-- Platforms will be loaded here -->
-            </tbody>
-        </table>
+<div class="master-detail" id="master-detail">
+  <!-- Master list -->
+  <div class="master" id="master-list">
+    <div class="master-search">
+      <div class="cmd-input">
+        <span class="pmt">⌕</span>
+        <input type="text" id="plat-search" placeholder="filter platforms…" oninput="filterPlatforms()">
+      </div>
     </div>
+    <div id="master-items">
+      <div class="empty-state" style="padding:24px 16px;font-size:12px;">
+        <span class="prompt">$</span> loading…
+      </div>
+    </div>
+  </div>
 
-    <div id="platformModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 data-i18n="addNewPlatform">Add New Platform</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="platformForm">
-                    <input type="hidden" id="platformId" name="platformId" value="">
-                    <div class="form-group">
-                        <label for="name" data-i18n="platformName">Platform Name</label>
-                        <input type="text" id="name" name="name" required placeholder="e.g., production-server">
-                    </div>
-                    <div class="form-group">
-                        <label for="host" data-i18n="host">Host</label>
-                        <input type="text" id="host" name="host" required placeholder="192.168.1.100 or hostname.example.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="port" data-i18n="port">Port</label>
-                        <input type="number" id="port" name="port" value="22" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="username" data-i18n="username">Username</label>
-                        <input type="text" id="username" name="username" required placeholder="root or deploy user">
-                    </div>
-                    <div class="form-group">
-                        <label for="auth_method" data-i18n="authMethod">Authentication Method</label>
-                        <select id="auth_method" name="auth_method" required>
-                            <option value="password" data-i18n="password">Password</option>
-                            <option value="private_key" data-i18n="privateKey">Private Key</option>
-                        </select>
-                    </div>
-                    <div class="form-group conditional" id="password_field">
-                        <label for="password" data-i18n="password">Password</label>
-                        <div style="position: relative;">
-                            <input type="password" id="password" name="password" placeholder="Enter password">
-                            <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; color: var(--md-on-surface-variant);" aria-label="Toggle password visibility">
-                                <span class="material-symbols-rounded" id="passwordToggleIcon" style="font-size: 20px;">visibility</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group conditional" id="ssh_key_field">
-                        <label for="ssh_key_id" data-i18n="sshKey">SSH Key</label>
-                        <select id="ssh_key_id" name="ssh_key_id">
-                            <option value="">Select SSH Key...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                        <button type="submit" class="btn-primary">Save</button>
-                    </div>
-                </form>
-            </div>
+  <!-- Detail panel -->
+  <div class="detail" id="detail-panel">
+    <div class="empty-state" style="margin-top:80px;">
+      <div class="glyph s56" style="margin:0 auto 16px;">&gt;_</div>
+      <div><span class="prompt">$</span> select a platform_</div>
+    </div>
+  </div>
+</div>
+
+<!-- Add platform modal -->
+<div class="modal-overlay" id="addPlatformModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <span class="modal-title">+ <span data-i18n="addPlatform">Add platform</span></span>
+      <button class="iconbtn" onclick="closeAddPlatform()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="field" style="grid-column:1/-1;">
+          <label class="field-label" data-i18n="name">Name</label>
+          <input type="text" class="input" id="p-name" placeholder="web-01">
         </div>
+        <div class="field">
+          <label class="field-label">Host</label>
+          <input type="text" class="input" id="p-host" placeholder="192.168.1.1">
+        </div>
+        <div class="field">
+          <label class="field-label">Port</label>
+          <input type="number" class="input" id="p-port" value="22" min="1" max="65535">
+        </div>
+        <div class="field">
+          <label class="field-label" data-i18n="username">Username</label>
+          <input type="text" class="input" id="p-user" placeholder="ubuntu">
+        </div>
+        <div class="field">
+          <label class="field-label">Auth</label>
+          <select class="input" id="p-auth" onchange="toggleAuthFields()">
+            <option value="password">Password</option>
+            <option value="private_key">SSH Key</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column:1/-1;" id="p-password-field">
+          <label class="field-label" data-i18n="password">Password</label>
+          <input type="password" class="input" id="p-password" placeholder="••••••••">
+        </div>
+        <div class="field" style="grid-column:1/-1;display:none;" id="p-key-field">
+          <label class="field-label">SSH Key</label>
+          <select class="input" id="p-key-select">
+            <option value="">— select key —</option>
+          </select>
+        </div>
+      </div>
     </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeAddPlatform()">Cancel</button>
+      <button class="btn btn-signal" onclick="submitAddPlatform()">+ Add</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        const API_BASE = '/api/platforms';
-        const NOT_AVAILABLE_VALUE = '<span data-i18n="notAvailable">Not available</span>';
+<script>
+let platforms = [];
+let selectedId = null;
 
-        function escapeHtml(value) {
-            if (value === null || value === undefined) return '';
-            return String(value).replace(/[&<>"']/g, (char) => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;',
-            })[char]);
-        }
+async function loadPlatforms() {
+  try {
+    const r = await fetch('/api/platforms/');
+    platforms = await r.json();
+    renderMaster(platforms);
+    document.getElementById('plat-sub').textContent = platforms.length + ' platforms';
+  } catch(e) { showSnack('✗ Failed to load platforms', 'err'); }
+}
 
-        function formatValue(value) {
-            if (!value) return '';
-            return escapeHtml(value).replace(/\n/g, '<br>');
-        }
+function renderMaster(list) {
+  const el = document.getElementById('master-items');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:24px 16px;font-size:12px;"><span class="prompt">$</span> no platforms yet — add one ↗</div>';
+    return;
+  }
+  el.innerHTML = list.map(p => {
+    const hasSys = !!p.system_info;
+    return `<div class="master-item${selectedId===p.id?' active':''}" onclick="selectPlatform('${p.id}')">
+      <span class="dot ${hasSys?'dot-ok':'dot-off'}"></span>
+      <div>
+        <div class="master-item-name">${p.name}</div>
+        <div class="master-item-sub">${p.host}:${p.port}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-        function formatOSRelease(osReleaseRaw) {
-            if (!osReleaseRaw) return '';
-            const prettyMatch = osReleaseRaw.match(/PRETTY_NAME="([^"]+)"/);
-            if (prettyMatch) {
-                return prettyMatch[1];
-            }
-            const prettyLine = osReleaseRaw
-                .split('\n')
-                .find((line) => line.startsWith('PRETTY_NAME='));
-            if (prettyLine) {
-                return prettyLine.split('=')[1].replace(/"/g, '');
-            }
-            return osReleaseRaw;
-        }
+function filterPlatforms() {
+  const q = document.getElementById('plat-search').value.toLowerCase();
+  renderMaster(platforms.filter(p => p.name.toLowerCase().includes(q) || p.host.toLowerCase().includes(q)));
+}
 
-        function showMessage(text, type = 'success') {
-            const msg = document.getElementById('message');
-            msg.innerHTML = '';
+async function selectPlatform(id) {
+  selectedId = id;
+  renderMaster(platforms.filter(p => {
+    const q = document.getElementById('plat-search').value.toLowerCase();
+    return !q || p.name.toLowerCase().includes(q) || p.host.toLowerCase().includes(q);
+  }));
+  const p = platforms.find(x => x.id === id);
+  if (!p) return;
+  const det = document.getElementById('detail-panel');
+  const hasSys = !!p.system_info;
+  const sys = p.system_info || {};
+  det.innerHTML = `
+    <div class="det-head">
+      <span class="dot ${hasSys?'dot-ok':'dot-off'}" style="width:10px;height:10px;"></span>
+      <div>
+        <div class="det-name">${p.name}</div>
+        <div class="det-meta">
+          <span class="pill pill-muted">${p.auth_method}</span>
+          <span class="pill pill-muted">${p.host}:${p.port}</span>
+          ${hasSys?'<span class="pill pill-ok">ONLINE</span>':'<span class="pill pill-err">OFFLINE</span>'}
+        </div>
+      </div>
+      <div class="det-actions">
+        <button class="btn btn-ghost" onclick="deployKeys('${p.id}')">⎘ Deploy keys</button>
+        <button class="btn btn-signal" onclick="openRunModal('${p.id}')">▶ Run</button>
+        <button class="btn btn-err" onclick="deletePlatform('${p.id}','${p.name}')">✕</button>
+      </div>
+    </div>
 
-            const container = document.createElement('div');
-            container.className = type;
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-label">CPU</div>
+        <div class="metric-value" style="font-size:18px;">${sys.cpu?sys.cpu.split('(')[0].trim().slice(0,20):'—'}</div>
+        <div class="metric-unit">${sys.cpu&&sys.cpu.includes('(')?sys.cpu.match(/\((.+)\)/)?.[1]||'':''}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Memory</div>
+        <div class="metric-value" style="font-size:18px;">${sys.memory?sys.memory.split(',')[0]:'—'}</div>
+        <div class="metric-unit">${sys.memory&&sys.memory.includes(',')?sys.memory.split(',')[1].trim():''}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Kernel</div>
+        <div class="metric-value" style="font-size:14px;">${sys.kernel||'—'}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Uptime</div>
+        <div class="metric-value" style="font-size:14px;">${sys.uptime||'—'}</div>
+      </div>
+    </div>
 
-            const iconMap = {
-                success: 'check_circle',
-                error: 'error',
-                info: 'info'
-            };
-            const iconName = iconMap[type] || iconMap.info;
+    <div class="det-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Recent jobs</span></div>
+        <div id="det-jobs">loading…</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">SSH info</span></div>
+        <div style="font-size:12px;color:var(--fg-muted);">
+          <div style="margin-bottom:8px;"><span style="color:var(--fg-dim);">user</span> ${p.username}</div>
+          <div style="margin-bottom:8px;"><span style="color:var(--fg-dim);">auth</span> ${p.auth_method}</div>
+          <div><span style="color:var(--fg-dim);">fingerprint</span> ${p.known_host_fingerprint||'not verified'}</div>
+        </div>
+      </div>
+    </div>`;
+  loadPlatformJobs(id);
+}
 
-            const icon = document.createElement('span');
-            icon.className = 'material-symbols-rounded';
-            icon.setAttribute('aria-hidden', 'true');
-            icon.textContent = iconName;
+async function loadPlatformJobs(platformId) {
+  try {
+    const r = await fetch(`/api/tasks/?platform_id=${platformId}&limit=8`);
+    const data = await r.json();
+    const jobs = Array.isArray(data) ? data : (data.items || []);
+    const el = document.getElementById('det-jobs');
+    if (!el) return;
+    if (!jobs.length) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;font-size:12px;"><span class="prompt">$</span> no jobs yet</div>'; return; }
+    el.innerHTML = jobs.map(j => {
+      const cls = j.status==='success'?'ok':j.status==='running'?'warn':j.status==='failed'?'err':'muted';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft);cursor:pointer;" onclick="window.location='/tasks/${j.id}'">
+        <span class="pill pill-${cls}">${j.status}</span>
+        <span style="font-size:12px;color:var(--fg-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${j.type||'job'}</span>
+        <span style="font-size:11px;color:var(--fg-dim);">${j.created_at?new Date(j.created_at).toLocaleTimeString():''}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
 
-            const messageText = document.createElement('span');
-            messageText.className = 'message-text';
-            messageText.style.whiteSpace = 'pre-line';
-            messageText.textContent = text;
+async function deployKeys(id) {
+  try {
+    const r = await fetch(`/api/platforms/${id}/deploy_keys`, { method:'POST' });
+    const d = await r.json();
+    if (r.ok) showSnack('✓ Deploy started', 'ok');
+    else showSnack('✗ ' + (d.error||'Failed'), 'err');
+  } catch(e) { showSnack('✗ Network error', 'err'); }
+}
 
-            container.append(icon, messageText);
-            msg.appendChild(container);
+async function deletePlatform(id, name) {
+  showSnack(`Delete "${name}"? Click again to confirm.`, 'warn');
+  const btn = event.target;
+  btn.textContent = '✓ confirm';
+  btn.onclick = async () => {
+    try {
+      const r = await fetch(`/api/platforms/${id}`, { method:'DELETE' });
+      if (r.ok) {
+        showSnack('✓ Deleted', 'ok');
+        await loadPlatforms();
+        document.getElementById('detail-panel').innerHTML = '<div class="empty-state" style="margin-top:80px;"><span class="prompt">$</span> select a platform_</div>';
+      } else showSnack('✗ Delete failed', 'err');
+    } catch(e) { showSnack('✗ Network error', 'err'); }
+  };
+}
 
-            setTimeout(() => {
-                if (msg.contains(container)) {
-                    msg.removeChild(container);
-                }
-            }, 5000);
-        }
+// Add platform modal
+function openAddPlatform() {
+  document.getElementById('addPlatformModal').classList.add('open');
+  loadKeysForModal();
+}
+function closeAddPlatform() {
+  document.getElementById('addPlatformModal').classList.remove('open');
+}
+function toggleAuthFields() {
+  const auth = document.getElementById('p-auth').value;
+  document.getElementById('p-password-field').style.display = auth==='password'?'':'none';
+  document.getElementById('p-key-field').style.display = auth==='private_key'?'':'none';
+}
+async function loadKeysForModal() {
+  try {
+    const r = await fetch('/api/keys/');
+    const keys = await r.json();
+    const sel = document.getElementById('p-key-select');
+    sel.innerHTML = '<option value="">— select key —</option>';
+    keys.forEach(k => {
+      const o = document.createElement('option');
+      o.value = k.id; o.textContent = k.name;
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+}
+async function submitAddPlatform() {
+  const name = document.getElementById('p-name').value.trim();
+  const host = document.getElementById('p-host').value.trim();
+  const port = parseInt(document.getElementById('p-port').value) || 22;
+  const username = document.getElementById('p-user').value.trim();
+  const auth = document.getElementById('p-auth').value;
+  if (!name||!host||!username) { showSnack('✗ Fill required fields', 'err'); return; }
+  const body = { name, host, port, username, auth_method: auth };
+  if (auth==='password') body.password = document.getElementById('p-password').value;
+  else body.ssh_key_id = document.getElementById('p-key-select').value || null;
+  try {
+    const r = await fetch('/api/platforms/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const d = await r.json();
+    if (r.ok) {
+      closeAddPlatform();
+      showSnack('✓ Platform added', 'ok');
+      await loadPlatforms();
+    } else showSnack('✗ ' + (d.error||d.details||'Failed'), 'err');
+  } catch(e) { showSnack('✗ Network error', 'err'); }
+}
 
-        function openModal() {
-            // Reset form and modal title for new platform
-            document.getElementById('platformForm').reset();
-            document.getElementById('platformId').value = '';
-            document.querySelector('#platformModal .modal-header h2').textContent = t('addNewPlatform');
-            
-            const modal = document.getElementById('platformModal');
-            modal.classList.add('active');
-            modal.style.display = 'block';
-            document.body.classList.add('modal-open');
-            toggleAuthFields();
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('platformModal');
-            modal.classList.remove('active');
-            modal.style.display = 'none';
-            document.body.classList.remove('modal-open');
-            document.getElementById('platformForm').reset();
-            document.getElementById('platformId').value = '';
-        }
-
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('platformModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                closeModal();
-            }
-        });
-
-        function toggleAuthFields() {
-            const method = document.getElementById('auth_method').value;
-            document.getElementById('password_field').style.display = method === 'password' ? 'block' : 'none';
-            document.getElementById('ssh_key_field').style.display = method === 'private_key' ? 'block' : 'none';
-        }
-
-        document.getElementById('auth_method').addEventListener('change', toggleAuthFields);
-
-        function togglePasswordVisibility() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('passwordToggleIcon');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.textContent = 'visibility_off';
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.textContent = 'visibility';
-            }
-        }
-
-        async function loadSSHKeys() {
-            try {
-                const response = await fetch('/api/keys');
-                const keys = await response.json();
-                const select = document.getElementById('ssh_key_id');
-                select.innerHTML = '<option value="">Select SSH Key...</option>';
-                keys.forEach(key => {
-                    const option = document.createElement('option');
-                    option.value = key.id;
-                    option.textContent = key.name;
-                    select.appendChild(option);
-                });
-            } catch (err) {
-                console.error('Failed to load SSH keys:', err);
-            }
-        }
-
-        async function loadPlatforms() {
-            try {
-                const response = await fetch(API_BASE + '/');
-                const platforms = await response.json();
-                const tbody = document.getElementById('platformsTableBody');
-
-                if (platforms.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${t('noPlatformsFound')}</td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = platforms.map((p) => {
-                    const info = p.system_info || {};
-                    
-                    // Format system info
-                    const osRelease = formatOSRelease(info.os_release);
-                    const systemInfoParts = [];
-                    if (osRelease) systemInfoParts.push(`OS: ${osRelease}`);
-                    if (info.kernel) systemInfoParts.push(`Kernel: ${info.kernel}`);
-                    if (info.cpu) systemInfoParts.push(`CPU: ${info.cpu}`);
-                    if (info.memory) systemInfoParts.push(`Memory: ${info.memory}`);
-                    if (info.uptime) systemInfoParts.push(`Uptime: ${info.uptime}`);
-                    
-                    const systemInfo = systemInfoParts.length > 0 
-                        ? systemInfoParts.join('<br>') 
-                        : '<span style="color: var(--md-on-surface-variant);">Not available</span>';
-
-                    const authClass = p.auth_method === 'private_key' ? 'auth-key' : 'auth-password';
-                    const authText = p.auth_method === 'private_key' ? 'SSH Key' : 'Password';
-                    const createdDate = new Date(p.created_at).toLocaleDateString();
-
-                    return `
-                        <tr>
-                            <td><strong class="platform-name">${escapeHtml(p.name)}</strong></td>
-                            <td>
-                                <div class="platform-host">
-                                    <span class="material-symbols-rounded">router</span>
-                                    <span>${escapeHtml(p.host)}:${p.port}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="platform-host">
-                                    <span class="material-symbols-rounded">person</span>
-                                    <span>${escapeHtml(p.username)}</span>
-                                </div>
-                            </td>
-                            <td><span class="auth-badge ${authClass}">${authText}</span></td>
-                            <td><div class="platform-info">${systemInfo}</div></td>
-                            <td>${createdDate}</td>
-                            <td class="platform-actions">
-                                <button class="btn-icon btn-primary" onclick="deployKeys('${p.id}')" title="Deploy Keys">
-                                    <span class="material-symbols-rounded">vpn_key</span>
-                                </button>
-                                <button class="btn-icon btn-primary" onclick="runCommand('${p.id}')" title="Run Command">
-                                    <span class="material-symbols-rounded">terminal</span>
-                                </button>
-                                <button class="btn-icon" onclick='editPlatform(${JSON.stringify(p)})' title="Edit">
-                                    <span class="material-symbols-rounded">edit</span>
-                                </button>
-                                <button class="btn-icon btn-delete" onclick="deletePlatform('${p.id}')" title="Delete">
-                                    <span class="material-symbols-rounded">delete</span>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            } catch (error) {
-                showMessage('Failed to load platforms: ' + error.message, 'error');
-            }
-        }
-
-        function editPlatform(platform) {
-            // Populate form with existing data
-            document.getElementById('platformId').value = platform.id;
-            document.getElementById('name').value = platform.name;
-            document.getElementById('host').value = platform.host;
-            document.getElementById('port').value = platform.port;
-            document.getElementById('username').value = platform.username;
-            document.getElementById('auth_method').value = platform.auth_method;
-            
-            // Toggle auth fields based on method
-            toggleAuthFields();
-            
-            // Change modal title
-            document.querySelector('#platformModal .modal-header h2').textContent = t('editPlatform');
-            
-            // Open modal
-            const modal = document.getElementById('platformModal');
-            modal.classList.add('active');
-            modal.style.display = 'block';
-            document.body.classList.add('modal-open');
-        }
-
-        // Refresh button handler
-        async function refreshPlatforms() {
-            await loadPlatforms();
-            updateSidebarCount();
-        }
-
-        async function deletePlatform(id) {
-            if (!confirm('Are you sure you want to delete this platform?')) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage(t('platformDeleted'));
-                    loadPlatforms();
-                    updateSidebarCount();
-                } else {
-                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                showMessage('Failed to delete platform: ' + error.message, 'error');
-            }
-        }
-
-        async function deployKeys(platformId) {
-            if (!confirm('Deploy all SSH keys to this platform?')) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/${platformId}/deploy_keys`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}),
-                });
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage(`Task started: ${result.task_id}`);
-                    window.open(`/tasks/${result.task_id}`, '_blank');
-                } else {
-                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                showMessage('Failed to start deployment: ' + error.message, 'error');
-            }
-        }
-
-        async function runCommand(platformId) {
-            const command = prompt('Enter command to execute:');
-            if (!command) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/${platformId}/run_command`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command, timeout: 60 }),
-                });
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage(`Task started: ${result.task_id}`);
-                    window.open(`/tasks/${result.task_id}`, '_blank');
-                } else {
-                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                showMessage('Failed to run command: ' + error.message, 'error');
-            }
-        }
-
-        document.getElementById('platformForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalContent = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            
-            const platformId = document.getElementById('platformId').value;
-            const isEditing = platformId !== '';
-            
-            submitBtn.textContent = isEditing ? 'Updating...' : 'Testing connection...';
-
-            const formData = {
-                name: document.getElementById('name').value,
-                host: document.getElementById('host').value,
-                port: parseInt(document.getElementById('port').value, 10),
-                username: document.getElementById('username').value,
-                auth_method: document.getElementById('auth_method').value,
-            };
-
-            if (formData.auth_method === 'password') {
-                formData.password = document.getElementById('password').value;
-            } else {
-                formData.ssh_key_id = document.getElementById('ssh_key_id').value;
-            }
-
-            try {
-                const url = isEditing ? `${API_BASE}/${platformId}` : `${API_BASE}/`;
-                const method = isEditing ? 'PUT' : 'POST';
-                
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData),
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    let successMsg = isEditing 
-                        ? 'Platform updated successfully!' 
-                        : 'Platform added successfully! Connection test passed.';
-
-                    if (!isEditing && result.system_info) {
-                        const info = result.system_info;
-                        successMsg += '\n\nSystem Information:';
-                        if (info.os_release) {
-                            const osMatch = info.os_release.match(/PRETTY_NAME="([^"]+)"/);
-                            if (osMatch) successMsg += `\n• OS: ${osMatch[1]}`;
-                        }
-                        if (info.kernel) successMsg += `\n• Kernel: ${info.kernel}`;
-                        if (info.cpu) successMsg += `\n• CPU: ${info.cpu}`;
-                        if (info.memory) successMsg += `\n• Memory: ${info.memory}`;
-                        if (info.uptime) successMsg += `\n• Uptime: ${info.uptime}`;
-                    }
-
-                    showMessage(successMsg);
-                    e.target.reset();
-                    closeModal();
-                    loadPlatforms();
-                    
-                    // Update sidebar counter
-                    updateSidebarCount();
-                } else {
-                    let errorMsg = result.error || 'Unknown error';
-                    if (result.details) {
-                        errorMsg += '\n\nDetails: ' + result.details;
-                    }
-                    showMessage(errorMsg, 'error');
-                }
-            } catch (error) {
-                showMessage('Failed to add platform: ' + error.message, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalContent;
-            }
-        });
-
-        function updateSidebarCount() {
-            // Update platforms count in sidebar
-            const sidebarLink = document.querySelector('a[href="/platforms"]');
-            if (sidebarLink) {
-                const countElement = sidebarLink.querySelector('.sidebar-count');
-                if (countElement) {
-                    fetch(API_BASE + '/')
-                        .then(r => r.json())
-                        .then(platforms => {
-                            countElement.textContent = platforms.length;
-                        })
-                        .catch(() => {});
-                }
-            }
-        }
-
-        loadSSHKeys();
-        loadPlatforms();
-    </script>
+loadPlatforms();
+</script>
 {% endblock %}

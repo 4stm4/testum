@@ -1,295 +1,124 @@
 {% extends "layout.html" %}
-{% set active_page = 'keys' %}
-
-{% block title %}SSH Keys - Testum{% endblock %}
-
-{% block extra_styles %}
-    <style>
-        .key-list {
-            display: grid;
-            gap: 16px;
-        }
-
-        .key-item {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            align-items: flex-start;
-            justify-content: space-between;
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid var(--md-outline-variant);
-            background: var(--md-surface-container);
-            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-        }
-
-        .key-item:hover {
-            border-color: var(--md-primary);
-            box-shadow: var(--md-elevation-1);
-        }
-
-        .key-meta {
-            display: grid;
-            gap: 8px;
-            flex: 1;
-            min-width: 220px;
-        }
-
-        .key-meta h3 {
-            margin: 0;
-            font: var(--md-title-medium);
-            color: var(--md-on-surface);
-        }
-
-        .key-snippet {
-            font-family: 'Roboto Mono', monospace;
-            font-size: 0.85em;
-            color: var(--md-on-surface-variant);
-            word-break: break-all;
-        }
-
-        .key-meta small {
-            color: var(--md-on-surface-variant);
-            font: var(--md-label-medium);
-        }
-
-        .key-actions {
-            display: inline-flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .key-actions .btn-danger {
-            padding: 10px 16px;
-        }
-
-    </style>
-{% endblock %}
+{% block title %}SSH keys_ — testum{% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <div class="page-header-info">
-            <h1 class="page-title">
-                <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
-                <span data-i18n="sshKeysTitle">SSH Keys</span>
-            </h1>
-            <p class="page-subtitle" data-i18n="sshKeysSubtitle">Manage public and private key pairs used to connect to your platforms.</p>
-        </div>
-        <div class="page-actions">
-            <button class="toolbar-icon-btn primary" type="button" onclick="openModal()" aria-label="Add new SSH key">
-                <span class="material-symbols-rounded" aria-hidden="true">add</span>
-                <span data-i18n="addNewKey">Add SSH Key</span>
-            </button>
-        </div>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">SSH keys<span class="cur"></span></div>
+    <div class="pg-sub" id="keys-sub">—</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-signal" onclick="openAddKey()">+ <span data-i18n="addKey">Add key</span></button>
+  </div>
+</div>
+
+<div id="keys-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--sp-4);">
+  <div class="empty-state"><span class="prompt">$</span> loading…</div>
+</div>
+
+<!-- Add key modal -->
+<div class="modal-overlay" id="addKeyModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">+ <span data-i18n="addKey">Add SSH key</span></span>
+      <button class="iconbtn" onclick="closeAddKey()">✕</button>
     </div>
-
-    <div id="message" class="message" aria-live="polite"></div>
-
-    <section class="page-section">
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title" data-i18n="existingKeys">SSH Keys</h2>
-            </div>
-            <div id="keysList" class="key-list">
-                <!-- Keys will be loaded here -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Modal for adding/editing SSH key -->
-    <div id="keyModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add New SSH Key</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="keyForm">
-                    <div class="form-group">
-                        <label for="name" data-i18n="keyName">Key Name</label>
-                        <input type="text" id="name" name="name" required placeholder="e.g., production-key">
-                    </div>
-                    <div class="form-group">
-                        <label for="public_key" data-i18n="publicKey">Public Key</label>
-                        <textarea id="public_key" name="public_key" required placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..." rows="4"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="private_key" data-i18n="privateKeyOptional">Private Key (Optional)</label>
-                        <textarea id="private_key" name="private_key" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----" rows="6"></textarea>
-                        <span class="form-helper" data-i18n="privateKeyNote">If provided, this key can be used to authenticate to platforms</span>
-                    </div>
-                    <div class="form-group">
-                        <label for="description">Description (Optional)</label>
-                        <textarea id="description" name="description" placeholder="e.g., Production SSH key for web servers" rows="2"></textarea>
-                    </div>
-                    <div class="page-actions">
-                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <span class="material-symbols-rounded" aria-hidden="true">save</span>
-                            <span data-i18n="saveKey">Save Key</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label" data-i18n="name">Name</label>
+        <input type="text" class="input" id="k-name" placeholder="prod-key">
+      </div>
+      <div class="field">
+        <label class="field-label">Public key</label>
+        <textarea class="input" id="k-pubkey" rows="3" placeholder="ssh-ed25519 AAAA…" style="resize:vertical;"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Private key <span style="color:var(--fg-dim);font-size:10px;">(optional)</span></label>
+        <textarea class="input" id="k-privkey" rows="4" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" style="resize:vertical;"></textarea>
+      </div>
     </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeAddKey()">Cancel</button>
+      <button class="btn btn-signal" onclick="submitAddKey()">+ Add</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        const API_BASE = '/api/keys';
+<script>
+let allPlatforms = [];
+async function loadKeys() {
+  try {
+    const [kr, pr] = await Promise.all([fetch('/api/keys/'), fetch('/api/platforms/')]);
+    const keys = await kr.json();
+    allPlatforms = await pr.json();
+    document.getElementById('keys-sub').textContent = keys.length + ' keys';
+    const grid = document.getElementById('keys-grid');
+    if (!keys.length) {
+      grid.innerHTML = '<div class="empty-state"><span class="prompt">$</span> no SSH keys yet — add one ↗</div>';
+      return;
+    }
+    grid.innerHTML = keys.map(k => `
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="glyph s28">&gt;_</div>
+            <div>
+              <div style="font-size:var(--t-body);font-weight:700;">${k.name}</div>
+              <div style="font-size:var(--t-xs);color:var(--fg-dim);">${k.has_private_key?'pub + priv':'pub only'}</div>
+            </div>
+          </div>
+          <button class="iconbtn" onclick="deleteKey('${k.id}','${k.name}')">✕</button>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--fg-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:var(--sp-3);" title="${k.public_key}">
+          ${k.public_key.substring(0,60)}…
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:var(--t-xs);color:var(--fg-dim);">by ${k.created_by||'—'} · ${k.created_at?new Date(k.created_at).toLocaleDateString():''}</div>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="deployKey('${k.id}')">⎘ Deploy</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { showSnack('✗ Failed to load keys', 'err'); }
+}
 
-        function openModal() {
-            document.getElementById('keyForm').reset();
-            document.querySelector('#keyModal .modal-header h2').textContent = t('addNewKey');
-            document.getElementById('keyModal').classList.add('active');
-            document.body.classList.add('modal-open');
-        }
+async function deleteKey(id, name) {
+  showSnack(`Delete "${name}"? Click again to confirm.`);
+  const btn = event.target;
+  btn.textContent = '✓';
+  btn.onclick = async () => {
+    try {
+      const r = await fetch(`/api/keys/${id}`, { method:'DELETE' });
+      if (r.ok) { showSnack('✓ Key deleted', 'ok'); loadKeys(); }
+      else showSnack('✗ Delete failed', 'err');
+    } catch(e) { showSnack('✗ Network error', 'err'); }
+  };
+}
 
-        function closeModal() {
-            document.getElementById('keyModal').classList.remove('active');
-            document.body.classList.remove('modal-open');
-        }
+async function deployKey(keyId) {
+  if (!allPlatforms.length) { showSnack('No platforms to deploy to', 'warn'); return; }
+  for (const p of allPlatforms) {
+    await fetch(`/api/platforms/${p.id}/deploy_keys`, { method:'POST' }).catch(()=>{});
+  }
+  showSnack(`✓ Deploy started to ${allPlatforms.length} platforms`, 'ok');
+}
 
-        // Close modal on outside click
-        document.getElementById('keyModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && document.getElementById('keyModal').classList.contains('active')) {
-                closeModal();
-            }
-        });
-
-        function showMessage(text, type = 'success') {
-            const msg = document.getElementById('message');
-            msg.innerHTML = '';
-
-            const container = document.createElement('div');
-            container.classList.add('message-item');
-
-            const variantClass = {
-                success: 'alert-success',
-                error: 'alert-error',
-                info: 'alert-info'
-            }[type] || 'alert-info';
-            container.classList.add(variantClass);
-
-            const icon = document.createElement('span');
-            icon.className = 'material-symbols-rounded';
-            icon.setAttribute('aria-hidden', 'true');
-            icon.textContent = type === 'error' ? 'error' : type === 'success' ? 'check_circle' : 'info';
-
-            const textSpan = document.createElement('span');
-            textSpan.className = 'message-text';
-            textSpan.textContent = text;
-
-            container.append(icon, textSpan);
-            msg.appendChild(container);
-
-            setTimeout(() => {
-                if (msg.contains(container)) {
-                    msg.removeChild(container);
-                }
-            }, 5000);
-        }
-
-        async function loadKeys() {
-            try {
-                const response = await fetch(API_BASE);
-                const keys = await response.json();
-                const container = document.getElementById('keysList');
-
-                if (keys.length === 0) {
-                    container.innerHTML = '<div class="empty-state" data-i18n="noKeysFound">No SSH keys found. Add your first key above.</div>';
-                    if (typeof applyTranslations === 'function') {
-                        applyTranslations();
-                    }
-                    return;
-                }
-
-                container.innerHTML = keys.map(key => `
-                    <div class="key-item">
-                        <div class="key-meta">
-                            <h3 class="title-with-icon">
-                                <span class="material-symbols-rounded" aria-hidden="true">vpn_key</span>
-                                <span>${key.name}</span>
-                            </h3>
-                            <div class="key-snippet">${key.public_key.substring(0, 80)}...</div>
-                            <small><span data-i18n="created">Created:</span> ${new Date(key.created_at).toLocaleString()}</small>
-                        </div>
-                        <div class="key-actions">
-                            <button class="btn btn-danger" onclick="deleteKey('${key.id}')">
-                                <span class="material-symbols-rounded" aria-hidden="true">delete</span>
-                                <span data-i18n="delete">Delete</span>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-                if (typeof applyTranslations === 'function') {
-                    applyTranslations();
-                }
-            } catch (error) {
-                showMessage('Failed to load keys: ' + error.message, 'error');
-            }
-        }
-
-        async function deleteKey(id) {
-            if (!confirm('Are you sure you want to delete this key?')) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage(t('keyDeleted'));
-                    loadKeys();
-                } else {
-                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                showMessage('Failed to delete key: ' + error.message, 'error');
-            }
-        }
-
-        document.getElementById('keyForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const formData = {
-                name: document.getElementById('name').value,
-                public_key: document.getElementById('public_key').value,
-            };
-
-            const privateKey = document.getElementById('private_key').value.trim();
-            if (privateKey) {
-                formData.private_key = privateKey;
-            }
-
-            try {
-                const response = await fetch(API_BASE, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData),
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    showMessage(t('keyAdded'));
-                    closeModal();
-                    loadKeys();
-                } else {
-                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                showMessage('Failed to add key: ' + error.message, 'error');
-            }
-        });
-
-        loadKeys();
-    </script>
+function openAddKey() { document.getElementById('addKeyModal').classList.add('open'); }
+function closeAddKey() { document.getElementById('addKeyModal').classList.remove('open'); }
+async function submitAddKey() {
+  const name = document.getElementById('k-name').value.trim();
+  const pub = document.getElementById('k-pubkey').value.trim();
+  if (!name||!pub) { showSnack('✗ Name and public key required', 'err'); return; }
+  const body = { name, public_key: pub };
+  const priv = document.getElementById('k-privkey').value.trim();
+  if (priv) body.private_key = priv;
+  try {
+    const r = await fetch('/api/keys/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const d = await r.json();
+    if (r.ok) { closeAddKey(); showSnack('✓ Key added', 'ok'); loadKeys(); }
+    else showSnack('✗ ' + (d.error||'Failed'), 'err');
+  } catch(e) { showSnack('✗ Network error', 'err'); }
+}
+loadKeys();
+</script>
 {% endblock %}

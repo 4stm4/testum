@@ -1,0 +1,85 @@
+/* terminal.css — Terminal Native design tokens */
+:root {
+  /* Surfaces */
+  --bg:         #0A090D;
+  --surface-1:  #14131A;
+  --surface-2:  #1B1A22;
+  --surface-3:  #25232D;
+  --surface-4:  #2E2C38;
+  --surface-5:  #3A3845;
+
+  /* Foreground */
+  --fg:         #F0EEF5;
+  --fg-muted:   #9B98A8;
+  --fg-dim:     #5C5A68;
+
+  /* Signal (lime) — the ONLY brand color */
+  --signal:     #B9FF66;
+  --on-signal:  #0A090D;
+  --signal-soft: color-mix(in srgb, #B9FF66 12%, transparent);
+  --signal-glow: 0 0 12px color-mix(in srgb, #B9FF66 40%, transparent);
+
+  /* Semantic */
+  --warn:       #FFB546;
+  --err:        #FF6E6E;
+  --info:       #66B8FF;
+
+  /* Structure */
+  --line:       #2E2C38;
+  --line-soft:  #1F1E26;
+
+  /* Radii */
+  --r-sm:  4px;
+  --r-md:  8px;
+  --r-lg:  12px;
+  --r-xl:  16px;
+  --r-pill: 9999px;
+
+  /* Typography */
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-ui:   'JetBrains Mono', monospace;
+
+  /* Type scale */
+  --t-xs:   11px;
+  --t-sm:   12px;
+  --t-body: 13px;
+  --t-md:   14px;
+  --t-lg:   16px;
+  --t-xl:   20px;
+  --t-2xl:  24px;
+  --t-h1:   28px;
+
+  /* Spacing */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* Transitions */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur:  150ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--signal); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface-1); }
+::-webkit-scrollbar-thumb { background: var(--surface-5); border-radius: var(--r-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--fg-dim); }

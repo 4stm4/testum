@@ -1,373 +1,195 @@
 {% extends "layout.html" %}
 {% set active_page = 'jobs' %}
 
-{% block title %}Job Details - Testum{% endblock %}
+{% block title %}Job detail_ — testum{% endblock %}
 
 {% block extra_styles %}
-    <style>
-        .back-link {
-            color: var(--accent-primary);
-            font-size: 0.85em;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 15px;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        .job-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        #taskIcon.material-symbols-rounded {
-            font-size: 32px;
-        }
-
-        .status-chip {
-            padding: 6px 14px;
-            border-radius: 16px;
-            font-size: 0.8em;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .status-chip.pending {
-            background: #2d2616;
-            color: #fab387;
-        }
-
-        .status-chip.running {
-            background: #162d3b;
-            color: #89b4fa;
-        }
-
-        .status-chip.success {
-            background: #1e2d28;
-            color: #a6e3a1;
-        }
-
-        .status-chip.failed {
-            background: #2d1e22;
-            color: #f38ba8;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
-            margin-bottom: 25px;
-            font-size: 0.9em;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
-        .info-label {
-            color: var(--text-secondary);
-            font-size: 0.8em;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .info-value {
-            color: var(--text-primary);
-            font-size: 0.95em;
-            font-weight: 500;
-        }
-
-        .info-value code {
-            background: var(--bg-tertiary);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            color: var(--accent-primary);
-        }
-
-        .output-box {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-            max-height: 400px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .output-box.stdout {
-            color: #a6e3a1;
-        }
-
-        .output-box.stderr {
-            color: #f38ba8;
-        }
-
-        .output-box.empty {
-            color: var(--text-secondary);
-            font-style: italic;
-            text-align: center;
-            padding: 30px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            background: var(--accent-primary);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.85em;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .metadata {
-            background: var(--bg-tertiary);
-            padding: 12px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.8em;
-        }
-    </style>
+<style>
+  .output-box {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--sp-4);
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
+  }
+  .output-box.stdout { color: var(--signal); }
+  .output-box.stderr { color: var(--err); }
+  .output-box.empty { color: var(--fg-dim); font-style: italic; text-align: center; padding: var(--sp-8); }
+  .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4); }
+  .info-label { color: var(--fg-dim); font-size: var(--t-xs); margin-bottom: var(--sp-1); text-transform: uppercase; letter-spacing: 1px; }
+  .info-value { color: var(--fg); font-size: var(--t-body); font-weight: 500; }
+</style>
 {% endblock %}
 
 {% block content %}
-    <a href="/jobs" class="back-link">
-        <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
-        <span>Back to Jobs</span>
-    </a>
-    <h1 class="job-title">
-        <span id="taskIcon" class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
-        <span>Job Details</span>
-        <span class="status-chip pending" id="statusBadge">Loading...</span>
-    </h1>
-    <div class="subtitle" id="taskIdDisplay">Task ID: <code>{{ task_id }}</code></div>
+<div style="margin-bottom:var(--sp-4);">
+  <a href="/jobs" style="font-size:var(--t-sm);color:var(--signal);">← Back to Jobs</a>
+</div>
 
-    <div class="card">
-        <h2 class="card-title title-with-icon">
-            <span class="material-symbols-rounded" aria-hidden="true">insights</span>
-            <span>Overview</span>
-        </h2>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Task ID</div>
-                <div class="info-value"><code id="taskId">{{ task_id }}</code></div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Type</div>
-                <div class="info-value" id="taskType">—</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Platform</div>
-                <div class="info-value" id="platformName">—</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Started At</div>
-                <div class="info-value" id="startedAt">—</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Finished At</div>
-                <div class="info-value" id="finishedAt">—</div>
-            </div>
-        </div>
+<div class="pg-head">
+  <div style="display:flex;align-items:center;gap:var(--sp-3);">
+    <div class="glyph s28" id="taskGlyph">&gt;_</div>
+    <div>
+      <div class="pg-title" style="font-size:var(--t-2xl);">Job detail<span class="cur"></span></div>
+      <div class="pg-sub">Task ID: <span style="color:var(--signal);font-family:var(--font-mono);">{{ task_id }}</span></div>
     </div>
+    <span class="pill pill-muted" id="statusBadge" style="margin-left:var(--sp-2);">Loading…</span>
+  </div>
+  <div class="toolbar">
+    <a href="/tasks/{{ task_id }}" class="btn btn-ghost" target="_blank">▶ Live Monitor</a>
+    <button class="btn btn-ghost" onclick="location.reload()">↻ Refresh</button>
+    <button class="btn btn-err" id="stopBtn" onclick="stopTask()" style="display:none;">■ Stop</button>
+  </div>
+</div>
 
-    <div class="card" id="metadataCard" style="display: none;">
-        <h2 class="card-title title-with-icon">
-            <span class="material-symbols-rounded" aria-hidden="true">build</span>
-            <span>Task Details</span>
-        </h2>
-        <div class="info-grid">
-            <div class="info-item" id="commandItem" style="display: none;">
-                <div class="info-label">Command</div>
-                <div class="info-value"><code id="commandValue" style="display: block; white-space: pre-wrap;">—</code></div>
-            </div>
-            <div class="info-item" id="timeoutItem" style="display: none;">
-                <div class="info-label">Timeout</div>
-                <div class="info-value" id="timeoutValue">—</div>
-            </div>
-        </div>
-        <details style="margin-top: 15px;">
-            <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85em;">Show Raw Metadata</summary>
-            <div class="metadata" id="metadataContent" style="margin-top: 10px;"></div>
-        </details>
+<div class="card" style="margin-bottom:var(--sp-5);">
+  <div class="card-header"><span class="card-title">Overview</span></div>
+  <div class="info-grid">
+    <div><div class="info-label">Task ID</div><div class="info-value tbl-mono" id="taskId">{{ task_id }}</div></div>
+    <div><div class="info-label">Type</div><div class="info-value" id="taskType">—</div></div>
+    <div><div class="info-label">Platform</div><div class="info-value" id="platformName">—</div></div>
+    <div><div class="info-label">Started At</div><div class="info-value tbl-mono" id="startedAt">—</div></div>
+    <div><div class="info-label">Finished At</div><div class="info-value tbl-mono" id="finishedAt">—</div></div>
+  </div>
+</div>
+
+<div class="card" id="metadataCard" style="display:none;margin-bottom:var(--sp-5);">
+  <div class="card-header"><span class="card-title">Task Details</span></div>
+  <div class="info-grid">
+    <div id="commandItem" style="display:none;">
+      <div class="info-label">Command</div>
+      <div class="info-value" style="font-family:var(--font-mono);font-size:var(--t-sm);white-space:pre-wrap;" id="commandValue">—</div>
     </div>
-
-    <div class="card" id="outputCard" style="display: none;">
-        <h2 class="card-title title-with-icon">
-            <span class="material-symbols-rounded" aria-hidden="true">terminal</span>
-            <span>Output</span>
-        </h2>
-        <h3 style="font-size: 0.9em; margin-bottom: 8px; color: var(--text-secondary);">STDOUT:</h3>
-        <div class="output-box stdout" id="stdoutContent">
-            <div class="empty">No output</div>
-        </div>
-
-        <h3 style="font-size: 0.9em; margin: 20px 0 8px; color: var(--text-secondary);">STDERR:</h3>
-        <div class="output-box stderr" id="stderrContent">
-            <div class="empty">No errors</div>
-        </div>
+    <div id="timeoutItem" style="display:none;">
+      <div class="info-label">Timeout</div>
+      <div class="info-value" id="timeoutValue">—</div>
     </div>
+  </div>
+  <details style="margin-top:var(--sp-4);">
+    <summary style="cursor:pointer;font-size:var(--t-xs);color:var(--fg-dim);text-transform:uppercase;letter-spacing:1px;">Show raw metadata</summary>
+    <div class="output-box" style="margin-top:var(--sp-2);color:var(--fg-muted);" id="metadataContent"></div>
+  </details>
+</div>
 
-    <div class="card" id="errorCard" style="display: none;">
-        <h2 class="card-title title-with-icon">
-            <span class="material-symbols-rounded" aria-hidden="true">error</span>
-            <span>Error</span>
-        </h2>
-        <div class="output-box stderr" id="errorContent"></div>
-    </div>
+<div class="card" id="outputCard" style="display:none;margin-bottom:var(--sp-5);">
+  <div class="card-header"><span class="card-title">Output</span></div>
+  <div style="font-size:var(--t-xs);color:var(--fg-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:var(--sp-2);">STDOUT</div>
+  <div class="output-box stdout" id="stdoutContent">
+    <div class="empty">No output</div>
+  </div>
+  <div style="font-size:var(--t-xs);color:var(--fg-dim);text-transform:uppercase;letter-spacing:1px;margin:var(--sp-5) 0 var(--sp-2);">STDERR</div>
+  <div class="output-box stderr" id="stderrContent">
+    <div class="empty">No errors</div>
+  </div>
+</div>
 
-    <div class="actions">
-        <a href="/tasks/{{ task_id }}" class="btn" target="_blank">
-            <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
-            <span>Live Monitor</span>
-        </a>
-        <button class="btn btn-secondary" onclick="location.reload()">
-            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-            <span>Refresh</span>
-        </button>
-        <button class="btn" id="stopBtn" onclick="stopTask()" style="background: #f38ba8; display: none;">
-            <span class="material-symbols-rounded" aria-hidden="true">stop_circle</span>
-            <span>Stop Task</span>
-        </button>
-    </div>
+<div class="card" id="errorCard" style="display:none;">
+  <div class="card-header"><span class="card-title" style="color:var(--err);">Error</span></div>
+  <div class="output-box stderr" id="errorContent"></div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        const taskId = '{{ task_id }}';
+<script>
+const taskId = '{{ task_id }}';
 
-        async function loadJobDetails() {
-            try {
-                const resp = await fetch(`/api/tasks/${taskId}`);
-                if (!resp.ok) {
-                    throw new Error('Task not found');
-                }
-                const data = await resp.json();
+async function loadJobDetails() {
+  try {
+    const resp = await fetch(`/api/tasks/${taskId}`);
+    if (!resp.ok) throw new Error('Task not found');
+    const data = await resp.json();
 
-                const statusBadge = document.getElementById('statusBadge');
-                statusBadge.textContent = data.status.toUpperCase();
-                statusBadge.className = `status-chip ${data.status}`;
+    const statusBadge = document.getElementById('statusBadge');
+    const cls = data.status==='success'?'ok':data.status==='running'?'warn':data.status==='failed'?'err':'muted';
+    statusBadge.className = `pill pill-${cls}`;
+    statusBadge.textContent = data.status.toUpperCase();
 
-                const icons = {
-                    'deploy': 'rocket_launch',
-                    'run_command': 'terminal'
-                };
-                const taskIcon = document.getElementById('taskIcon');
-                taskIcon.textContent = icons[data.type] || 'inventory_2';
+    document.getElementById('taskType').textContent = data.type || '—';
 
-                document.getElementById('taskType').textContent = data.type;
-
-                if (data.platform_id) {
-                    try {
-                        const platformResp = await fetch(`/api/platforms/${data.platform_id}`);
-                        if (platformResp.ok) {
-                            const platform = await platformResp.json();
-                            document.getElementById('platformName').innerHTML = `<a href="/platforms" style="color: var(--accent-primary);">${platform.name}</a>`;
-                        } else {
-                            document.getElementById('platformName').textContent = data.platform_id;
-                        }
-                    } catch {
-                        document.getElementById('platformName').textContent = data.platform_id || '—';
-                    }
-                } else {
-                    document.getElementById('platformName').textContent = '—';
-                }
-
-                document.getElementById('startedAt').textContent = data.started_at ? new Date(data.started_at).toLocaleString() : '—';
-                document.getElementById('finishedAt').textContent = data.finished_at ? new Date(data.finished_at).toLocaleString() : '—';
-
-                if (data.task_metadata && Object.keys(data.task_metadata).length > 0) {
-                    document.getElementById('metadataCard').style.display = 'block';
-                    document.getElementById('metadataContent').textContent = JSON.stringify(data.task_metadata, null, 2);
-
-                    if (data.task_metadata.command) {
-                        document.getElementById('commandItem').style.display = 'block';
-                        document.getElementById('commandValue').textContent = data.task_metadata.command;
-                    }
-
-                    if (data.task_metadata.timeout) {
-                        document.getElementById('timeoutItem').style.display = 'block';
-                        document.getElementById('timeoutValue').textContent = data.task_metadata.timeout + ' seconds';
-                    }
-                }
-
-                if (data.status === 'running' || data.status === 'pending') {
-                    document.getElementById('stopBtn').style.display = 'inline-flex';
-                }
-
-                if (data.stdout || data.stderr) {
-                    document.getElementById('outputCard').style.display = 'block';
-
-                    const stdoutEl = document.getElementById('stdoutContent');
-                    if (data.stdout && data.stdout.trim()) {
-                        stdoutEl.textContent = data.stdout;
-                        stdoutEl.classList.remove('empty');
-                    }
-
-                    const stderrEl = document.getElementById('stderrContent');
-                    if (data.stderr && data.stderr.trim()) {
-                        stderrEl.textContent = data.stderr;
-                        stderrEl.classList.remove('empty');
-                    }
-                }
-
-                if (data.error_message) {
-                    document.getElementById('errorCard').style.display = 'block';
-                    document.getElementById('errorContent').textContent = data.error_message;
-                }
-
-            } catch (err) {
-                document.getElementById('statusBadge').textContent = 'ERROR';
-                document.getElementById('statusBadge').className = 'status-chip failed';
-                alert('Failed to load job details: ' + err.message);
-            }
+    if (data.platform_id) {
+      try {
+        const pResp = await fetch(`/api/platforms/${data.platform_id}`);
+        if (pResp.ok) {
+          const platform = await pResp.json();
+          document.getElementById('platformName').innerHTML = `<a href="/platforms" style="color:var(--signal);">${platform.name}</a>`;
+        } else {
+          document.getElementById('platformName').textContent = data.platform_id;
         }
+      } catch { document.getElementById('platformName').textContent = data.platform_id || '—'; }
+    }
 
-        async function stopTask() {
-            if (!confirm('Are you sure you want to stop this task?')) return;
+    document.getElementById('startedAt').textContent = data.started_at ? new Date(data.started_at).toLocaleString() : '—';
+    document.getElementById('finishedAt').textContent = data.finished_at ? new Date(data.finished_at).toLocaleString() : '—';
 
-            try {
-                const resp = await fetch(`/api/tasks/${taskId}/revoke`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+    if (data.task_metadata && Object.keys(data.task_metadata).length > 0) {
+      document.getElementById('metadataCard').style.display = '';
+      document.getElementById('metadataContent').textContent = JSON.stringify(data.task_metadata, null, 2);
+      if (data.task_metadata.command) {
+        document.getElementById('commandItem').style.display = '';
+        document.getElementById('commandValue').textContent = data.task_metadata.command;
+      }
+      if (data.task_metadata.timeout) {
+        document.getElementById('timeoutItem').style.display = '';
+        document.getElementById('timeoutValue').textContent = data.task_metadata.timeout + ' seconds';
+      }
+    }
 
-                if (resp.ok) {
-                    alert('Task stop signal sent. The task will be terminated.');
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    const data = await resp.json();
-                    alert('Failed to stop task: ' + (data.error || 'Unknown error'));
-                }
-            } catch (err) {
-                alert('Failed to stop task: ' + err.message);
-            }
-        }
+    if (data.status === 'running' || data.status === 'pending') {
+      document.getElementById('stopBtn').style.display = '';
+    }
 
-        loadJobDetails();
-    </script>
+    if (data.stdout || data.stderr) {
+      document.getElementById('outputCard').style.display = '';
+      const stdoutEl = document.getElementById('stdoutContent');
+      if (data.stdout && data.stdout.trim()) {
+        stdoutEl.textContent = data.stdout;
+      }
+      const stderrEl = document.getElementById('stderrContent');
+      if (data.stderr && data.stderr.trim()) {
+        stderrEl.textContent = data.stderr;
+      }
+    }
+
+    if (data.error_message) {
+      document.getElementById('errorCard').style.display = '';
+      document.getElementById('errorContent').textContent = data.error_message;
+    }
+  } catch (err) {
+    document.getElementById('statusBadge').className = 'pill pill-err';
+    document.getElementById('statusBadge').textContent = 'ERROR';
+    showSnack('✗ Failed to load job details: ' + err.message, 'err');
+  }
+}
+
+async function stopTask() {
+  showSnack('Click again to confirm stop');
+  const btn = document.getElementById('stopBtn');
+  btn.textContent = '✓ confirm stop';
+  btn.onclick = async () => {
+    try {
+      const resp = await fetch(`/api/tasks/${taskId}/revoke`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (resp.ok) {
+        showSnack('✓ Stop signal sent', 'ok');
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        const data = await resp.json();
+        showSnack('✗ Failed to stop: ' + (data.error || 'Unknown error'), 'err');
+      }
+    } catch (err) {
+      showSnack('✗ ' + err.message, 'err');
+    }
+  };
+}
+
+loadJobDetails();
+</script>
 {% endblock %}

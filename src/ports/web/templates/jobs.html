@@ -1,157 +1,126 @@
 {% extends "layout.html" %}
 {% set active_page = 'jobs' %}
 
-{% block title %}Jobs - Task Runs{% endblock %}
+{% block title %}Jobs_ — testum{% endblock %}
 
 {% block extra_styles %}
-    <style>
-        .job-type {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .job-type.deploy {
-            background: color-mix(in srgb, var(--md-tertiary) 18%, transparent);
-            color: var(--md-tertiary);
-        }
-
-        .job-type.run_command {
-            background: color-mix(in srgb, var(--md-primary) 18%, transparent);
-            color: var(--md-primary);
-        }
-
-        .jobs-table .material-symbols-rounded {
-            font-size: 20px;
-        }
-    </style>
+<style>
+  .filters-row { display:flex; gap:var(--sp-3); margin-bottom:var(--sp-5); align-items:center; flex-wrap:wrap; }
+</style>
 {% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <div class="page-header-info">
-            <h1 class="page-title">
-                <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-                <span data-i18n="jobs">Jobs</span>
-            </h1>
-            <p class="page-subtitle" data-i18n="jobsSubtitle">Track execution history and live status for your automation jobs.</p>
-        </div>
-        <div class="page-actions">
-            <div class="filters-inline">
-                <select id="filterStatus">
-                    <option value="">Status: All</option>
-                    <option value="pending">Pending</option>
-                    <option value="running">Running</option>
-                    <option value="success">Success</option>
-                    <option value="failed">Failed</option>
-                </select>
-                <select id="filterType">
-                    <option value="">Type: All</option>
-                    <option value="deploy">Deploy</option>
-                    <option value="run_command">Run Command</option>
-                </select>
-            </div>
-            <button id="refreshBtn" class="toolbar-icon-btn">
-                <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-                <span data-i18n="refresh">Refresh</span>
-            </button>
-        </div>
-    </div>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">Jobs<span class="cur"></span></div>
+    <div class="pg-sub" data-i18n="jobsSubtitle">Execution history and live status</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-ghost" id="refreshBtn">↻ <span data-i18n="refresh">Refresh</span></button>
+  </div>
+</div>
 
-    <div class="card table-card">
-        <div class="table-wrapper">
-            <table id="tasksTable" class="data-table jobs-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Task ID</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Platform</th>
-                        <th>Started</th>
-                        <th>Finished</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="tasksBody">
-                    <tr><td colspan="8" class="table-empty-state">Loading tasks…</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="filters-row">
+  <select class="input" id="filterStatus" style="width:160px;">
+    <option value="">Status: All</option>
+    <option value="pending">Pending</option>
+    <option value="running">Running</option>
+    <option value="success">Success</option>
+    <option value="failed">Failed</option>
+  </select>
+  <select class="input" id="filterType" style="width:180px;">
+    <option value="">Type: All</option>
+    <option value="deploy">Deploy</option>
+    <option value="run_command">Run Command</option>
+  </select>
+</div>
 
-    <div class="pagination">
-        <button id="prevPage" disabled>Prev</button>
-        <button id="nextPage" disabled>Next</button>
-    </div>
+<div class="card" style="padding:0;overflow:hidden;">
+  <table class="tbl" id="tasksTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Platform</th>
+        <th>Started</th>
+        <th>Finished</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tasksBody">
+      <tr><td colspan="7" class="empty-state">$ loading jobs…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-4);justify-content:flex-end;">
+  <button class="btn btn-ghost" id="prevPage" disabled>← prev</button>
+  <button class="btn btn-ghost" id="nextPage" disabled>next →</button>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        let offset = 0;
-        const limit = 50;
+<script>
+let offset = 0;
+const limit = 50;
 
-        async function loadTasks() {
-            const status = document.getElementById('filterStatus').value;
-            const type = document.getElementById('filterType').value;
-            let url = `/api/tasks/?limit=${limit}&offset=${offset}`;
-            if (status) url += `&status=${encodeURIComponent(status)}`;
-            if (type) url += `&type=${encodeURIComponent(type)}`;
-            const bodyEl = document.getElementById('tasksBody');
-            bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">${t('loadingTasks')}</td></tr>`;
-            try {
-                const resp = await fetch(url);
-                if (!resp.ok) {
-                    bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">${t('failedToLoad')}</td></tr>`;
-                    return;
-                }
-                const data = await resp.json();
-                if (data.length === 0) {
-                    bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">${t('noTasksFound')}</td></tr>`;
-                } else {
-                    bodyEl.innerHTML = data.map(renderRow).join('');
-                }
-                document.getElementById('prevPage').disabled = offset === 0;
-                document.getElementById('nextPage').disabled = data.length < limit;
-            } catch (e) {
-                bodyEl.innerHTML = `<tr><td colspan="8" class="table-empty-state">${t('errorPrefix')}${e.message}</td></tr>`;
-            }
-        }
+async function loadTasks() {
+  const status = document.getElementById('filterStatus').value;
+  const type = document.getElementById('filterType').value;
+  let url = `/api/tasks/?limit=${limit}&offset=${offset}`;
+  if (status) url += `&status=${encodeURIComponent(status)}`;
+  if (type) url += `&type=${encodeURIComponent(type)}`;
+  const bodyEl = document.getElementById('tasksBody');
+  bodyEl.innerHTML = `<tr><td colspan="7" class="empty-state">$ loading…</td></tr>`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      bodyEl.innerHTML = `<tr><td colspan="7" class="empty-state">✗ failed to load</td></tr>`;
+      return;
+    }
+    const data = await resp.json();
+    const rows = Array.isArray(data) ? data : (data.items || []);
+    if (rows.length === 0) {
+      bodyEl.innerHTML = `<tr><td colspan="7" class="empty-state">$ no jobs found_</td></tr>`;
+    } else {
+      bodyEl.innerHTML = rows.map(renderRow).join('');
+    }
+    document.getElementById('prevPage').disabled = offset === 0;
+    document.getElementById('nextPage').disabled = rows.length < limit;
+  } catch (e) {
+    bodyEl.innerHTML = `<tr><td colspan="7" class="empty-state">✗ ${e.message}</td></tr>`;
+  }
+}
 
-        function renderRow(t) {
-            const started = t.started_at ? new Date(t.started_at).toLocaleString() : '—';
-            const finished = t.finished_at ? new Date(t.finished_at).toLocaleString() : '—';
-            const shortId = t.id.substring(0, 8);
-            const typeLabel = t.type.replace('_', ' ');
-            return `<tr>
-                <td><a href="/jobs/${t.id}" class="task-link" title="${t.id}">${shortId}…</a></td>
-                <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis;" title="${t.id}"><code>${t.id}</code></td>
-                <td><span class="chip job-type ${t.type}">${typeLabel}</span></td>
-                <td><span class="status-chip ${t.status}">${t.status.toUpperCase()}</span></td>
-                <td>${t.platform_name ? `<span class="platform-link" title="${t.platform_id}">${t.platform_name}</span>` : '—'}</td>
-                <td>${started}</td>
-                <td>${finished}</td>
-                <td>
-                    <div class="table-actions">
-                        <a class="btn btn-ghost" href="/jobs/${t.id}" title="View Details">
-                            <span class="material-symbols-rounded" aria-hidden="true">description</span>
-                            <span>Details</span>
-                        </a>
-                        <a class="btn btn-ghost" href="/tasks/${t.id}" target="_blank" title="Live Monitor">
-                            <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
-                            <span>Monitor</span>
-                        </a>
-                    </div>
-                </td>
-            </tr>`;
-        }
+function renderRow(j) {
+  const started = j.started_at ? new Date(j.started_at).toLocaleString() : '—';
+  const finished = j.finished_at ? new Date(j.finished_at).toLocaleString() : '—';
+  const shortId = j.id.substring(0, 8);
+  const typeLabel = (j.type||'').replace('_', ' ');
+  const cls = j.status==='success'?'ok':j.status==='running'?'warn':j.status==='failed'?'err':'muted';
+  return `<tr>
+    <td><a href="/jobs/${j.id}" class="tbl-mono" style="color:var(--signal);" title="${j.id}">${shortId}…</a></td>
+    <td><span class="pill pill-muted">${typeLabel}</span></td>
+    <td><span class="pill pill-${cls}">${j.status}</span></td>
+    <td style="color:var(--fg-muted);">${j.platform_name||'—'}</td>
+    <td class="tbl-mono">${started}</td>
+    <td class="tbl-mono">${finished}</td>
+    <td>
+      <div style="display:flex;gap:6px;">
+        <a class="btn btn-ghost" href="/jobs/${j.id}" style="font-size:11px;padding:4px 8px;">details</a>
+        <a class="btn btn-ghost" href="/tasks/${j.id}" target="_blank" style="font-size:11px;padding:4px 8px;">monitor</a>
+      </div>
+    </td>
+  </tr>`;
+}
 
-        document.getElementById('refreshBtn').addEventListener('click', () => { loadTasks(); });
-        document.getElementById('filterStatus').addEventListener('change', () => { offset = 0; loadTasks(); });
-        document.getElementById('filterType').addEventListener('change', () => { offset = 0; loadTasks(); });
-        document.getElementById('prevPage').addEventListener('click', () => { if (offset >= limit) { offset -= limit; loadTasks(); } });
-        document.getElementById('nextPage').addEventListener('click', () => { offset += limit; loadTasks(); });
+document.getElementById('refreshBtn').addEventListener('click', () => { loadTasks(); });
+document.getElementById('filterStatus').addEventListener('change', () => { offset = 0; loadTasks(); });
+document.getElementById('filterType').addEventListener('change', () => { offset = 0; loadTasks(); });
+document.getElementById('prevPage').addEventListener('click', () => { if (offset >= limit) { offset -= limit; loadTasks(); } });
+document.getElementById('nextPage').addEventListener('click', () => { offset += limit; loadTasks(); });
 
-        loadTasks();
-    </script>
+loadTasks();
+</script>
 {% endblock %}

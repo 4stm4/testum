@@ -1,718 +1,348 @@
 {% extends "layout.html" %}
 {% set active_page = 'settings' %}
 
-{% block title %}Settings - Testum{% endblock %}
+{% block title %}Settings_ — testum{% endblock %}
 
 {% block extra_styles %}
-    <style>
-        .message > div {
-            padding: 10px 14px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            border-left: 4px solid;
-            font-size: 0.85em;
-        }
-
-        .message .success {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border-color: var(--success-border);
-        }
-
-        .message .error {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border-color: var(--error-border);
-        }
-
-        .settings-grid {
-            display: grid;
-            gap: 16px;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            align-items: stretch;
-            grid-auto-flow: row dense;
-        }
-
-        .settings-grid .card {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            padding: 18px;
-            height: 100%;
-        }
-
-        .settings-grid .card-title {
-            font-size: 1.1em;
-            margin-bottom: 2px;
-        }
-
-        .settings-grid .card-description {
-            font-size: 0.85em;
-            margin-bottom: 0;
-        }
-
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-            color: var(--text-primary);
-            font-size: 0.9em;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 0.95em;
-        }
-
-        .current-value {
-            background: var(--bg-tertiary);
-            padding: 10px;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            color: var(--accent-primary);
-            font-size: 0.95em;
-            word-break: break-word;
-            overflow-wrap: anywhere;
-        }
-
-        .card-description {
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-        }
-
-        .note {
-            color: var(--text-tertiary);
-            display: block;
-            margin-top: 5px;
-            font-size: 0.85em;
-        }
-
-        .split-columns {
-            grid-column: 1 / -1;
-            display: grid;
-            gap: 16px;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        }
-
-        .form-row {
-            display: grid;
-            gap: 12px;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        }
-
-        .inline-note {
-            grid-column: 1 / -1;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 14px 18px;
-            flex-wrap: wrap;
-        }
-
-        .update-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .update-modal.active {
-            display: flex;
-        }
-
-        .update-modal-content {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 600px;
-            width: 90%;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-        }
-
-        .update-modal-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .update-modal-icon {
-            font-size: 3em;
-        }
-
-        .update-modal-title {
-            font-size: 1.5em;
-            color: var(--text-primary);
-            margin: 0;
-        }
-
-        .update-modal-subtitle {
-            color: var(--text-secondary);
-            font-size: 0.95em;
-            margin: 0;
-        }
-
-        .update-step {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 3px solid transparent;
-        }
-
-        .update-step.active {
-            border-left-color: var(--accent-primary);
-            background: var(--bg-tertiary);
-        }
-
-        .update-step.completed {
-            border-left-color: var(--success-border);
-            background: var(--success-bg);
-        }
-
-        .update-step.error {
-            border-left-color: var(--error-border);
-            background: var(--error-bg);
-        }
-
-        .update-step-icon {
-            min-width: 30px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .update-step-icon .material-symbols-rounded {
-            font-size: 28px;
-        }
-
-        .update-step-text {
-            flex: 1;
-            color: var(--text-primary);
-        }
-
-        .update-step-status {
-            color: var(--text-secondary);
-            font-size: 0.9em;
-        }
-
-        .spinner {
-            border: 3px solid var(--border-color);
-            border-top: 3px solid var(--accent-primary);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .update-modal-footer {
-            text-align: center;
-            color: var(--text-tertiary);
-            font-size: 0.9em;
-            margin-top: 20px;
-        }
-    </style>
+<style>
+  .settings-grid {
+    display: grid;
+    gap: var(--sp-4);
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    align-items: stretch;
+  }
+  .settings-grid .card { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .setting-key { font-size: var(--t-xs); color: var(--fg-dim); margin-bottom: var(--sp-1); text-transform: uppercase; letter-spacing: 1px; }
+  .setting-val {
+    background: var(--surface-3);
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r-md);
+    font-family: var(--font-mono);
+    color: var(--signal);
+    font-size: var(--t-sm);
+    word-break: break-word;
+  }
+  .note { color: var(--fg-dim); display: block; margin-top: var(--sp-1); font-size: var(--t-xs); }
+  .split-col { grid-column: 1 / -1; display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .form-row { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+</style>
 {% endblock %}
 
 {% block content %}
-    <div class="page-header">
-        <div class="page-header-info">
-            <h1 class="page-title">
-                <span class="material-symbols-rounded" aria-hidden="true">settings</span>
-                <span data-i18n="settingsTitle">Settings</span>
-            </h1>
+<div class="pg-head">
+  <div>
+    <div class="pg-title">Settings<span class="cur"></span></div>
+  </div>
+</div>
+
+<div class="settings-grid">
+  <div class="card">
+    <div class="card-header"><span class="card-title" data-i18n="accountInfo">Account</span></div>
+    <div>
+      <div class="setting-key" data-i18n="currentUsername">Current Username</div>
+      <div class="setting-val" id="currentUsername">loading…</div>
+    </div>
+    <div>
+      <div class="setting-key" data-i18n="accountType">Account Type</div>
+      <div class="setting-val" data-i18n="administrator">Administrator</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title" data-i18n="appSettings">Application</span></div>
+    <div>
+      <div class="setting-key" data-i18n="environment">Environment</div>
+      <div class="setting-val" id="appEnv">loading…</div>
+    </div>
+    <div>
+      <div class="setting-key" data-i18n="secretKey">Secret Key</div>
+      <div class="setting-val">••••••••••••••••••••</div>
+      <small class="note" data-i18n="hiddenForSecurity">Hidden for security</small>
+    </div>
+    <div>
+      <div class="setting-key" data-i18n="fernetKey">Fernet Encryption Key</div>
+      <div class="setting-val" id="fernetKey">••••••••••••••••••••</div>
+      <small class="note" data-i18n="fernetKeyDesc">Used for encrypting passwords and private keys</small>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title" data-i18n="databaseSettings">Database</span></div>
+    <div>
+      <div class="setting-key" data-i18n="databaseUrl">Database URL</div>
+      <div class="setting-val" id="databaseUrl">loading…</div>
+    </div>
+    <div>
+      <div class="setting-key" data-i18n="redisUrl">Redis URL</div>
+      <div class="setting-val" id="redisUrl">loading…</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title" data-i18n="taskQueueSettings">Task Queue</span></div>
+    <div>
+      <div class="setting-key" data-i18n="brokerUrl">Broker URL</div>
+      <div class="setting-val" id="jobkitBroker">loading…</div>
+    </div>
+    <div>
+      <div class="setting-key" data-i18n="resultBackend">Result Backend</div>
+      <div class="setting-val" id="jobkitBackend">loading…</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title" data-i18n="storageSettings">Storage</span></div>
+    <div>
+      <div class="setting-key" data-i18n="minioEndpoint">MinIO Endpoint</div>
+      <div class="setting-val" id="minioEndpoint">loading…</div>
+    </div>
+    <div>
+      <div class="setting-key" data-i18n="bucketName">Bucket Name</div>
+      <div class="setting-val" id="minioBucket">loading…</div>
+    </div>
+    <div>
+      <div class="setting-key" data-i18n="accessKey">Access Key</div>
+      <div class="setting-val">••••••••••</div>
+    </div>
+    <div>
+      <div class="setting-key" data-i18n="secureConnection">Secure (TLS)</div>
+      <div class="setting-val" id="minioSecure">loading…</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title" data-i18n="sshSettings">SSH</span></div>
+    <div>
+      <div class="setting-key" data-i18n="hostKeyPolicy">Host Key Policy</div>
+      <div class="setting-val" id="sshPolicy">loading…</div>
+      <small class="note" data-i18n="autoAddDesc">auto_add = TOFU - Trust On First Use</small>
+    </div>
+  </div>
+
+  <!-- Backup & Restore -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">Backup &amp; Restore</span></div>
+    <div class="form-row">
+      <div class="field">
+        <button type="button" onclick="exportBackup()" class="btn btn-ghost btn-full">↓ Export YAML</button>
+        <small class="note">Downloads configuration (passwords excluded)</small>
+      </div>
+      <div class="field">
+        <label class="field-label">Import Backup</label>
+        <input type="file" class="input" id="backupFile" accept=".yaml,.yml" onchange="importBackup(event)" style="padding:6px;">
+        <small class="note">Upload YAML to restore configuration</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- GitOps Import -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">GitOps Import</span></div>
+    <div class="field">
+      <label class="field-label">Git Repository URL</label>
+      <input type="text" class="input" id="gitUrl" placeholder="https://github.com/user/repo.git">
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label class="field-label">Branch</label>
+        <input type="text" class="input" id="gitBranch" value="main">
+      </div>
+      <div class="field">
+        <label class="field-label">Config Path</label>
+        <input type="text" class="input" id="configPath" value="testum-config.yaml">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label class="field-label">Username (optional)</label>
+        <input type="text" class="input" id="gitUsername" placeholder="git username">
+      </div>
+      <div class="field">
+        <label class="field-label">Token (optional)</label>
+        <input type="password" class="input" id="gitToken" placeholder="git token">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-2);">
+      <input type="checkbox" id="dryRun" checked>
+      <label for="dryRun" style="font-size:var(--t-sm);color:var(--fg-muted);">Dry Run (preview without importing)</label>
+    </div>
+    <button type="button" onclick="gitopsImport()" class="btn btn-signal">▶ Import from Git</button>
+  </div>
+
+  <div class="split-col">
+    <div class="card">
+      <div class="card-header"><span class="card-title" data-i18n="changeUsername">Username</span></div>
+      <form id="usernameForm" style="display:flex;flex-direction:column;gap:var(--sp-3);">
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label">Current Password</label>
+            <input type="password" class="input" id="currentPasswordForUsername" required>
+          </div>
+          <div class="field">
+            <label class="field-label">New Username</label>
+            <input type="text" class="input" id="newUsername" required>
+          </div>
         </div>
+        <button type="submit" class="btn btn-ghost">Update Username</button>
+      </form>
     </div>
 
-    <div id="message" class="message"></div>
-
-    <div class="settings-grid">
-        <div class="card">
-            <h2 class="card-title" data-i18n="accountInfo">Account</h2>
-            <div class="card-description" data-i18n="accountInfoDesc">Current profile overview</div>
-            <div class="form-group">
-                <label data-i18n="currentUsername">Current Username</label>
-                <div class="current-value" id="currentUsername">Loading...</div>
-            </div>
-            <div class="form-group">
-                <label data-i18n="accountType">Account Type</label>
-                <div class="current-value" data-i18n="administrator">Administrator</div>
-            </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title" data-i18n="changePassword">Password</span></div>
+      <form id="passwordForm" style="display:flex;flex-direction:column;gap:var(--sp-3);">
+        <div class="field">
+          <label class="field-label">Current Password</label>
+          <input type="password" class="input" id="currentPassword" required>
         </div>
-
-        <div class="card">
-            <h2 class="card-title" data-i18n="appSettings">Application</h2>
-            <div class="card-description" data-i18n="appSettingsDesc">Read-only runtime configuration</div>
-            <div class="form-group">
-                <label data-i18n="environment">Environment</label>
-                <div class="current-value" id="appEnv">Loading...</div>
-            </div>
-            <div class="form-group">
-                <label data-i18n="secretKey">Secret Key</label>
-                <div class="current-value">••••••••••••••••••••</div>
-                <small class="note" data-i18n="hiddenForSecurity">Hidden for security. Change in docker-compose.yml if needed.</small>
-            </div>
-            <div class="form-group">
-                <label data-i18n="fernetKey">Fernet Encryption Key</label>
-                <div class="current-value" id="fernetKey">••••••••••••••••••••</div>
-                <small class="note" data-i18n="fernetKeyDesc">Used for encrypting passwords and private keys</small>
-            </div>
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label">New Password</label>
+            <input type="password" class="input" id="newPassword" required>
+          </div>
+          <div class="field">
+            <label class="field-label">Confirm</label>
+            <input type="password" class="input" id="confirmPassword" required>
+          </div>
         </div>
-
-        <div class="card">
-            <h2 class="card-title" data-i18n="databaseSettings">Database</h2>
-            <div class="card-description" data-i18n="databaseSettingsDesc">Connection endpoints</div>
-            <div class="form-group">
-                <label data-i18n="databaseUrl">Database URL</label>
-                <div class="current-value" id="databaseUrl">Loading...</div>
-            </div>
-            <div class="form-group">
-                <label data-i18n="redisUrl">Redis URL</label>
-                <div class="current-value" id="redisUrl">Loading...</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2 class="card-title" data-i18n="taskQueueSettings">Task Queue</h2>
-            <div class="card-description" data-i18n="taskQueueSettingsDesc">Task queue endpoints</div>
-            <div class="form-group">
-                <label data-i18n="brokerUrl">Broker URL</label>
-                <div class="current-value" id="jobkitBroker">Loading...</div>
-            </div>
-            <div class="form-group">
-                <label data-i18n="resultBackend">Result Backend</label>
-                <div class="current-value" id="jobkitBackend">Loading...</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2 class="card-title" data-i18n="storageSettings">Storage</h2>
-            <div class="card-description" data-i18n="storageSettingsDesc">MinIO configuration</div>
-            <div class="form-group">
-                <label data-i18n="minioEndpoint">MinIO Endpoint</label>
-                <div class="current-value" id="minioEndpoint">Loading...</div>
-            </div>
-            <div class="form-group">
-                <label data-i18n="bucketName">Bucket Name</label>
-                <div class="current-value" id="minioBucket">Loading...</div>
-            </div>
-            <div class="form-group">
-                <label data-i18n="accessKey">Access Key</label>
-                <div class="current-value" id="minioAccessKey">••••••••••</div>
-            </div>
-            <div class="form-group">
-                <label data-i18n="secureConnection">Secure Connection (TLS)</label>
-                <div class="current-value" id="minioSecure">Loading...</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2 class="card-title" data-i18n="sshSettings">SSH</h2>
-            <div class="card-description" data-i18n="sshSettingsDesc">Connection behaviour</div>
-            <div class="form-group">
-                <label data-i18n="hostKeyPolicy">Host Key Policy</label>
-                <div class="current-value" id="sshPolicy">Loading...</div>
-                <small class="note" data-i18n="autoAddDesc">auto_add = Automatically accept new host keys (TOFU - Trust On First Use)</small>
-            </div>
-        </div>
-
-        <!-- Backup & Restore -->
-        <div class="card">
-            <h2 class="card-title">🔄 Backup & Restore</h2>
-            <div class="card-description">Export or import configuration (platforms, SSH keys)</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <button type="button" onclick="exportBackup()" class="btn-secondary">
-                        📥 Export Backup (YAML)
-                    </button>
-                    <small class="note">Downloads configuration as YAML file (passwords excluded)</small>
-                </div>
-                <div class="form-group">
-                    <label for="backupFile">Import Backup</label>
-                    <input type="file" id="backupFile" accept=".yaml,.yml" onchange="importBackup(event)">
-                    <small class="note">Upload YAML file to restore configuration</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- GitOps Import -->
-        <div class="card">
-            <h2 class="card-title">🔀 GitOps Import</h2>
-            <div class="card-description">Import configuration from Git repository</div>
-            <div class="form-group">
-                <label for="gitUrl">Git Repository URL</label>
-                <input type="text" id="gitUrl" placeholder="https://github.com/user/repo.git" required>
-                <small class="note">HTTPS or SSH URL to Git repository</small>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="gitBranch">Branch</label>
-                    <input type="text" id="gitBranch" value="main" placeholder="main">
-                </div>
-                <div class="form-group">
-                    <label for="configPath">Config Path</label>
-                    <input type="text" id="configPath" value="testum-config.yaml" placeholder="testum-config.yaml">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="gitUsername">Username (optional)</label>
-                    <input type="text" id="gitUsername" placeholder="git username">
-                </div>
-                <div class="form-group">
-                    <label for="gitToken">Token/Password (optional)</label>
-                    <input type="password" id="gitToken" placeholder="git token or password">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="dryRun" checked>
-                    Dry Run (preview without importing)
-                </label>
-            </div>
-            <button type="button" onclick="gitopsImport()" class="btn-primary">
-                🚀 Import from Git
-            </button>
-        </div>
-
-        <div class="split-columns">
-            <div class="card">
-                <h2 class="card-title" data-i18n="changeUsername">Username</h2>
-                <div class="card-description" data-i18n="changeUsernameDesc">Update login name</div>
-                <form id="usernameForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="currentPasswordForVerification">Current Password</label>
-                            <input type="password" id="currentPasswordForUsername" required>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="newUsername">New Username</label>
-                            <input type="text" id="newUsername" required>
-                        </div>
-                    </div>
-                    <button type="submit" data-i18n="updateUsername">Update Username</button>
-                </form>
-            </div>
-
-            <div class="card">
-                <h2 class="card-title" data-i18n="changePassword">Password</h2>
-                <div class="card-description" data-i18n="changePasswordDesc">Refresh credentials</div>
-                <form id="passwordForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="currentPassword">Current Password</label>
-                            <input type="password" id="currentPassword" required>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="newPassword">New Password</label>
-                            <input type="password" id="newPassword" required>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="confirmPassword">Confirm</label>
-                            <input type="password" id="confirmPassword" required>
-                        </div>
-                    </div>
-                    <button type="submit" data-i18n="updatePassword">Update Password</button>
-                </form>
-            </div>
-        </div>
-
-        <div class="card inline-note">
-            <h2 class="card-title" data-i18n="noteTitle">Heads-up</h2>
-            <div class="card-description" data-i18n="noteText">Changing credentials will sign you out.</div>
-        </div>
+        <button type="submit" class="btn btn-ghost">Update Password</button>
+      </form>
     </div>
+  </div>
 
-    <div class="update-modal" id="updateModal">
-        <div class="update-modal-content">
-            <div class="update-modal-header">
-                <div class="update-modal-icon">⬇️</div>
-                <div>
-                    <h3 class="update-modal-title">Updating Testum</h3>
-                    <p class="update-modal-subtitle">Please do not close this window</p>
-                </div>
-            </div>
-            <div id="updateProgress" class="update-progress"></div>
-            <div class="update-modal-footer">Logs are streamed in real-time. You can close this modal after completion.</div>
-        </div>
+  <div class="card" style="grid-column:1/-1;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-3);">
+      <div>
+        <div style="font-size:var(--t-sm);font-weight:600;color:var(--fg);" data-i18n="noteTitle">Heads-up</div>
+        <div style="font-size:var(--t-xs);color:var(--fg-dim);" data-i18n="noteText">Changing credentials will sign you out.</div>
+      </div>
     </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        const messageContainer = document.getElementById('message');
-        const updateModal = document.getElementById('updateModal');
-        const updateProgress = document.getElementById('updateProgress');
+<script>
+async function fetchSettings() {
+  try {
+    const response = await fetch('/api/settings');
+    if (!response.ok) throw new Error('Failed to load settings');
+    const data = await response.json();
+    document.getElementById('currentUsername').textContent = data.username || 'admin';
+    document.getElementById('appEnv').textContent = data.environment || 'production';
+    document.getElementById('fernetKey').textContent = data.fernet_key ? '••••••••••••••••••••' : 'not set';
+    document.getElementById('databaseUrl').textContent = data.database_url || 'postgresql://...';
+    document.getElementById('redisUrl').textContent = data.redis_url || 'redis://...';
+    document.getElementById('jobkitBroker').textContent = data.jobkit_broker_url || 'redis://...';
+    document.getElementById('jobkitBackend').textContent = data.jobkit_result_backend || 'redis://...';
+    document.getElementById('minioEndpoint').textContent = data.minio_endpoint || 'minio:9000';
+    document.getElementById('minioBucket').textContent = data.minio_bucket || 'testum';
+    document.getElementById('minioSecure').textContent = data.minio_secure ? 'enabled' : 'disabled';
+    document.getElementById('sshPolicy').textContent = data.ssh_host_key_policy || 'auto_add';
+  } catch (error) {
+    showSnack('✗ Error loading settings: ' + error.message, 'err');
+  }
+}
 
-        function showMessage(text, type = 'success') {
-            messageContainer.innerHTML = `<div class="${type}">${text}</div>`;
-            setTimeout(() => messageContainer.innerHTML = '', 5000);
-        }
+document.getElementById('usernameForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const payload = {
+    current_password: document.getElementById('currentPasswordForUsername').value,
+    new_username: document.getElementById('newUsername').value,
+  };
+  try {
+    const response = await fetch('/api/settings/username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to update username');
+    showSnack('✓ Username updated', 'ok');
+    setTimeout(() => window.location.href = '/login', 1000);
+  } catch (error) {
+    showSnack('✗ ' + error.message, 'err');
+  }
+});
 
-        async function fetchSettings() {
-            try {
-                const response = await fetch('/api/settings');
-                if (!response.ok) throw new Error('Failed to load settings');
-                const data = await response.json();
+document.getElementById('passwordForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const payload = {
+    current_password: document.getElementById('currentPassword').value,
+    new_password: document.getElementById('newPassword').value,
+    confirm_password: document.getElementById('confirmPassword').value,
+  };
+  try {
+    const response = await fetch('/api/settings/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to update password');
+    showSnack('✓ Password updated', 'ok');
+    setTimeout(() => window.location.href = '/login', 1000);
+  } catch (error) {
+    showSnack('✗ ' + error.message, 'err');
+  }
+});
 
-                document.getElementById('currentUsername').textContent = data.username || 'admin';
-                document.getElementById('appEnv').textContent = data.environment || 'production';
-                document.getElementById('fernetKey').textContent = data.fernet_key ? '••••••••••••••••••••' : t('notSet');
-                document.getElementById('databaseUrl').textContent = data.database_url || 'postgresql://...';
-                document.getElementById('redisUrl').textContent = data.redis_url || 'redis://...';
-                document.getElementById('jobkitBroker').textContent = data.jobkit_broker_url || 'redis://...';
-                document.getElementById('jobkitBackend').textContent = data.jobkit_result_backend || 'redis://...';
-                document.getElementById('minioEndpoint').textContent = data.minio_endpoint || 'minio:9000';
-                document.getElementById('minioBucket').textContent = data.minio_bucket || 'testum';
-                document.getElementById('minioAccessKey').textContent = data.minio_access_key ? '••••••••••' : t('notSet');
-                document.getElementById('minioSecure').textContent = data.minio_secure ? t('enabled') : t('disabled');
-                document.getElementById('sshPolicy').textContent = data.ssh_host_key_policy || 'auto_add';
-            } catch (error) {
-                showMessage('Error loading settings: ' + error.message, 'error');
-            }
-        }
+function exportBackup() {
+  window.open('/api/backup/export', '_blank');
+  showSnack('✓ Backup export started', 'ok');
+}
 
-        document.getElementById('usernameForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const payload = {
-                current_password: document.getElementById('currentPasswordForUsername').value,
-                new_username: document.getElementById('newUsername').value,
-            };
+async function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const fileContent = await file.text();
+    const response = await fetch('/api/backup/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-yaml' },
+      body: fileContent,
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Import failed');
+    showSnack(`✓ Imported: ${result.stats.platforms_imported} platforms, ${result.stats.ssh_keys_imported} keys`, 'ok');
+    setTimeout(() => window.location.reload(), 1500);
+  } catch (error) {
+    showSnack('✗ ' + error.message, 'err');
+  } finally {
+    event.target.value = '';
+  }
+}
 
-            try {
-                const response = await fetch('/api/settings/username', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
+async function gitopsImport() {
+  const gitUrl = document.getElementById('gitUrl').value.trim();
+  if (!gitUrl) { showSnack('✗ Git URL required', 'err'); return; }
+  const dryRun = document.getElementById('dryRun').checked;
+  const payload = {
+    git_url: gitUrl,
+    branch: document.getElementById('gitBranch').value.trim() || 'main',
+    config_path: document.getElementById('configPath').value.trim() || 'testum-config.yaml',
+    dry_run: dryRun
+  };
+  const gitUsername = document.getElementById('gitUsername').value.trim();
+  const gitToken = document.getElementById('gitToken').value.trim();
+  if (gitUsername) payload.username = gitUsername;
+  if (gitToken) payload.token = gitToken;
+  try {
+    showSnack('$ cloning repository…');
+    const response = await fetch('/api/gitops/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'GitOps import failed');
+    showSnack(`✓ ${dryRun ? 'Dry run' : 'Import'}: ${result.platforms_imported} platforms, ${result.ssh_keys_imported} keys`, 'ok');
+    document.getElementById('gitToken').value = '';
+    if (!dryRun) setTimeout(() => window.location.reload(), 1500);
+  } catch (error) {
+    showSnack('✗ ' + error.message, 'err');
+  }
+}
 
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Failed to update username');
-                showMessage(t('usernameUpdated'));
-                setTimeout(() => window.location.href = '/login', 1000);
-            } catch (error) {
-                showMessage(t('errorPrefix') + error.message, 'error');
-            }
-        });
-
-        document.getElementById('passwordForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const payload = {
-                current_password: document.getElementById('currentPassword').value,
-                new_password: document.getElementById('newPassword').value,
-                confirm_password: document.getElementById('confirmPassword').value,
-            };
-
-            try {
-                const response = await fetch('/api/settings/password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
-
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Failed to update password');
-                showMessage(t('passwordUpdated'));
-                setTimeout(() => window.location.href = '/login', 1000);
-            } catch (error) {
-                showMessage(t('errorPrefix') + error.message, 'error');
-            }
-        });
-
-        async function startUpdateProcess() {
-            updateModal.classList.add('active');
-            updateProgress.innerHTML = '';
-
-            const steps = [
-                { icon: 'download', text: 'Downloading update package...' },
-                { icon: 'inventory_2', text: 'Extracting files...' },
-                { icon: 'handyman', text: 'Applying migrations...' },
-                { icon: 'rocket_launch', text: 'Restarting services...' },
-                { icon: 'task_alt', text: 'Update completed successfully!' },
-            ];
-
-            for (let i = 0; i < steps.length; i++) {
-                const step = document.createElement('div');
-                step.className = 'update-step' + (i === 0 ? ' active' : '');
-                step.innerHTML = `
-                    <div class="update-step-icon"><span class="material-symbols-rounded" aria-hidden="true">${steps[i].icon}</span></div>
-                    <div class="update-step-text">
-                        <div>${steps[i].text}</div>
-                        <div class="update-step-status" id="step-status-${i}">In progress...</div>
-                    </div>
-                    <div class="spinner" id="spinner-${i}"></div>
-                `;
-                updateProgress.appendChild(step);
-
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                document.getElementById(`step-status-${i}`).textContent = 'Completed';
-                document.getElementById(`spinner-${i}`).outerHTML = '<span class="material-symbols-rounded" aria-hidden="true">task_alt</span>';
-                step.classList.remove('active');
-                step.classList.add('completed');
-
-                if (i + 1 < steps.length) {
-                    const nextStep = updateProgress.children[i + 1];
-                    nextStep.classList.add('active');
-                }
-            }
-
-            setTimeout(() => {
-                updateModal.classList.remove('active');
-            }, 2000);
-        }
-
-        // Backup & Restore functions
-        function exportBackup() {
-            window.open('/api/backup/export', '_blank');
-            showMessage(t('backupStarted'), 'success');
-        }
-
-        async function importBackup(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!confirm(`Import configuration from ${file.name}? Existing items with same names will be skipped.`)) {
-                event.target.value = '';
-                return;
-            }
-
-            try {
-                const formData = new FormData();
-                const fileContent = await file.text();
-                
-                const response = await fetch('/api/backup/import', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-yaml',
-                    },
-                    body: fileContent,
-                });
-
-                const result = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(result.error || 'Import failed');
-                }
-
-                let message = `Import completed!\n`;
-                message += `- Platforms: ${result.stats.platforms_imported}\n`;
-                message += `- SSH Keys: ${result.stats.ssh_keys_imported}\n`;
-                if (result.stats.errors.length > 0) {
-                    message += `\nWarnings:\n${result.stats.errors.join('\n')}`;
-                }
-
-                alert(message);
-                showMessage(t('backupImported'), 'success');
-
-                // Reload page to show new data
-                setTimeout(() => window.location.reload(), 1500);
-            } catch (error) {
-                showMessage(t('errorPrefix') + error.message, 'error');
-            } finally {
-                event.target.value = '';
-            }
-        }
-
-        fetchSettings();
-
-        // GitOps Import function
-        async function gitopsImport() {
-            const gitUrl = document.getElementById('gitUrl').value.trim();
-            const gitBranch = document.getElementById('gitBranch').value.trim() || 'main';
-            const configPath = document.getElementById('configPath').value.trim() || 'testum-config.yaml';
-            const gitUsername = document.getElementById('gitUsername').value.trim();
-            const gitToken = document.getElementById('gitToken').value.trim();
-            const dryRun = document.getElementById('dryRun').checked;
-
-            if (!gitUrl) {
-                showMessage(t('gitUrlRequired'), 'error');
-                return;
-            }
-
-            if (!confirm(`Import from Git repository?\n\nURL: ${gitUrl}\nBranch: ${gitBranch}\nConfig: ${configPath}\nDry Run: ${dryRun ? 'Yes' : 'No (will import)'}`)) {
-                return;
-            }
-
-            try {
-                showMessage(t('cloningRepo'), 'info');
-
-                const payload = {
-                    git_url: gitUrl,
-                    branch: gitBranch,
-                    config_path: configPath,
-                    dry_run: dryRun
-                };
-
-                if (gitUsername) {
-                    payload.username = gitUsername;
-                }
-                if (gitToken) {
-                    payload.token = gitToken;
-                }
-
-                const response = await fetch('/api/gitops/import', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload),
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'GitOps import failed');
-                }
-
-                let message = `GitOps Import ${dryRun ? '(Dry Run)' : 'Completed'}!\n\n`;
-                message += `Repository: ${result.git_url}\n`;
-                message += `Branch: ${result.branch}\n`;
-                message += `Config: ${result.config_file}\n\n`;
-                message += `Platforms: ${result.platforms_imported} imported, ${result.platforms_skipped} skipped\n`;
-                message += `SSH Keys: ${result.ssh_keys_imported} imported, ${result.ssh_keys_skipped} skipped\n`;
-
-                if (result.errors && result.errors.length > 0) {
-                    message += `\nErrors:\n${result.errors.join('\n')}`;
-                }
-
-                alert(message);
-                showMessage(dryRun ? t('dryRunDone') : t('gitopsSuccess'), 'success');
-
-                // Clear sensitive fields
-                document.getElementById('gitToken').value = '';
-
-                // Reload if not dry run
-                if (!dryRun) {
-                    setTimeout(() => window.location.reload(), 1500);
-                }
-            } catch (error) {
-                showMessage(t('errorPrefix') + error.message, 'error');
-            }
-        }
-    </script>
+fetchSettings();
+</script>
 {% endblock %}
