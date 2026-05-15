@@ -19,8 +19,16 @@ fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
 
+
+def _sync_url(url: str | None) -> str | None:
+    """Rewrite bare postgresql:// to postgresql+psycopg:// for psycopg3."""
+    if url and url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
+
+
 def run_migrations_offline():
-    url = os.environ.get("DATABASE_URL")
+    url = _sync_url(os.environ.get("DATABASE_URL"))
     context.configure(
         url=url, target_metadata=target_metadata, literal_binds=True, compare_type=True
     )
@@ -32,7 +40,7 @@ def run_migrations_online():
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        url=os.environ.get("DATABASE_URL"),
+        url=_sync_url(os.environ.get("DATABASE_URL")),
     )
     with connectable.connect() as connection:
         context.configure(
