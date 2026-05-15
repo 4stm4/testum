@@ -212,44 +212,32 @@ def build_template_context(request: Request, active_page: str, **extra) -> dict:
 # Routes
 async def homepage(request: Request):
     """Homepage with links to keys and platforms."""
-    return templates.TemplateResponse(
-        "index.html", build_template_context(request, "")
-    )
+    return templates.TemplateResponse(request, "index.html", build_template_context(request, ""))
 
 
 async def keys_page(request: Request):
     """SSH Keys page."""
-    return templates.TemplateResponse(
-        "keys.html", build_template_context(request, "keys")
-    )
+    return templates.TemplateResponse(request, "keys.html", build_template_context(request, "keys"))
 
 
 async def platforms_page(request: Request):
     """Platforms page."""
-    return templates.TemplateResponse(
-        "platforms.html", build_template_context(request, "platforms")
-    )
+    return templates.TemplateResponse(request, "platforms.html", build_template_context(request, "platforms"))
 
 
 async def scripts_page(request: Request):
     """Scripts library page."""
-    return templates.TemplateResponse(
-        "scripts.html", build_template_context(request, "scripts")
-    )
+    return templates.TemplateResponse(request, "scripts.html", build_template_context(request, "scripts"))
 
 
 async def automations_page(request: Request):
     """Automation jobs page."""
-    return templates.TemplateResponse(
-        "automations.html", build_template_context(request, "automations")
-    )
+    return templates.TemplateResponse(request, "automations.html", build_template_context(request, "automations"))
 
 
 async def settings_page(request: Request):
     """Settings page."""
-    return templates.TemplateResponse(
-        "settings.html", build_template_context(request, "settings")
-    )
+    return templates.TemplateResponse(request, "settings.html", build_template_context(request, "settings"))
 
 
 async def users_page(request: Request):
@@ -258,9 +246,7 @@ async def users_page(request: Request):
     if not user or not user.is_admin():
         return JSONResponse({"error": "Admin access required"}, status_code=403)
     
-    return templates.TemplateResponse(
-        "users.html", build_template_context(request, "users")
-    )
+    return templates.TemplateResponse(request, "users.html", build_template_context(request, "users"))
 
 
 async def audit_page(request: Request):
@@ -269,38 +255,35 @@ async def audit_page(request: Request):
     if not user or user.role == UserRole.VIEWER:
         return JSONResponse({"error": "Admin or Operator access required"}, status_code=403)
     
-    return templates.TemplateResponse(
-        "audit.html", build_template_context(request, "audit")
-    )
+    return templates.TemplateResponse(request, "audit.html", build_template_context(request, "audit"))
 
 
 async def jobs_page(request: Request):
     """Jobs page listing recent tasks."""
-    return templates.TemplateResponse(
-        "jobs.html", build_template_context(request, "jobs")
-    )
+    return templates.TemplateResponse(request, "jobs.html", build_template_context(request, "jobs"))
 
 
 async def virt_vms_page(request: Request):
-    return templates.TemplateResponse("virt_vms.html", build_template_context(request, "virt_vms"))
+    return templates.TemplateResponse(request, "virt_vms.html", build_template_context(request, "virt_vms"))
 
 
 async def virt_pools_page(request: Request):
-    return templates.TemplateResponse("virt_pools.html", build_template_context(request, "virt_pools"))
+    return templates.TemplateResponse(request, "virt_pools.html", build_template_context(request, "virt_pools"))
 
 
 async def virt_volumes_page(request: Request):
-    return templates.TemplateResponse("virt_volumes.html", build_template_context(request, "virt_volumes"))
+    return templates.TemplateResponse(request, "virt_volumes.html", build_template_context(request, "virt_volumes"))
 
 
 async def virt_ufw_page(request: Request):
-    return templates.TemplateResponse("virt_ufw.html", build_template_context(request, "virt_ufw"))
+    return templates.TemplateResponse(request, "virt_ufw.html", build_template_context(request, "virt_ufw"))
 
 
 async def job_detail_page(request: Request):
     """Job detail page for a specific task."""
     task_id = request.path_params.get("task_id")
     return templates.TemplateResponse(
+        request,
         "job-detail.html",
         build_template_context(request, "jobs", task_id=task_id),
     )
@@ -310,6 +293,7 @@ async def task_page(request: Request):
     """Task monitoring page."""
     task_id = request.path_params.get("task_id")
     return templates.TemplateResponse(
+        request,
         "task.html",
         build_template_context(request, "jobs", task_id=task_id),
     )
@@ -317,7 +301,7 @@ async def task_page(request: Request):
 
 async def login_page(request: Request):
     """Login page."""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 async def login_endpoint(request: Request):
@@ -490,7 +474,7 @@ async def health_check(request: Request):
 
     if wants_html:
         context = build_template_context(request, "health", health=health_data)
-        return templates.TemplateResponse("health.html", context)
+        return templates.TemplateResponse(request, "health.html", context)
 
     return JSONResponse(health_data)
 

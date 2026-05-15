@@ -46,7 +46,7 @@ class AsyncSSHClient:
         _require_asyncssh()
         success, error = await self.connect()
         if not success:
-            raise asyncssh.Error(error or "Unable to establish SSH connection")
+            raise ConnectionError(error or "Unable to establish SSH connection")
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
