@@ -13,28 +13,58 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade() -> None:
-    enums = {
-        "userrole": ("admin", "operator", "viewer"),
-        "authmethodenum": ("password", "private_key"),
-        "tasktypeenum": ("deploy", "run_command"),
-        "taskstatusenum": ("pending", "running", "success", "failed"),
-        "automationexecutionenum": ("command", "script"),
-        "automationtriggerenum": ("manual", "cron", "github_push", "webhook"),
-    }
+def _is_pg() -> bool:
+    return op.get_bind().dialect.name == "postgresql"
 
-    for name, values in enums.items():
-        quoted_values = ", ".join(f"'{v}'" for v in values)
-        op.execute(
-            sa.text(
-                f"DO $$ BEGIN CREATE TYPE {name} AS ENUM ({quoted_values}); "
-                "EXCEPTION WHEN duplicate_object THEN null; END $$;"
-            )
+
+def _uuid_col(name: str, **kw):
+    """UUID primary/foreign key column, cross-database."""
+    if _is_pg():
+        return sa.Column(name, postgresql.UUID(as_uuid=True), **kw)
+    return sa.Column(name, sa.String(36), **kw)
+
+
+def _enum_col(name: str, *values: str, enum_name: str, **kw):
+    """ENUM column: native ENUM on PostgreSQL, String on SQLite."""
+    if _is_pg():
+        return sa.Column(
+            name,
+            postgresql.ENUM(*values, name=enum_name, create_type=False),
+            **kw,
         )
+    return sa.Column(name, sa.String(50), **kw)
+
+
+def _json_col(name: str, **kw):
+    """JSONB on PostgreSQL, JSON on SQLite."""
+    if _is_pg():
+        return sa.Column(name, postgresql.JSONB(astext_type=sa.Text()), **kw)
+    return sa.Column(name, sa.JSON(), **kw)
+
+
+def upgrade() -> None:
+    # PostgreSQL-only: create native ENUM types
+    if _is_pg():
+        enums = {
+            "userrole": ("admin", "operator", "viewer"),
+            "authmethodenum": ("password", "private_key"),
+            "tasktypeenum": ("deploy", "run_command"),
+            "taskstatusenum": ("pending", "running", "success", "failed"),
+            "automationexecutionenum": ("command", "script"),
+            "automationtriggerenum": ("manual", "cron", "github_push", "webhook"),
+        }
+        for name, values in enums.items():
+            quoted = ", ".join(f"'{v}'" for v in values)
+            op.execute(
+                sa.text(
+                    f"DO $$ BEGIN CREATE TYPE {name} AS ENUM ({quoted}); "
+                    "EXCEPTION WHEN duplicate_object THEN null; END $$;"
+                )
+            )
 
     op.create_table(
         "ssh_keys",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        _uuid_col("id", nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("public_key", sa.Text(), nullable=False),
         sa.Column("encrypted_private_key", sa.LargeBinary(), nullable=True),
@@ -46,15 +76,11 @@ def upgrade() -> None:
 
     op.create_table(
         "users",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        _uuid_col("id", nullable=False),
         sa.Column("username", sa.String(length=150), nullable=False),
         sa.Column("email", sa.String(length=255), nullable=True),
         sa.Column("hashed_password", sa.String(length=255), nullable=False),
-        sa.Column(
-            "role",
-            postgresql.ENUM("admin", "operator", "viewer", name="userrole", create_type=False),
-            nullable=False,
-        ),
+        _enum_col("role", "admin", "operator", "viewer", enum_name="userrole", nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
@@ -68,19 +94,15 @@ def upgrade() -> None:
 
     op.create_table(
         "platforms",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        _uuid_col("id", nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("host", sa.String(length=255), nullable=False),
         sa.Column("port", sa.Integer(), nullable=False),
         sa.Column("username", sa.String(length=255), nullable=False),
-        sa.Column(
-            "auth_method",
-            postgresql.ENUM("password", "private_key", name="authmethodenum", create_type=False),
-            nullable=False,
-        ),
+        _enum_col("auth_method", "password", "private_key", enum_name="authmethodenum", nullable=False),
         sa.Column("encrypted_password", sa.LargeBinary(), nullable=True),
         sa.Column("encrypted_private_key", sa.LargeBinary(), nullable=True),
-        sa.Column("ssh_key_id", postgresql.UUID(as_uuid=True), nullable=True),
+        _uuid_col("ssh_key_id", nullable=True),
         sa.Column("known_host_fingerprint", sa.String(length=255), nullable=True),
         sa.Column("system_info", sa.JSON(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
@@ -89,7 +111,6 @@ def upgrade() -> None:
         sa.UniqueConstraint("name"),
     )
 
-    # Lightweight job queue tables for pyjobkit
     op.create_table(
         "job_tasks",
         sa.Column("id", sa.String(), nullable=False),
@@ -99,7 +120,7 @@ def upgrade() -> None:
         sa.Column("max_attempts", sa.Integer(), nullable=False),
         sa.Column("priority", sa.Integer(), nullable=False),
         sa.Column("kind", sa.String(), nullable=False),
-        sa.Column("payload", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        _json_col("payload", nullable=True),
         sa.Column("idempotency_key", sa.String(), nullable=True),
         sa.Column("timeout_s", sa.Integer(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -110,18 +131,10 @@ def upgrade() -> None:
 
     op.create_table(
         "task_runs",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column(
-            "type",
-            postgresql.ENUM("deploy", "run_command", name="tasktypeenum", create_type=False),
-            nullable=False,
-        ),
-        sa.Column("platform_id", postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column(
-            "status",
-            postgresql.ENUM("pending", "running", "success", "failed", name="taskstatusenum", create_type=False),
-            nullable=False,
-        ),
+        _uuid_col("id", nullable=False),
+        _enum_col("type", "deploy", "run_command", enum_name="tasktypeenum", nullable=False),
+        _uuid_col("platform_id", nullable=True),
+        _enum_col("status", "pending", "running", "success", "failed", enum_name="taskstatusenum", nullable=False),
         sa.Column("result_location", sa.String(length=512), nullable=True),
         sa.Column("stdout", sa.Text(), nullable=True),
         sa.Column("stderr", sa.Text(), nullable=True),
@@ -138,7 +151,7 @@ def upgrade() -> None:
 
     op.create_table(
         "scripts",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        _uuid_col("id", nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("language", sa.String(length=50), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
@@ -152,21 +165,13 @@ def upgrade() -> None:
 
     op.create_table(
         "automation_jobs",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        _uuid_col("id", nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column(
-            "execution_type",
-            postgresql.ENUM("command", "script", name="automationexecutionenum", create_type=False),
-            nullable=False,
-        ),
+        _enum_col("execution_type", "command", "script", enum_name="automationexecutionenum", nullable=False),
         sa.Column("command", sa.Text(), nullable=True),
-        sa.Column("script_id", postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column(
-            "trigger_type",
-            postgresql.ENUM("manual", "cron", "github_push", "webhook", name="automationtriggerenum", create_type=False),
-            nullable=False,
-        ),
+        _uuid_col("script_id", nullable=True),
+        _enum_col("trigger_type", "manual", "cron", "github_push", "webhook", enum_name="automationtriggerenum", nullable=False),
         sa.Column("cron_expression", sa.String(length=255), nullable=True),
         sa.Column("repository_url", sa.String(length=512), nullable=True),
         sa.Column("repository_branch", sa.String(length=120), nullable=True),
@@ -195,9 +200,9 @@ def upgrade() -> None:
 
     op.create_table(
         "automation_job_platforms",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("job_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("platform_id", postgresql.UUID(as_uuid=True), nullable=False),
+        _uuid_col("id", nullable=False),
+        _uuid_col("job_id", nullable=False),
+        _uuid_col("platform_id", nullable=False),
         sa.ForeignKeyConstraint(["job_id"], ["automation_jobs.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["platform_id"], ["platforms.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
@@ -206,7 +211,7 @@ def upgrade() -> None:
 
     op.create_table(
         "audit_logs",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        _uuid_col("id", nullable=False),
         sa.Column("user", sa.String(length=255), nullable=False),
         sa.Column("action", sa.String(length=255), nullable=False),
         sa.Column("object_type", sa.String(length=100), nullable=False),
@@ -246,12 +251,13 @@ def downgrade() -> None:
     op.drop_index("ix_job_tasks_scheduled_for", table_name="job_tasks")
     op.drop_table("job_tasks")
 
-    for name in (
-        "automationtriggerenum",
-        "automationexecutionenum",
-        "taskstatusenum",
-        "tasktypeenum",
-        "authmethodenum",
-        "userrole",
-    ):
-        op.execute(sa.text(f"DROP TYPE IF EXISTS {name} CASCADE"))
+    if _is_pg():
+        for name in (
+            "automationtriggerenum",
+            "automationexecutionenum",
+            "taskstatusenum",
+            "tasktypeenum",
+            "authmethodenum",
+            "userrole",
+        ):
+            op.execute(sa.text(f"DROP TYPE IF EXISTS {name} CASCADE"))
