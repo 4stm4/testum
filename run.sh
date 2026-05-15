@@ -54,6 +54,10 @@ set +o allexport
 
 # ── Database migrations ────────────────────────────────────────────────────
 
+# Clear stale bytecode so alembic always runs the latest migration source
+find "$SCRIPT_DIR/migrations" -name "*.pyc" -delete 2>/dev/null || true
+find "$SCRIPT_DIR/migrations" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
 echo "Running migrations..."
 "$VENV/bin/alembic" upgrade head
 
