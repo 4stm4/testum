@@ -13,14 +13,17 @@ from adapters.storage.minio import MinioArtifactStore
 from app.config import config
 
 
+_LEASE_TTL = int(os.getenv("WORKER_LEASE_TTL", "60"))
+
+
 def _make_backend():
     if config.DATABASE_URL.startswith("sqlite"):
         from pyjobkit.backends.memory import MemoryBackend
-        return MemoryBackend()
+        return MemoryBackend(lease_ttl_s=_LEASE_TTL)
     from pyjobkit.backends.sql import SQLBackend
     from sqlalchemy.ext.asyncio import create_async_engine
     url = config.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-    return SQLBackend(create_async_engine(url))
+    return SQLBackend(create_async_engine(url), lease_ttl_s=_LEASE_TTL)
 
 
 def _build_engine() -> Engine:
@@ -44,13 +47,12 @@ def worker_factory():
     from pyjobkit.worker import Worker
 
     max_concurrency = int(os.getenv("WORKER_MAX_CONCURRENCY", "4"))
-    lease_ttl = int(os.getenv("WORKER_LEASE_TTL", "60"))
     stop_timeout = float(os.getenv("WORKER_STOP_TIMEOUT", "120.0"))
 
     return Worker(
         engine,
         max_concurrency=max_concurrency,
-        lease_ttl=lease_ttl,
+        lease_ttl=_LEASE_TTL,
         stop_timeout=stop_timeout,
     )
 
