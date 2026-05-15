@@ -581,10 +581,10 @@ async def startup_event() -> None:
     # without a separate worker container (useful for local dev and single-
     # container deployments).  In Docker the dedicated worker container is
     # preferred; running both is harmless — only one will claim each job.
-    from pyjobkit.worker import Worker
     from app.scheduler import run_scheduler, run_system_info_refresher
+    from app.task_engine import worker_factory
 
-    worker = Worker(engine)
+    worker = worker_factory()
 
     async def _run_worker():
         try:
@@ -615,6 +615,8 @@ async def startup_event() -> None:
 async def shutdown_event() -> None:
     for task in _background_tasks:
         task.cancel()
+    from app.task_engine import engine
+    await engine.close()
 
 
 logger.info(f"Application started in {config.APP_ENV} mode")

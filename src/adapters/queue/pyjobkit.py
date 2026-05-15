@@ -64,12 +64,6 @@ def _update_status(storage: Storage, task_run_id: str, status: TaskStatus, **kw:
     storage.update_task_run(task_run_id, status=status, **kw)
 
 
-def _append_stdout(storage: Storage, task_run_id: str, text: str) -> None:
-    task = storage.get_task_run_by_id(task_run_id)
-    if task:
-        storage.update_task_run(task_run_id, stdout=(task.stdout or "") + text + "\n")
-
-
 # ── DeployKeysExecutor ─────────────────────────────────────────────────────
 
 class DeployKeysExecutor(Executor):
@@ -87,15 +81,16 @@ class DeployKeysExecutor(Executor):
 
         async def emit(text: str) -> None:
             await ctx.log(text)
-            await asyncio.to_thread(_append_stdout, self._storage, task_run_id, text)
 
         await asyncio.to_thread(
             _update_status, self._storage, task_run_id, TaskStatus.RUNNING,
             started_at=datetime.utcnow(),
         )
+        await ctx.set_progress(0.0)
         await emit("Starting key deployment...")
 
         creds = await asyncio.to_thread(_load_platform_creds, self._storage, platform_id)
+        await ctx.set_progress(0.2)
         await emit(f"Connecting to {creds['name']}...")
 
         keys = self._storage.list_keys(limit=200) if not key_ids else [
@@ -106,59 +101,55 @@ class DeployKeysExecutor(Executor):
             raise ValueError("No SSH keys found to deploy")
         await emit(f"Found {len(keys)} keys to deploy")
 
-        ssh = AsyncSSHClient(
-            host=creds["host"], port=creds["port"],
-            username=creds["username"], password=creds["password"],
-            private_key=creds["private_key"],
-        )
         try:
-            try:
-                ok, err = await asyncio.wait_for(ssh.connect(), timeout=15)
-            except asyncio.TimeoutError:
-                raise RuntimeError("SSH connection timed out (15s)")
-            if not ok:
-                raise RuntimeError(err or "SSH connection failed")
+            async with AsyncSSHClient(
+                host=creds["host"], port=creds["port"],
+                username=creds["username"], password=creds["password"],
+                private_key=creds["private_key"],
+            ) as ssh:
+                await ctx.set_progress(0.4)
+                await emit("Connected to platform")
+                deployed = 0
+                lines = []
 
-            await emit("Connected to platform")
-            deployed = 0
-            lines = []
+                for key in keys:
+                    if await ctx.is_cancelled():
+                        raise RuntimeError("Task cancelled by user")
+                    await emit(f"Deploying key: {key.name}")
+                    cmd = (
+                        "mkdir -p ~/.ssh && chmod 700 ~/.ssh && "
+                        f'echo "{key.public_key}" >> ~/.ssh/authorized_keys && '
+                        "chmod 600 ~/.ssh/authorized_keys"
+                    )
+                    code, stdout, stderr = await ssh.execute_command(cmd)
+                    if stderr:
+                        lines.append(f"[{key.name}] stderr: {stderr}")
+                        await emit(f"[{key.name}] {stderr}")
+                    if code != 0:
+                        msg = f"[{key.name}] failed (exit {code}): {stderr or stdout}"
+                        lines.append(msg)
+                        await emit(msg)
+                        continue
+                    lines.append(f"[{key.name}] Deployed successfully")
+                    await emit(f"[{key.name}] Deployed successfully")
+                    deployed += 1
 
-            for key in keys:
-                if await ctx.is_cancelled():
-                    raise RuntimeError("Task cancelled by user")
-                await emit(f"Deploying key: {key.name}")
-                cmd = (
-                    "mkdir -p ~/.ssh && chmod 700 ~/.ssh && "
-                    f'echo "{key.public_key}" >> ~/.ssh/authorized_keys && '
-                    "chmod 600 ~/.ssh/authorized_keys"
+                await ctx.set_progress(0.8)
+                s3_key = f"tasks/{task_run_id}/output.txt"
+                try:
+                    self._artifacts.upload(s3_key, "\n".join(lines))
+                except Exception as e:
+                    logger.warning("[DeployKeysExecutor] S3 skipped: %s", e)
+                    s3_key = None
+
+                summary = f"Deployed {deployed}/{len(keys)} keys successfully"
+                await emit(summary)
+                await asyncio.to_thread(
+                    _update_status, self._storage, task_run_id, TaskStatus.SUCCESS,
+                    finished_at=datetime.utcnow(), result_location=s3_key,
                 )
-                code, stdout, stderr = await ssh.execute_command(cmd)
-                if stderr:
-                    lines.append(f"[{key.name}] stderr: {stderr}")
-                    await emit(f"[{key.name}] {stderr}")
-                if code != 0:
-                    msg = f"[{key.name}] failed (exit {code}): {stderr or stdout}"
-                    lines.append(msg)
-                    await emit(msg)
-                    continue
-                lines.append(f"[{key.name}] Deployed successfully")
-                await emit(f"[{key.name}] Deployed successfully")
-                deployed += 1
-
-            s3_key = f"tasks/{task_run_id}/output.txt"
-            try:
-                self._artifacts.upload(s3_key, "\n".join(lines))
-            except Exception as e:
-                logger.warning("[DeployKeysExecutor] S3 skipped: %s", e)
-                s3_key = None
-
-            summary = f"Deployed {deployed}/{len(keys)} keys successfully"
-            await emit(summary)
-            await asyncio.to_thread(
-                _update_status, self._storage, task_run_id, TaskStatus.SUCCESS,
-                finished_at=datetime.utcnow(), result_location=s3_key,
-            )
-            return {"task_id": str(job_id), "status": "success"}
+                await ctx.set_progress(1.0)
+                return {"task_id": str(job_id), "status": "success"}
         except Exception as exc:
             logger.exception("DeployKeysExecutor failed: %s", exc)
             await asyncio.to_thread(
@@ -167,8 +158,6 @@ class DeployKeysExecutor(Executor):
             )
             await emit(f"ERROR: {exc}")
             raise
-        finally:
-            await ssh.close()
 
 
 # ── RunCommandExecutor ─────────────────────────────────────────────────────
@@ -198,74 +187,71 @@ class RunCommandExecutor(Executor):
 
         async def emit(text: str) -> None:
             await ctx.log(text)
-            await asyncio.to_thread(_append_stdout, self._storage, task_run_id, text)
 
         await asyncio.to_thread(
             _update_status, self._storage, task_run_id, TaskStatus.RUNNING,
             started_at=datetime.utcnow(),
         )
+        await ctx.set_progress(0.0)
         await emit("Starting command execution...")
 
         creds = await asyncio.to_thread(_load_platform_creds, self._storage, platform_id)
         platform_name = creds["name"]
+        await ctx.set_progress(0.2)
         await emit(f"Connecting to {platform_name}...")
 
-        ssh = AsyncSSHClient(
-            host=creds["host"], port=creds["port"],
-            username=creds["username"], password=creds["password"],
-            private_key=creds["private_key"],
-        )
         try:
-            try:
-                ok, err = await asyncio.wait_for(ssh.connect(), timeout=15)
-            except asyncio.TimeoutError:
-                raise RuntimeError("SSH connection timed out (15s)")
-            if not ok:
-                raise RuntimeError(err or "SSH connection failed")
+            async with AsyncSSHClient(
+                host=creds["host"], port=creds["port"],
+                username=creds["username"], password=creds["password"],
+                private_key=creds["private_key"],
+            ) as ssh:
+                await ctx.set_progress(0.4)
+                if await ctx.is_cancelled():
+                    raise RuntimeError("Task cancelled by user")
 
-            if await ctx.is_cancelled():
-                raise RuntimeError("Task cancelled by user")
+                await emit("Connected, executing command...")
+                await emit(f"$ {command}")
+                code, stdout, stderr = await ssh.execute_command(command, timeout=timeout)
 
-            await emit("Connected, executing command...")
-            await emit(f"$ {command}")
-            code, stdout, stderr = await ssh.execute_command(command, timeout=timeout)
+                if stdout:
+                    await emit(stdout)
+                if stderr:
+                    await emit(f"[stderr] {stderr}")
+                await emit(f"\nExit code: {code}")
 
-            if stdout:
-                await emit(stdout)
-            if stderr:
-                await emit(f"[stderr] {stderr}")
-            await emit(f"\nExit code: {code}")
+                await ctx.set_progress(0.8)
+                content = (
+                    f"Command: {command}\n\n=== EXIT CODE ===\n{code}\n\n"
+                    f"=== STDOUT ===\n{stdout}\n\n=== STDERR ===\n{stderr}"
+                )
+                s3_key = f"tasks/{task_run_id}/output.txt"
+                try:
+                    self._artifacts.upload(s3_key, content)
+                except Exception as e:
+                    logger.warning("[RunCommandExecutor] S3 skipped: %s", e)
+                    s3_key = None
 
-            content = (
-                f"Command: {command}\n\n=== EXIT CODE ===\n{code}\n\n"
-                f"=== STDOUT ===\n{stdout}\n\n=== STDERR ===\n{stderr}"
-            )
-            s3_key = f"tasks/{task_run_id}/output.txt"
-            try:
-                self._artifacts.upload(s3_key, content)
-            except Exception as e:
-                logger.warning("[RunCommandExecutor] S3 skipped: %s", e)
-                s3_key = None
+                final_status = TaskStatus.SUCCESS if code == 0 else TaskStatus.FAILED
+                await asyncio.to_thread(
+                    _update_status, self._storage, task_run_id, final_status,
+                    finished_at=datetime.utcnow(),
+                    result_location=s3_key,
+                    stderr=stderr or None,
+                )
 
-            final_status = TaskStatus.SUCCESS if code == 0 else TaskStatus.FAILED
-            await asyncio.to_thread(
-                _update_status, self._storage, task_run_id, final_status,
-                finished_at=datetime.utcnow(),
-                result_location=s3_key,
-                stderr=stderr or None,
-            )
+                await self._notifier.notify_task_completion(
+                    task_run_id=task_run_id,
+                    automation_job_id=automation_job_id,
+                    platform_name=platform_name,
+                    platform_id=str(platform_id),
+                    status=final_status.value,
+                    triggered_by=triggered_by,
+                    stdout_snippet=stdout or "",
+                )
 
-            await self._notifier.notify_task_completion(
-                task_run_id=task_run_id,
-                automation_job_id=automation_job_id,
-                platform_name=platform_name,
-                platform_id=str(platform_id),
-                status=final_status.value,
-                triggered_by=triggered_by,
-                stdout_snippet=stdout or "",
-            )
-
-            return {"task_id": str(job_id), "status": final_status.value}
+                await ctx.set_progress(1.0)
+                return {"task_id": str(job_id), "status": final_status.value}
         except Exception as exc:
             logger.exception("RunCommandExecutor failed: %s", exc)
             await asyncio.to_thread(
@@ -282,8 +268,6 @@ class RunCommandExecutor(Executor):
             )
             await emit(f"ERROR: {exc}")
             raise
-        finally:
-            await ssh.close()
 
 
 # ── PyJobKit JobQueue adapter ──────────────────────────────────────────────
@@ -295,7 +279,7 @@ class PyJobKitQueue:
         self._engine = engine
 
     async def enqueue(self, kind: str, payload: Dict[str, Any], *, max_attempts: int = 1) -> str:
-        job_id = await self._engine.enqueue(kind, payload, max_attempts=max_attempts)
+        job_id = await self._engine.enqueue(kind=kind, payload=payload, max_attempts=max_attempts)
         return str(job_id)
 
     async def cancel(self, job_id: str) -> bool:

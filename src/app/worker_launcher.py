@@ -80,17 +80,11 @@ async def _wait_for_db(url: str, attempts: int, delay: int) -> None:
 
 async def _run_worker_async(engine_path: str) -> None:
     """Run the pyjobkit worker and CRON scheduler concurrently in this process."""
-    from pyjobkit.worker import Worker
     from app.scheduler import run_scheduler, run_system_info_refresher
-    import importlib
-
-    # Import engine from the specified path (e.g., "app.task_engine:engine")
-    module_path, engine_name = engine_path.rsplit(":", 1)
-    module = importlib.import_module(module_path)
-    engine = getattr(module, engine_name)
+    from app.task_engine import engine, worker_factory  # noqa: F401 — engine loaded for side-effects
 
     _log(f"Creating worker with engine from {engine_path}")
-    worker = Worker(engine)
+    worker = worker_factory()
     _log("Starting worker + CRON scheduler + system_info refresher...")
 
     await asyncio.gather(
