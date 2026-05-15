@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 """Main Starlette application."""
 import asyncio
+import contextlib
 import logging
 import uuid
 from datetime import datetime, timedelta
@@ -561,28 +562,14 @@ routes = [
     Mount("/static", StaticFiles(directory=str(_WEB_PORT / "static")), name="static"),
 ]
 
-app = Starlette(
-    debug=config.APP_ENV == "development",
-    routes=routes,
-    middleware=middleware,
-)
+@contextlib.asynccontextmanager
+async def lifespan(app: Starlette):
+    """Manage startup and shutdown of background services."""
+    from app.scheduler import run_scheduler, run_system_info_refresher
+    from app.task_engine import engine, worker_factory
 
-
-_background_tasks: list = []
-
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    """Initialize application services."""
     ensure_default_admin_user()
     _mark_stale_tasks_failed()
-
-    # Start the pyjobkit worker in-process so commands and deploys work
-    # without a separate worker container (useful for local dev and single-
-    # container deployments).  In Docker the dedicated worker container is
-    # preferred; running both is harmless — only one will claim each job.
-    from app.scheduler import run_scheduler, run_system_info_refresher
-    from app.task_engine import worker_factory
 
     worker = worker_factory()
 
@@ -604,19 +591,25 @@ async def startup_event() -> None:
         except Exception:
             logger.exception("In-process system_info refresher crashed")
 
-    for coro in (_run_worker, _run_scheduler, _run_refresher):
-        task = asyncio.create_task(coro())
-        _background_tasks.append(task)
-
+    background_tasks = [
+        asyncio.create_task(coro())
+        for coro in (_run_worker, _run_scheduler, _run_refresher)
+    ]
     logger.info("In-process worker, scheduler and refresher started")
 
+    try:
+        yield
+    finally:
+        for task in background_tasks:
+            task.cancel()
+        await engine.close()
 
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    for task in _background_tasks:
-        task.cancel()
-    from app.task_engine import engine
-    await engine.close()
 
+app = Starlette(
+    debug=config.APP_ENV == "development",
+    routes=routes,
+    middleware=middleware,
+    lifespan=lifespan,
+)
 
 logger.info(f"Application started in {config.APP_ENV} mode")
