@@ -60,11 +60,11 @@ if [[ "${USE_RUNTIME_INSTALL:-0}" == "1" ]]; then
     exit 1
   fi
 
-  ensure_python_module "uvicorn" "uvicorn[standard]==0.32.1"
-    ensure_python_module "pyjobkit" "pyjobkit==0.2.0"
+  ensure_python_module "uvicorn" "uvicorn[standard]==0.46.0"
+  ensure_python_module "pyjobkit" "pyjobkit==1.0.0"
 fi
 
-ensure_python_module "uvicorn" "uvicorn[standard]==0.32.1"
+ensure_python_module "uvicorn" "uvicorn[standard]==0.46.0"
 
 if [ -z "${FERNET_KEY:-}" ]; then
   echo "FERNET_KEY environment variable is required"

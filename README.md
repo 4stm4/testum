@@ -1,459 +1,296 @@
-# testum - Remote SSH Execution Platform
+# Testum
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![Python](https://img.shields.io/badge/python-3.13-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+Платформа для централизованного управления удалёнными серверами через SSH. Выполняйте команды, разворачивайте SSH-ключи, запускайте автоматизации — с real-time мониторингом через браузер или CLI.
 
-**Платформа для удаленного выполнения команд и кода на SSH-хостах**
+## Возможности
 
-Современный веб-интерфейс для централизованного управления удаленными серверами. Выполняйте команды, запускайте скрипты, развертывайте приложения на множестве хостов одновременно с real-time мониторингом.
+- Выполнение команд и скриптов на удалённых хостах
+- Развёртывание SSH-ключей на группы серверов
+- Real-time вывод задач через WebSocket
+- Автоматизации с расписанием (cron)
+- Управление пользователями и RBAC (Admin / Operator / Viewer)
+- Шифрование всех credentials через Fernet
+- Backup / Restore конфигурации в YAML
+- GitOps-импорт платформ и ключей из Git-репозитория
+- Audit-лог всех действий с фильтрами и экспортом
+- CLI-клиент `testumctl`
 
-## 🎯 Возможности
+## Стек
 
-- 🚀 **Удаленное выполнение команд** - запуск на одном или нескольких хостах
-- 📜 **Запуск скриптов и кода** - deploy приложений, автоматизация задач
-- 📊 **WebSocket стриминг** - вывод команд в реальном времени через БД polling
-- 🔑 **Управление SSH ключами** - централизованное хранение и развертывание
-- 🖥️ **Управление платформами** - добавление и настройка удаленных хостов
-- 🔐 **Безопасность** - JWT авторизация, RBAC, шифрование credentials (Fernet)
-- 🌙 **Современный UI** - темная/светлая тема, поддержка EN/RU, Material Design 3
-- 📋 **Audit Logs** - полное логирование действий с фильтрами и статистикой
-- 🔄 **Auto-Update** - автоматические обновления из GitHub
+| Слой | Технология |
+|---|---|
+| Web / API | Starlette + Uvicorn |
+| База данных | PostgreSQL + SQLAlchemy + Alembic |
+| Очередь задач | pyjobkit 1.0 |
+| SSH | asyncssh |
+| Хранилище артефактов | MinIO (S3-совместимый) |
+| Шифрование | cryptography (Fernet) |
+| Аутентификация | JWT (HTTP-only cookie) |
 
-### 🔮 В планах:
-- 🐳 Управление нативными контейнерами (без Docker)
-- 🖥️ Создание виртуальных машин (libvirt + KVM + QEMU)
-
-## 🏗️ Архитектура
+## Архитектура
 
 ```
-Browser → Nginx (Reverse Proxy + Loading Screen)
-            ↓
-         Starlette (ASGI) → PostgreSQL
-            ↓
-            ↓
-         AsyncSSH → MinIO (S3 logs)
-            ↓
-         Remote Hosts (SSH)
+src/
+├── core/           # Доменная логика, интерфейсы (чистый Python, без зависимостей)
+├── adapters/       # Реализации: postgres, minio, ssh, smtp, scheduler
+├── ports/
+│   ├── api/        # HTTP JSON API (Starlette роутеры)
+│   ├── web/        # Браузерный UI (Jinja2 + статика)
+│   ├── ws/         # WebSocket стриминг задач
+│   └── cli/        # testumctl — CLI-клиент
+└── app/            # Точка сборки: FastAPI-приложение, конфиг, движок задач
 ```
 
+## Быстрый старт (Docker Compose)
 
-**Без Redis** - используется только PostgreSQL для очередей и результатов задач
+### 1. Генерация ключей
 
-**Особенности деплоя**:
-- Nginx показывает красивый loading screen во время первого запуска
-- Автоматическая проверка готовности приложения через health check
-- Git clone из GitHub при каждом старте контейнера
-- Виртуальное окружение Python для изоляции зависимостей
+```bash
+# Fernet — шифрование credentials
+python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
-## 🚀 Быстрый старт
+# SECRET_KEY — подпись JWT
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
 
-### Деплой в Portainer (рекомендуется)
+### 2. Настройка окружения
+
+Скопируйте переменные в `docker-compose.yml` или `.env`:
+
+```bash
+FERNET_KEY=<из шага 1>
+SECRET_KEY=<из шага 1>
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+```
+
+> По умолчанию в `docker-compose.yml` уже прописаны тестовые значения — смените их перед продакшен-деплоем.
+
+### 3. Запуск
+
+```bash
+# Собрать образ worker-а и поднять все сервисы
+docker compose up -d --build
+
+# Просмотр логов
+docker compose logs -f app worker
+```
+
+Сервисы:
+| Сервис | Порт | Назначение |
+|---|---|---|
+| Nginx (loading screen) | 8000 | Ждёт готовности app, редиректит |
+| App | 8001 | Web UI + REST API |
+| Worker | — | Обработчик фоновых задач (SSH) |
+| PostgreSQL | 5432 | БД |
+| MinIO | 9010 / 9011 | S3-хранилище / консоль |
+
+После запуска откройте http://localhost:8001 (логин: admin / admin123).
+
+### Makefile
+
+```bash
+make build      # Пересобрать Docker-образы
+make up         # Запустить все сервисы
+make down       # Остановить
+make logs       # Следить за логами
+make migrate    # Применить миграции Alembic
+make migration MSG="описание"  # Создать новую миграцию
+make shell      # Bash внутри контейнера app
+make db-shell   # psql внутри контейнера db
+make test       # Запустить тесты
+make lint       # flake8 + black --check
+make format     # black (форматирование)
+make clean      # Удалить контейнеры и тома
+make generate-key  # Напечатать новый FERNET_KEY
+```
+
+## Деплой в Portainer
 
 1. Portainer → Stacks → Add stack → Web editor
 2. Вставьте содержимое `docker-compose.yml`
-3. Environment variables:
-   ```bash
-   FERNET_KEY=<generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())">
-   ADMIN_USERNAME=admin
-   ADMIN_PASSWORD=admin123
-   SECRET_KEY=<random-string>
-   PYJOBKIT_ENGINE=app.task_engine:engine
-   PYJOBKIT_DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/testum
+3. Задайте Environment variables:
    ```
-4. Deploy!
-5. Откройте http://your-server:8000
+   FERNET_KEY=...
+   SECRET_KEY=...
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=yourpassword
+   ```
+4. Deploy → откройте http://your-server:8001
 
-**Примечание:** При первом запуске контейнер автоматически:
-- Установит системные зависимости (gcc, git, postgresql-client)
-- Склонирует последнюю версию из GitHub
-- Создаст виртуальное окружение Python
-- Установит все зависимости из requirements.txt
-- Применит миграции базы данных
-- Запустит Uvicorn web-сервер
-
-Это может занять 1-2 минуты. Nginx покажет loading screen и автоматически перенаправит на приложение после успешного запуска.
-
-### Локальный запуск
+## Локальная разработка
 
 ```bash
-# 1. Генерация ключа шифрования
-make generate-key
+# Зависимости
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.dev.txt
 
-# 2. Настройка .env
-cp .env.example .env
-# Добавьте FERNET_KEY из шага 1
+# Поднять только инфраструктуру
+docker compose up -d db minio
 
-# 3. Скачать шрифты для оффлайн работы (опционально)
-./download_fonts.sh
+# Миграции
+PYTHONPATH=src DATABASE_URL=postgresql://postgres:postgres@localhost:5432/testum \
+  alembic upgrade head
 
-# 4. Запуск
-make build
-make up
+# Запуск app (в отдельном терминале)
+PYTHONPATH=src \
+  FERNET_KEY=<key> SECRET_KEY=<key> ADMIN_USERNAME=admin ADMIN_PASSWORD=admin123 \
+  DATABASE_URL=postgresql://postgres:postgres@localhost:5432/testum \
+  MINIO_ENDPOINT=localhost:9010 MINIO_ACCESS_KEY=minioadmin MINIO_SECRET_KEY=minioadmin \
+  uvicorn app.main:app --reload --port 8000
 
-# 5. Доступ
-open http://localhost:8000
+# Запуск worker (в отдельном терминале)
+PYTHONPATH=src \
+  FERNET_KEY=<key> DATABASE_URL=postgresql://postgres:postgres@localhost:5432/testum \
+  MINIO_ENDPOINT=localhost:9010 MINIO_ACCESS_KEY=minioadmin MINIO_SECRET_KEY=minioadmin \
+  python -m app.worker_launcher
 ```
 
-**Доступы по умолчанию:**
-- Web UI: http://localhost:8000 (admin / admin123)
-- MinIO Console: http://localhost:9011 (minioadmin / minioadmin)
-
-**Примечание:** Шрифты Material Design 3 (Roboto, Material Symbols) скачиваются локально скриптом `download_fonts.sh` для работы без интернета. Если не запустить скрипт, шрифты не будут загружены, но приложение продолжит работать (используя системные шрифты).
-
-## 🧪 Разработка и тестирование
-
-Контейнер приложения собирается только с продакшен-зависимостями, поэтому инструменты разработки вроде `pytest`, `black` и `flake8`
-не попадают в финальный образ. Для локальной проверки качества кода используйте команды `make test`, `make lint` или `make format` —
-они запускают временный контейнер, ставят необходимые dev-зависимости и выполняют тесты/линтеры.
-
-## 📖 Использование
-
-### Добавление хоста
-
-1. **Platforms** → **Add Platform**
-2. Укажите: name, host, port, username
-3. Выберите метод авторизации:
-   - **Password** - простой пароль
-   - **Private Key** - SSH приватный ключ
-
-### Развертывание SSH ключей
-
-1. **SSH Keys** → **Add Key** - добавьте публичный ключ
-2. **Platforms** → выберите хост → **Deploy Keys**
-3. Ключи атомарно добавятся в `~/.ssh/authorized_keys`
-
-### Выполнение команд
-
-1. **Platforms** → выберите хост → **Run Command**
-2. Введите команду, например: `uptime`, `df -h`, `docker ps`
-3. Наблюдайте вывод в real-time через WebSocket
-
-## 🔒 Безопасность
-
-- **Шифрование**: Все пароли и ключи шифруются Fernet (symmetric encryption)
-- **JWT авторизация**: HTTP-only cookies, защита всех роутов
-- **SSH Host Key Verification**: Автоматическое сохранение fingerprint при первом подключении
-- **Atomic Write**: Безопасное обновление `authorized_keys` через temp file + rename
-- **Audit Logging**: Полное логирование действий пользователей
-
-## 📚 API
-
-### Аутентификация
+### Тесты
 
 ```bash
-curl -X POST http://localhost:8000/api/auth/login \
+pytest tests/ -v --cov=src
+```
+
+## Конфигурация (переменные окружения)
+
+### Обязательные
+
+| Переменная | Описание |
+|---|---|
+| `FERNET_KEY` | 32-байтовый Fernet-ключ (base64). Шифрует все credentials |
+| `SECRET_KEY` | Секрет для подписи JWT |
+| `ADMIN_USERNAME` | Логин администратора по умолчанию |
+| `ADMIN_PASSWORD` | Пароль администратора по умолчанию |
+| `DATABASE_URL` | PostgreSQL DSN: `postgresql://user:pass@host/db` |
+
+### Опциональные
+
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `MINIO_ENDPOINT` | `minio:9000` | Адрес MinIO |
+| `MINIO_ACCESS_KEY` | `minioadmin` | Ключ доступа MinIO |
+| `MINIO_SECRET_KEY` | `minioadmin` | Секрет MinIO |
+| `MINIO_BUCKET` | `testum-artifacts` | Бакет для хранения вывода задач |
+| `MINIO_SECURE` | `false` | TLS для MinIO |
+| `SSH_HOST_KEY_POLICY` | `auto_add` | `auto_add` — сохранять fingerprint автоматически, `strict` — проверять |
+| `WORKER_MAX_CONCURRENCY` | `4` | Кол-во параллельных задач в worker |
+| `WORKER_LEASE_TTL` | `60` | TTL аренды задачи (сек) |
+| `WORKER_STOP_TIMEOUT` | `120` | Таймаут graceful-остановки worker (сек) |
+| `WORKER_WATCHDOG_INTERVAL` | `15` | Интервал watchdog-а worker (сек) |
+| `WORKER_RETRY_POLICY` | `exponential_jitter:1:2:300:0.2` | Retry-политика для упавших задач |
+
+## CLI-клиент testumctl
+
+```bash
+# Установка
+chmod +x src/ports/cli/testumctl
+sudo ln -s "$(pwd)/src/ports/cli/testumctl" /usr/local/bin/testumctl
+
+# Авторизация
+testumctl login --url http://localhost:8001 -u admin
+
+# Платформы
+testumctl platforms list
+testumctl platforms list --json
+testumctl platforms add --name web-01 --host 192.168.1.10 --username ubuntu --auth-method password
+
+# Выполнение команд
+testumctl exec <platform_id> "uptime"
+testumctl exec <platform_id> "df -h" --wait
+
+# SSH-ключи
+testumctl keys list
+```
+
+Токен сохраняется в `~/.testum/config.json` (права 0600).
+
+## REST API
+
+```bash
+BASE=http://localhost:8001
+
+# Авторизация
+curl -c cookies.txt -X POST $BASE/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}'
-```
 
-### Управление платформами
+# Список платформ
+curl -b cookies.txt $BASE/api/platforms/
 
-```bash
-# Список
-curl http://localhost:8000/api/platforms/
-
-# Создать
-curl -X POST http://localhost:8000/api/platforms/ \
+# Добавить платформу
+curl -b cookies.txt -X POST $BASE/api/platforms/ \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "server-01",
-    "host": "192.168.1.100",
-    "port": 22,
-    "username": "ubuntu",
-    "auth_method": "password",
-    "password": "secret"
-  }'
+  -d '{"name":"web-01","host":"192.168.1.10","port":22,"username":"ubuntu","auth_method":"password","password":"secret"}'
 
 # Выполнить команду
-curl -X POST http://localhost:8000/api/platforms/{id}/run_command \
+curl -b cookies.txt -X POST $BASE/api/platforms/{id}/run_command \
   -H "Content-Type: application/json" \
-  -d '{"command": "uptime", "timeout": 60}'
+  -d '{"command":"uptime","timeout":60}'
+
+# Развернуть ключи
+curl -b cookies.txt -X POST $BASE/api/platforms/{id}/deploy_keys
 ```
 
-### WebSocket стриминг
+### WebSocket — стриминг задачи
 
 ```javascript
-// Подключение к задаче
-const ws = new WebSocket('ws://localhost:8000/ws/tasks/{task_id}');
-
-ws.onmessage = (event) => {
-  const msg = JSON.parse(event.data);
-  
-  if (msg.type === 'output') {
-    console.log(msg.data);  // Вывод команды
-  } else if (msg.type === 'done') {
-    console.log('Exit code:', msg.exit_code);
-  }
+const ws = new WebSocket('ws://localhost:8001/ws/tasks/{task_id}');
+ws.onmessage = (e) => {
+  const msg = JSON.parse(e.data);
+  if (msg.type === 'output')  console.log(msg.data);
+  if (msg.type === 'done')    ws.close();
 };
 ```
 
-**Примечание**: WebSocket работает через polling БД (без Redis)
-
-## 🖥️ CLI-клиент testumctl
-
-Testumctl - command-line интерфейс для управления Testum.
-
-### Установка
+## Backup / Restore
 
 ```bash
-# Из корня проекта
-chmod +x testumctl
-sudo ln -s $(pwd)/testumctl /usr/local/bin/testumctl
+# Экспорт (платформы + ключи + пользователи, без паролей)
+curl -b cookies.txt $BASE/api/backup/export -o backup.yaml
+
+# Импорт
+curl -b cookies.txt -X POST $BASE/api/backup/import -F "file=@backup.yaml"
 ```
 
-### Использование
+## GitOps-импорт
 
 ```bash
-# Авторизация
-testumctl login --url http://localhost:8000 -u admin
-
-# Список платформ
-testumctl platforms list
-testumctl platforms list --json  # JSON формат
-
-# Добавить платформу (пароль)
-testumctl platforms add \
-  --name server-01 \
-  --host 192.168.1.100 \
-  --username ubuntu \
-  --auth-method password
-
-# Добавить платформу (SSH ключ)
-testumctl platforms add \
-  --name server-02 \
-  --host 192.168.1.101 \
-  --username ubuntu \
-  --auth-method key \
-  --ssh-key-id 1
-
-# Удалить платформу
-testumctl platforms remove <platform_id>
-
-# Выполнить команду
-testumctl exec <platform_id> "uptime"
-testumctl exec <platform_id> "df -h" --wait  # Ждать завершения
-```
-
-### Конфигурация
-
-Токен авторизации хранится в `~/.testum/config.json` с правами `0600`.
-
-## 📥 Backup & Restore
-
-### Экспорт конфигурации
-
-```bash
-curl -X GET http://localhost:8000/api/backup/export \
-  -H "Authorization: Bearer <token>" \
-  -o backup.yaml
-```
-
-### Импорт конфигурации
-
-```bash
-curl -X POST http://localhost:8000/api/backup/import \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@backup.yaml"
-```
-
-**Формат YAML**:
-- Metadata (version, timestamp, author)
-- Платформы (без паролей)
-- SSH ключи (без приватных ключей)
-- Пользователи (только список, без паролей)
-
-## 🔀 GitOps Import
-
-Импорт конфигурации из Git репозитория.
-
-### API
-
-```bash
-curl -X POST http://localhost:8000/api/gitops/import \
-  -H "Authorization: Bearer <token>" \
+curl -b cookies.txt -X POST $BASE/api/gitops/import \
   -H "Content-Type: application/json" \
   -d '{
-    "git_url": "https://github.com/user/repo.git",
+    "git_url": "https://github.com/org/infra.git",
     "branch": "main",
     "config_path": "testum-config.yaml",
-    "username": "git_username",
-    "token": "git_token",
     "dry_run": true
   }'
 ```
 
-### Формат конфигурации
-
-Создайте `testum-config.yaml` в Git репозитории:
+Формат `testum-config.yaml`:
 
 ```yaml
 ssh_keys:
   - name: prod-key
     public_key: "ssh-rsa AAAA..."
-    description: Production SSH key
 
 platforms:
-  - name: web-server-01
-    host: 192.168.1.100
+  - name: web-01
+    host: 192.168.1.10
     port: 22
     username: ubuntu
     auth_method: key
-    ssh_key_name: prod-key  # Ссылка на SSH ключ по имени
-    description: Production web server
-  
-  - name: db-server-01
-    host: 192.168.1.101
-    port: 22
-    username: postgres
-    auth_method: password
-    description: Production database server
+    ssh_key_name: prod-key
 ```
 
-### Альтернативные пути
+GitOps автоматически ищет файл по путям: `testum-config.yaml`, `testum.yaml`, `testum-config.yml`, `config/testum.yaml`, `.testum/config.yaml`.
 
-GitOps автоматически ищет конфигурацию в:
-- `testum-config.yaml` (по умолчанию)
-- `testum.yaml`
-- `testum-config.yml`
-- `config/testum.yaml`
-- `.testum/config.yaml`
+## Безопасность
 
-### Dry Run
+- Все пароли и приватные ключи хранятся зашифрованными (Fernet AES-128-CBC)
+- JWT передаётся только через HTTP-only cookie
+- SSH fingerprint верифицируется при каждом подключении
+- Все действия пользователей пишутся в audit-лог
 
-Используйте `"dry_run": true` для проверки без импорта:
-- Проверяет доступность репозитория
-- Валидирует формат конфигурации
-- Показывает, что будет импортировано
-- Не вносит изменения в БД
+## Лицензия
 
-**Примечание**: WebSocket работает через polling БД (без Redis)
-  } else if (msg.type === 'status') {
-    console.log(`Status: ${msg.status}`);
-  } else if (msg.type === 'done') {
-    console.log(`Completed with exit code: ${msg.exit_code}`);
-    ws.close();
-  }
-};
-```
-
-**Примечание**: WebSocket работает через polling БД (без Redis)
-
-## 🛠️ Разработка
-
-### Команды Makefile
-
-```bash
-make help          # Справка
-make build         # Собрать образы
-make up            # Запустить сервисы
-make down          # Остановить
-make logs          # Просмотр логов
-make test          # Запустить тесты
-make shell         # Shell в app контейнере
-make db-shell      # PostgreSQL shell
-make migrate       # Применить миграции
-make migration     # Создать миграцию
-```
-
-### Тестирование
-
-```bash
-make test                                          # Все тесты
-docker-compose exec app pytest tests/ -v --cov   # С coverage
-```
-
-### Структура проекта
-
-```
-app/
-├── main.py              # Starlette приложение
-├── models.py            # SQLAlchemy модели
-├── schemas.py           # Pydantic схемы
-├── ssh_helper.py        # AsyncSSH операции
-├── crypto.py            # Fernet шифрование
-├── audit.py             # Audit logging helper
-├── api/                 # API endpoints
-│   ├── keys.py
-│   ├── platforms.py
-│   ├── audit.py         # Audit logs API
-│   ├── backup.py        # Backup/Restore API
-│   ├── gitops.py        # GitOps Import API
-│   └── users.py         # User management
-└── templates/           # Jinja2 шаблоны
-    ├── audit.html       # Audit logs UI
-    └── ...
-```
-
-## 🔧 Конфигурация
-
-Основные переменные `.env`:
-
-```bash
-# ОБЯЗАТЕЛЬНО
-FERNET_KEY=<32-byte-urlsafe-base64>  # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
-SECRET_KEY=<random-string>
-
-# Database
-DATABASE_URL=postgresql://postgres:postgres@db:5432/testum
-
-# MinIO
-MINIO_ENDPOINT=minio:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-
-# SSH
-SSH_HOST_KEY_POLICY=auto_add  # или 'strict'
-```
-
-## 📊 База данных
-
-### Таблицы
-
-- **SSHKey** - публичные SSH ключи
-- **Platform** - удаленные хосты с credentials
-- **TaskRun** - история выполнения задач
-- **AuditLog** - журнал действий
-- **User** - пользователи (готова миграция для multi-user)
-
-### Миграции
-
-```bash
-make migration MSG="Add new feature"  # Создать
-make migrate                           # Применить
-```
-
-## 🚧 Ограничения и планы
-
-### Реализовано (100% MVP готово) 🎉
-- ✅ Multi-user с RBAC (Admin/Operator/Viewer)
-- ✅ Async SSH (asyncssh)
-- ✅ WebSocket real-time streaming (через БД polling)
-- ✅ Audit Logs UI с фильтрами и статистикой
-- ✅ Rate limiting и pagination
-- ✅ Material Design 3 UI
-- ✅ Экспорт audit-логов (JSON/CSV)
-- ✅ Backup/Restore конфигурации (YAML)
-- ✅ CLI-клиент testumctl
-- ✅ GitOps Import (импорт из Git репозитория)
-
-### Планы (v2.0)
-- 🔮 Нативные контейнеры (Docker API)
-- 🔮 VM управление (libvirt + KVM + QEMU)
-- 🔮 HashiCorp Vault интеграция
-- 🔮 Scheduled tasks (cron-like)
-- 🔮 Webhooks и интеграции
-
-## 📝 Лицензия
-
-MIT License
-
-## 🤝 Контрибьюция
-
-Issues и Pull Requests приветствуются!
-
----
-
-**Версия**: 0.1.0 | **Дата**: Ноябрь 2025 | **Статус**: MVP
+MIT

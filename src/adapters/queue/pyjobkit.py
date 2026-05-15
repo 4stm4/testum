@@ -79,19 +79,17 @@ class DeployKeysExecutor(Executor):
         platform_id = payload["platform_id"]
         key_ids = payload.get("key_ids")
 
-        async def emit(text: str) -> None:
-            await ctx.log(text)
-
         await asyncio.to_thread(
             _update_status, self._storage, task_run_id, TaskStatus.RUNNING,
             started_at=datetime.utcnow(),
         )
         await ctx.set_progress(0.0)
-        await emit("Starting key deployment...")
+        await ctx.log("Starting key deployment...")
 
-        creds = await asyncio.to_thread(_load_platform_creds, self._storage, platform_id)
+        async with ctx.profile_phase("load-credentials"):
+            creds = await asyncio.to_thread(_load_platform_creds, self._storage, platform_id)
         await ctx.set_progress(0.2)
-        await emit(f"Connecting to {creds['name']}...")
+        await ctx.log(f"Connecting to {creds['name']}...")
 
         keys = self._storage.list_keys(limit=200) if not key_ids else [
             self._storage.get_key_by_id(kid) for kid in key_ids
@@ -99,40 +97,44 @@ class DeployKeysExecutor(Executor):
         keys = [k for k in keys if k]
         if not keys:
             raise ValueError("No SSH keys found to deploy")
-        await emit(f"Found {len(keys)} keys to deploy")
+        await ctx.log(f"Found {len(keys)} keys to deploy")
 
         try:
-            async with AsyncSSHClient(
-                host=creds["host"], port=creds["port"],
-                username=creds["username"], password=creds["password"],
-                private_key=creds["private_key"],
-            ) as ssh:
+            async with ctx.profile_phase("ssh-connect", host=creds["host"]):
+                ssh_client = AsyncSSHClient(
+                    host=creds["host"], port=creds["port"],
+                    username=creds["username"], password=creds["password"],
+                    private_key=creds["private_key"],
+                )
+
+            async with ssh_client as ssh:
                 await ctx.set_progress(0.4)
-                await emit("Connected to platform")
+                await ctx.log("Connected to platform")
                 deployed = 0
                 lines = []
 
-                for key in keys:
-                    if await ctx.is_cancelled():
-                        raise RuntimeError("Task cancelled by user")
-                    await emit(f"Deploying key: {key.name}")
-                    cmd = (
-                        "mkdir -p ~/.ssh && chmod 700 ~/.ssh && "
-                        f'echo "{key.public_key}" >> ~/.ssh/authorized_keys && '
-                        "chmod 600 ~/.ssh/authorized_keys"
-                    )
-                    code, stdout, stderr = await ssh.execute_command(cmd)
-                    if stderr:
-                        lines.append(f"[{key.name}] stderr: {stderr}")
-                        await emit(f"[{key.name}] {stderr}")
-                    if code != 0:
-                        msg = f"[{key.name}] failed (exit {code}): {stderr or stdout}"
-                        lines.append(msg)
-                        await emit(msg)
-                        continue
-                    lines.append(f"[{key.name}] Deployed successfully")
-                    await emit(f"[{key.name}] Deployed successfully")
-                    deployed += 1
+                async with ctx.profile_phase("deploy-keys", key_count=len(keys)):
+                    for key in keys:
+                        if await ctx.is_cancelled():
+                            raise RuntimeError("Task cancelled by user")
+                        await ctx.log(f"Deploying key: {key.name}")
+                        cmd = (
+                            "mkdir -p ~/.ssh && chmod 700 ~/.ssh && "
+                            f'echo "{key.public_key}" >> ~/.ssh/authorized_keys && '
+                            "chmod 600 ~/.ssh/authorized_keys"
+                        )
+                        code, stdout, stderr = await ssh.execute_command(cmd)
+                        if stderr:
+                            lines.append(f"[{key.name}] stderr: {stderr}")
+                            await ctx.log(f"[{key.name}] {stderr}")
+                        if code != 0:
+                            msg = f"[{key.name}] failed (exit {code}): {stderr or stdout}"
+                            lines.append(msg)
+                            await ctx.log(msg)
+                            continue
+                        lines.append(f"[{key.name}] Deployed successfully")
+                        await ctx.log(f"[{key.name}] Deployed successfully")
+                        deployed += 1
 
                 await ctx.set_progress(0.8)
                 s3_key = f"tasks/{task_run_id}/output.txt"
@@ -143,7 +145,7 @@ class DeployKeysExecutor(Executor):
                     s3_key = None
 
                 summary = f"Deployed {deployed}/{len(keys)} keys successfully"
-                await emit(summary)
+                await ctx.log(summary)
                 await asyncio.to_thread(
                     _update_status, self._storage, task_run_id, TaskStatus.SUCCESS,
                     finished_at=datetime.utcnow(), result_location=s3_key,
@@ -156,7 +158,7 @@ class DeployKeysExecutor(Executor):
                 _update_status, self._storage, task_run_id, TaskStatus.FAILED,
                 finished_at=datetime.utcnow(), error_message=str(exc),
             )
-            await emit(f"ERROR: {exc}")
+            await ctx.log(f"ERROR: {exc}")
             raise
 
 
@@ -185,40 +187,43 @@ class RunCommandExecutor(Executor):
         triggered_by: str = payload.get("triggered_by", "manual")
         platform_name = str(platform_id)
 
-        async def emit(text: str) -> None:
-            await ctx.log(text)
-
         await asyncio.to_thread(
             _update_status, self._storage, task_run_id, TaskStatus.RUNNING,
             started_at=datetime.utcnow(),
         )
         await ctx.set_progress(0.0)
-        await emit("Starting command execution...")
+        await ctx.log("Starting command execution...")
 
-        creds = await asyncio.to_thread(_load_platform_creds, self._storage, platform_id)
+        async with ctx.profile_phase("load-credentials"):
+            creds = await asyncio.to_thread(_load_platform_creds, self._storage, platform_id)
         platform_name = creds["name"]
         await ctx.set_progress(0.2)
-        await emit(f"Connecting to {platform_name}...")
+        await ctx.log(f"Connecting to {platform_name}...")
 
         try:
-            async with AsyncSSHClient(
-                host=creds["host"], port=creds["port"],
-                username=creds["username"], password=creds["password"],
-                private_key=creds["private_key"],
-            ) as ssh:
+            async with ctx.profile_phase("ssh-connect", host=creds["host"]):
+                ssh_client = AsyncSSHClient(
+                    host=creds["host"], port=creds["port"],
+                    username=creds["username"], password=creds["password"],
+                    private_key=creds["private_key"],
+                )
+
+            async with ssh_client as ssh:
                 await ctx.set_progress(0.4)
                 if await ctx.is_cancelled():
                     raise RuntimeError("Task cancelled by user")
 
-                await emit("Connected, executing command...")
-                await emit(f"$ {command}")
-                code, stdout, stderr = await ssh.execute_command(command, timeout=timeout)
+                await ctx.log("Connected, executing command...")
+                await ctx.log(f"$ {command}")
+
+                async with ctx.profile_phase("ssh-exec", command=command[:80]):
+                    code, stdout, stderr = await ssh.execute_command(command, timeout=timeout)
 
                 if stdout:
-                    await emit(stdout)
+                    await ctx.log(stdout)
                 if stderr:
-                    await emit(f"[stderr] {stderr}")
-                await emit(f"\nExit code: {code}")
+                    await ctx.log(f"[stderr] {stderr}")
+                await ctx.log(f"\nExit code: {code}")
 
                 await ctx.set_progress(0.8)
                 content = (
@@ -266,7 +271,7 @@ class RunCommandExecutor(Executor):
                 status="failure",
                 triggered_by=triggered_by,
             )
-            await emit(f"ERROR: {exc}")
+            await ctx.log(f"ERROR: {exc}")
             raise
 
 
