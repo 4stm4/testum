@@ -1,6 +1,7 @@
 # Environment
 .env
 *.env
+!netos.env
 !.env.example
 
 # Python
