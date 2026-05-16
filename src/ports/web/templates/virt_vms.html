@@ -13,22 +13,26 @@
 {% endblock %}
 
 {% block content %}
-<!-- header row -->
-<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+<!-- header row: title + buttons only -->
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
   <div>
     <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
     <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
       <span style="color:var(--signal)">$</span> Virtual Machines<span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
     </h1>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <select class="input" id="platformSelect" style="min-width:200px;">
-      <option value="">— select platform —</option>
-    </select>
+  <div style="display:flex;align-items:center;gap:8px;">
     <button class="btn btn-ghost" id="installBtn" disabled>&#9881; Install libvirt</button>
     <button class="btn btn-ghost" id="refreshBtn">&#8635; Refresh</button>
     <button class="btn btn-signal" id="createVmBtn">+ Create VM</button>
   </div>
+</div>
+
+<!-- filter bar -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
+  <select class="input" id="platformSelect" style="min-width:220px;">
+    <option value="">— select platform —</option>
+  </select>
 </div>
 
 <!-- VMs table -->
