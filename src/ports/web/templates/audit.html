@@ -16,7 +16,7 @@
 <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-5);flex-wrap:wrap;align-items:center;">
   <div class="cmd-input" style="flex:1;min-width:200px;">
     <span class="pmt">⌕</span>
-    <input type="text" id="audit-search" placeholder="search user, action…" oninput="applyFilters()">
+    <input type="text" id="audit-search" data-i18n="auditSearchPlaceholder" placeholder="search user, action…" oninput="applyFilters()">
   </div>
   <select class="input" id="audit-action" style="width:160px;" onchange="applyFilters()">
     <option value="" data-i18n="allActions">All actions</option>
@@ -107,7 +107,7 @@ function renderPage() {
     return `<tr>
       <td class="tbl-mono">${ts}</td>
       <td style="font-weight:600;">${e.user||'—'}</td>
-      <td><span class="pill pill-${cls}">${e.action||'—'}</span></td>
+      <td><span class="pill pill-${cls}">${e.action ? (t('action_'+e.action)||e.action) : '—'}</span></td>
       <td class="tbl-mono">${e.object_type||'—'} ${e.object_id?'#'+e.object_id.substring(0,8):''}</td>
       <td class="tbl-mono" style="font-size:11px;color:var(--fg-dim);">${meta}</td>
     </tr>`;

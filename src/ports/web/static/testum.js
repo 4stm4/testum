@@ -395,7 +395,9 @@ const translations = {
         last30d: 'Last 30 days',
         allTime: 'All time',
         export: 'Export',
-
+        auditSearchPlaceholder: 'search user, action…',
+        action_create: 'create', action_delete: 'delete', action_login: 'login',
+        action_run: 'run', action_deploy: 'deploy', action_update: 'update',
         // Jobs page
         jobId: 'ID',
         type: 'Type',
@@ -773,7 +775,9 @@ const translations = {
         last30d: 'Последние 30 дней',
         allTime: 'За всё время',
         export: 'Экспорт',
-
+        auditSearchPlaceholder: 'поиск по пользователю, действию…',
+        action_create: 'создать', action_delete: 'удалить', action_login: 'вход',
+        action_run: 'запуск', action_deploy: 'деплой', action_update: 'обновить',
         // Jobs page
         jobId: 'ID',
         type: 'Тип',
