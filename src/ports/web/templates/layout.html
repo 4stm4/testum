@@ -80,6 +80,21 @@
         <span class="count">{{ sidebar_counts['automations'] }}</span>
       </a>
 
+      <!-- Virtualization -->
+      <div class="sb-section-label">Virtualization</div>
+      <a href="/virt/vms" class="sb-link{% if active_page == 'virt_vms' %} active{% endif %}">
+        <span class="sb-link-inner"><span class="sb-pip"></span><span>VMs</span></span>
+      </a>
+      <a href="/virt/pools" class="sb-link{% if active_page == 'virt_pools' %} active{% endif %}">
+        <span class="sb-link-inner"><span class="sb-pip"></span><span>Storage Pools</span></span>
+      </a>
+      <a href="/virt/volumes" class="sb-link{% if active_page == 'virt_volumes' %} active{% endif %}">
+        <span class="sb-link-inner"><span class="sb-pip"></span><span>Volumes</span></span>
+      </a>
+      <a href="/virt/ufw" class="sb-link{% if active_page == 'virt_ufw' %} active{% endif %}">
+        <span class="sb-link-inner"><span class="sb-pip"></span><span>Firewall</span></span>
+      </a>
+
       <!-- System -->
       <div class="sb-section-label">System</div>
       <a href="/users" class="sb-link{% if active_page == 'users' %} active{% endif %}">

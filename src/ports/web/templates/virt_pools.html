@@ -1,142 +1,112 @@
 {% extends "layout.html" %}
 {% set active_page = 'virt_pools' %}
-
-{% block title %}Storage Pools - Testum{% endblock %}
+{% block title %}Storage Pools · testum_{% endblock %}
 
 {% block extra_styles %}
 <style>
-    .platform-selector { display: flex; align-items: center; gap: 8px; }
-    .platform-selector label { font: var(--md-label-medium); color: var(--md-on-surface-variant); white-space: nowrap; }
-    .platform-selector select { min-width: 200px; }
-    .capacity-bar { display: flex; flex-direction: column; gap: 3px; min-width: 120px; }
-    .capacity-bar-track { height: 4px; background: var(--md-surface-container-highest); border-radius: 2px; overflow: hidden; }
-    .capacity-bar-fill  { height: 100%; background: var(--md-primary); border-radius: 2px; transition: width .3s; }
-    .capacity-label { font: var(--md-label-small); color: var(--md-on-surface-variant); }
-    .modal-section-divider {
-        border: none; border-top: 1px solid var(--md-outline-variant);
-        margin: 4px 0 16px;
-    }
+  .cap-bar-track { height:4px;background:var(--surface-4);border-radius:2px;overflow:hidden;min-width:100px; }
+  .cap-bar-fill  { height:100%;background:var(--signal);border-radius:2px;transition:width .3s; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="page-header-info">
-        <h1 class="page-title">
-            <span class="material-symbols-rounded" aria-hidden="true">storage</span>
-            <span data-i18n="virtPools">Storage Pools</span>
-        </h1>
-        <p class="page-subtitle" data-i18n="virtPoolsSubtitle">Manage libvirt storage pools on your platforms.</p>
-    </div>
-    <div class="page-actions">
-        <div class="platform-selector">
-            <label for="platformSelect" data-i18n="platformLabel">Platform:</label>
-            <select id="platformSelect">
-                <option value="">— select —</option>
-            </select>
-        </div>
-        <button id="addPoolBtn" class="toolbar-icon-btn primary">
-            <span class="material-symbols-rounded" aria-hidden="true">add</span>
-            <span data-i18n="addPool">Add Pool</span>
-        </button>
-        <button id="refreshBtn" class="toolbar-icon-btn">
-            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-            <span data-i18n="refresh">Refresh</span>
-        </button>
-    </div>
+<!-- header row -->
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <div>
+    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
+    <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
+      <span style="color:var(--signal)">$</span> Storage Pools<span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
+    </h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <select class="input" id="platformSelect" style="min-width:200px;">
+      <option value="">— select platform —</option>
+    </select>
+    <button class="btn btn-ghost" id="refreshBtn">&#8635; Refresh</button>
+    <button class="btn btn-signal" id="addPoolBtn">+ Add Pool</button>
+  </div>
 </div>
 
-<div class="card table-card">
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th data-i18n="poolColName">Name</th>
-                    <th data-i18n="poolColState">State</th>
-                    <th data-i18n="poolColVolumes">Volumes</th>
-                    <th data-i18n="poolColCapacity">Capacity</th>
-                    <th data-i18n="poolColUsage">Usage</th>
-                    <th data-i18n="poolColAutostart">Autostart</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="poolsBody">
-                <tr><td colspan="7" class="table-empty-state" data-i18n="poolSelectPlatform">Select a platform to load pools.</td></tr>
-            </tbody>
-        </table>
-    </div>
+<!-- Pools table -->
+<div style="background:var(--surface-1);border:1px solid var(--surface-4);border-radius:var(--r-lg);overflow:hidden;">
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>NAME</th><th>TYPE</th><th>STATE</th><th>VOLUMES</th><th>CAPACITY</th><th>USAGE</th><th>AUTOSTART</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="poolsBody">
+      <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">$ select a platform to load pools_</td></tr>
+    </tbody>
+  </table>
 </div>
 
-<!-- Add Pool Modal -->
-<div id="addPoolModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:520px">
-        <div class="modal-header">
-            <h2 class="modal-title" data-i18n="addPoolTitle">Add Storage Pool</h2>
-            <button class="modal-close" onclick="closeAddModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <!-- Выбор платформы внутри модального окна -->
-            <div class="form-group">
-                <label class="form-label" data-i18n="platformLabel">Platform *</label>
-                <select id="modalPlatformSelect" class="form-input">
-                    <option value="">— select —</option>
-                </select>
-            </div>
-            <hr class="modal-section-divider">
-            <div class="form-group">
-                <label class="form-label" data-i18n="poolNameLabel">Name *</label>
-                <input type="text" id="poolName" class="form-input" placeholder="default">
-            </div>
-            <div class="form-group">
-                <label class="form-label" data-i18n="poolTypeLabel">Type *</label>
-                <select id="poolType" class="form-input">
-                    <option value="dir">dir — directory</option>
-                    <option value="fs">fs — filesystem</option>
-                    <option value="netfs">netfs — network filesystem</option>
-                    <option value="logical">logical — LVM</option>
-                    <option value="disk">disk — physical disk</option>
-                    <option value="iscsi">iscsi — iSCSI</option>
-                    <option value="scsi">scsi — SCSI</option>
-                    <option value="rbd">rbd — Ceph RBD</option>
-                    <option value="gluster">gluster — GlusterFS</option>
-                    <option value="zfs">zfs — ZFS</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label" data-i18n="poolSourceLabel">Source (device / path / host)</label>
-                <input type="text" id="poolSource" class="form-input" placeholder="/dev/sdb">
-            </div>
-            <div class="form-group">
-                <label class="form-label" data-i18n="poolTargetLabel">Target path</label>
-                <input type="text" id="poolTarget" class="form-input" placeholder="/var/lib/libvirt/images">
-            </div>
-            <div class="form-group">
-                <label class="form-label" data-i18n="poolHostLabel">Host (for netfs / iSCSI)</label>
-                <input type="text" id="poolHost" class="form-input" placeholder="192.168.1.10">
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeAddModal()" data-i18n="cancel">Cancel</button>
-            <button id="createPoolBtn" class="btn btn-primary" data-i18n="createPool">Create Pool</button>
-        </div>
+<!-- Add Pool modal -->
+<div class="modal-overlay" id="addPoolModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <span class="modal-title"><span style="color:var(--signal)">$</span> Add Storage Pool</span>
+      <button class="iconbtn" onclick="closeAddModal()">&#10005;</button>
     </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label">Platform *</label>
+        <select class="input" id="modalPlatformSelect"><option value="">— select —</option></select>
+      </div>
+      <div class="field">
+        <label class="field-label">Name *</label>
+        <input type="text" class="input" id="poolName" placeholder="default">
+      </div>
+      <div class="field">
+        <label class="field-label">Type *</label>
+        <select class="input" id="poolType">
+          <option value="dir">dir — directory</option>
+          <option value="fs">fs — filesystem</option>
+          <option value="netfs">netfs — network filesystem</option>
+          <option value="logical">logical — LVM</option>
+          <option value="disk">disk — physical disk</option>
+          <option value="iscsi">iscsi — iSCSI</option>
+          <option value="scsi">scsi — SCSI</option>
+          <option value="rbd">rbd — Ceph RBD</option>
+          <option value="gluster">gluster — GlusterFS</option>
+          <option value="zfs">zfs — ZFS</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Source (device / path / host)</label>
+        <input type="text" class="input" id="poolSource" placeholder="/dev/sdb">
+      </div>
+      <div class="field">
+        <label class="field-label">Target path</label>
+        <input type="text" class="input" id="poolTarget" placeholder="/var/lib/libvirt/images">
+      </div>
+      <div class="field">
+        <label class="field-label">Host (for netfs / iSCSI)</label>
+        <input type="text" class="input" id="poolHost" placeholder="192.168.1.10">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-signal" id="createPoolBtn">&#9658; Create Pool</button>
+    </div>
+  </div>
 </div>
 
-<!-- Delete Pool Modal -->
-<div id="deleteModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:420px">
-        <div class="modal-header">
-            <h2 class="modal-title" data-i18n="deletePoolTitle">Delete Pool</h2>
-            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p><strong id="deletePoolName"></strong> — <span data-i18n="deletePoolBody">This will undefine and delete the pool from the hypervisor.</span></p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
-            <button id="confirmDeleteBtn" class="btn btn-danger" data-i18n="delete">Delete</button>
-        </div>
+<!-- Delete Pool modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <span class="modal-title"><span style="color:var(--err)">!</span> Delete Pool</span>
+      <button class="iconbtn" onclick="closeDeleteModal()">&#10005;</button>
     </div>
+    <div class="modal-body">
+      <p style="color:var(--fg-muted);font-size:var(--t-sm);">Undefine and delete <strong id="deletePoolName" style="color:var(--fg)"></strong>? This cannot be undone.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-err" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -169,21 +139,21 @@ function onPlatformChange(pid) {
     } else {
         history.replaceState({}, '', location.pathname);
         document.getElementById('poolsBody').innerHTML =
-            `<tr><td colspan="7" class="table-empty-state">${t('poolSelectPlatform')}</td></tr>`;
+            `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('poolSelectPlatform')}</td></tr>`;
     }
 }
 
 async function loadPools(platformId) {
     const body = document.getElementById('poolsBody');
-    body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${t('loading')}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('loading')}</td></tr>`;
     try {
         const resp = await fetch(`/api/virt/${platformId}/pools?state=1&state=2&state=4&state=8&state=16&state=32`);
         const data = await resp.json();
-        if (!resp.ok) { body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${data.error || 'Error'}</td></tr>`; return; }
-        if (!data.length) { body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${t('poolNone')}</td></tr>`; return; }
+        if (!resp.ok) { body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${data.error || 'Error'}</td></tr>`; return; }
+        if (!data.length) { body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('poolNone')}</td></tr>`; return; }
         body.innerHTML = data.map(renderRow).join('');
     } catch(e) {
-        body.innerHTML = `<tr><td colspan="7" class="table-empty-state">Error: ${e.message}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">Error: ${e.message}</td></tr>`;
     }
 }
 
@@ -196,34 +166,29 @@ function fmtBytes(b) {
 
 function renderRow(p) {
     const pct = p.capacity ? Math.round(p.allocation / p.capacity * 100) : 0;
-    const stateChip = p.is_active
-        ? '<span class="status-chip success">Active</span>'
-        : '<span class="status-chip failed">Inactive</span>';
+    const statePill = p.is_active
+        ? '<span class="pill pill-ok">Active</span>'
+        : '<span class="pill pill-muted">Inactive</span>';
     return `<tr>
         <td><strong>${escapeHtml(p.name)}</strong></td>
-        <td>${stateChip}</td>
+        <td style="color:var(--fg-muted);font-size:var(--t-sm);">${escapeHtml(p.type || '—')}</td>
+        <td>${statePill}</td>
         <td>${p.num_volumes}</td>
         <td>${fmtBytes(p.capacity)}</td>
         <td>
-            <div class="capacity-bar">
-                <div class="capacity-bar-track"><div class="capacity-bar-fill" style="width:${pct}%"></div></div>
-                <span class="capacity-label">${fmtBytes(p.allocation)} / ${fmtBytes(p.capacity)} (${pct}%)</span>
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:120px;">
+                <div class="cap-bar-track"><div class="cap-bar-fill" style="width:${pct}%"></div></div>
+                <span style="font-size:var(--t-xs);color:var(--fg-dim);">${fmtBytes(p.allocation)} / ${fmtBytes(p.capacity)} (${pct}%)</span>
             </div>
         </td>
         <td>${p.auto_start ? '✓' : '—'}</td>
         <td>
-            <div class="table-actions">
+            <div style="display:flex;gap:6px;">
                 ${p.is_active
-                    ? `<button class="btn btn-ghost" onclick="deactivatePool('${escapeHtml(p.name)}')">
-                           <span class="material-symbols-rounded">stop</span><span>${t('deactivate')}</span>
-                       </button>`
-                    : `<button class="btn btn-ghost" onclick="activatePool('${escapeHtml(p.name)}')">
-                           <span class="material-symbols-rounded">play_arrow</span><span>${t('activate')}</span>
-                       </button>`
+                    ? `<button class="btn btn-ghost" onclick="deactivatePool('${escapeHtml(p.name)}')">&#9632; ${t('deactivate')}</button>`
+                    : `<button class="btn btn-ghost" onclick="activatePool('${escapeHtml(p.name)}')">&#9658; ${t('activate')}</button>`
                 }
-                <button class="btn btn-ghost" style="color:var(--md-error)" onclick="openDeleteModal('${escapeHtml(p.name)}')">
-                    <span class="material-symbols-rounded">delete</span>
-                </button>
+                <button class="btn btn-ghost" style="color:var(--err)" onclick="openDeleteModal('${escapeHtml(p.name)}')">&#10006;</button>
             </div>
         </td>
     </tr>`;
@@ -235,7 +200,7 @@ async function activatePool(name) {
         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
     });
     const data = await resp.json();
-    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    showSnack(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'ok' : 'err');
     if (resp.ok) loadPools(currentPlatformId);
 }
 
@@ -245,30 +210,26 @@ async function deactivatePool(name) {
         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
     });
     const data = await resp.json();
-    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    showSnack(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'ok' : 'err');
     if (resp.ok) loadPools(currentPlatformId);
 }
 
-// ── Add Pool Modal ────────────────────────────────────────────────────────────
-
+// Add Pool Modal
 function openAddModal() {
-    // Клонируем список платформ из тулбара в модальное окно
     const toolbarSel = document.getElementById('platformSelect');
     const modalSel   = document.getElementById('modalPlatformSelect');
     modalSel.innerHTML = toolbarSel.innerHTML;
     if (currentPlatformId) modalSel.value = currentPlatformId;
 
-    // Сбрасываем поля формы
     document.getElementById('poolName').value   = '';
     document.getElementById('poolType').selectedIndex = 0;
     document.getElementById('poolSource').value = '';
     document.getElementById('poolTarget').value = '';
     document.getElementById('poolHost').value   = '';
 
-    document.getElementById('addPoolModal').style.display = 'flex';
+    document.getElementById('addPoolModal').classList.add('open');
 }
-
-function closeAddModal() { document.getElementById('addPoolModal').style.display = 'none'; }
+function closeAddModal() { document.getElementById('addPoolModal').classList.remove('open'); }
 
 document.getElementById('addPoolBtn').addEventListener('click', openAddModal);
 document.getElementById('addPoolModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
@@ -278,8 +239,8 @@ document.getElementById('createPoolBtn').addEventListener('click', async () => {
     const name       = document.getElementById('poolName').value.trim();
     const pool_type  = document.getElementById('poolType').value;
 
-    if (!platformId) { showToast(t('selectPlatformRequired'), 'error'); return; }
-    if (!name)       { showToast(t('poolNameLabel') + ' required', 'error'); return; }
+    if (!platformId) { showSnack(t('selectPlatformRequired'), 'err'); return; }
+    if (!name)       { showSnack(t('poolNameLabel') + ' required', 'err'); return; }
 
     const btn = document.getElementById('createPoolBtn');
     btn.disabled = true;
@@ -294,14 +255,12 @@ document.getElementById('createPoolBtn').addEventListener('click', async () => {
             })
         });
         const data = await resp.json();
-        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        showSnack(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'ok' : 'err');
         if (resp.ok) {
             closeAddModal();
-            // Если созданный пул на текущей платформе — обновляем таблицу
             if (platformId === currentPlatformId) {
                 loadPools(currentPlatformId);
             } else {
-                // Переключаем тулбар на платформу из модального окна
                 document.getElementById('platformSelect').value = platformId;
                 onPlatformChange(platformId);
             }
@@ -311,15 +270,14 @@ document.getElementById('createPoolBtn').addEventListener('click', async () => {
     }
 });
 
-// ── Delete Pool Modal ─────────────────────────────────────────────────────────
-
+// Delete Pool Modal
 let pendingDeleteName = null;
 function openDeleteModal(name) {
     pendingDeleteName = name;
     document.getElementById('deletePoolName').textContent = name;
-    document.getElementById('deleteModal').style.display = 'flex';
+    document.getElementById('deleteModal').classList.add('open');
 }
-function closeDeleteModal() { pendingDeleteName = null; document.getElementById('deleteModal').style.display = 'none'; }
+function closeDeleteModal() { pendingDeleteName = null; document.getElementById('deleteModal').classList.remove('open'); }
 document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
 document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
     if (!pendingDeleteName || !currentPlatformId) return;
@@ -329,17 +287,15 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
     });
     const data = await resp.json();
-    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    showSnack(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'ok' : 'err');
     if (resp.ok) loadPools(currentPlatformId);
 });
 
-// ── Toolbar ───────────────────────────────────────────────────────────────────
-
+// Toolbar
 document.getElementById('platformSelect').addEventListener('change', e => onPlatformChange(e.target.value));
 document.getElementById('refreshBtn').addEventListener('click', () => { if (currentPlatformId) loadPools(currentPlatformId); });
 
 function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function showToast(msg, type) { if (window.showNotification) showNotification(msg, type); else alert(msg); }
 
 loadPlatforms();
 </script>

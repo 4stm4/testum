@@ -1,207 +1,117 @@
 {% extends "layout.html" %}
 {% set active_page = 'virt_vms' %}
-
-{% block title %}Virtual Machines - Testum{% endblock %}
+{% block title %}VMs · testum_{% endblock %}
 
 {% block extra_styles %}
 <style>
-    .vm-state { display: inline-flex; align-items: center; gap: 5px; }
-    .vm-state.running { color: var(--md-primary); }
-    .vm-state.stopped { color: var(--md-on-surface-variant); }
-    .vm-state.paused  { color: var(--md-tertiary); }
-    .vm-state.crashed { color: var(--md-error); }
-    .platform-selector { display: flex; align-items: center; gap: 8px; }
-    .platform-selector label { font: var(--md-label-medium); color: var(--md-on-surface-variant); white-space: nowrap; }
-    .platform-selector select { min-width: 200px; }
-    .install-output {
-        background: var(--md-surface-container-highest);
-        border-radius: 8px;
-        padding: 16px;
-        font-family: 'Roboto Mono', monospace;
-        font-size: 13px;
-        line-height: 1.6;
-        white-space: pre-wrap;
-        word-break: break-word;
-        max-height: 420px;
-        overflow-y: auto;
-        color: var(--md-on-surface);
-        min-height: 80px;
-    }
-    .install-output .line-cmd  { color: var(--md-primary); font-weight: 600; }
-    .install-output .line-head { color: var(--md-tertiary); font-weight: 700; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spin { animation: spin 1s linear infinite; display: inline-block; }
-    #installJobLink { display: none; gap: 8px; margin-top: 12px; }
+  .vm-state-dot { width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0; }
+  .vm-state-dot.running { background:var(--signal);box-shadow:0 0 6px var(--signal); }
+  .vm-state-dot.stopped { background:var(--surface-5); }
+  .vm-state-dot.paused  { background:var(--warn); }
+  .vm-state-dot.crashed { background:var(--err); }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="page-header-info">
-        <h1 class="page-title">
-            <span class="material-symbols-rounded" aria-hidden="true">computer</span>
-            <span data-i18n="virtVms">Virtual Machines</span>
-        </h1>
-        <p class="page-subtitle" data-i18n="virtVmsSubtitle">Manage virtual machines on libvirt platforms.</p>
-    </div>
-    <div class="page-actions">
-        <div class="platform-selector">
-            <label for="platformSelect" data-i18n="platformLabel">Platform:</label>
-            <select id="platformSelect">
-                <option value="">— select —</option>
-            </select>
-        </div>
-        <button id="createVmBtn" class="toolbar-icon-btn primary">
-            <span class="material-symbols-rounded" aria-hidden="true">add</span>
-            <span data-i18n="createVm">Create VM</span>
-        </button>
-        <button id="installBtn" class="toolbar-icon-btn" disabled>
-            <span class="material-symbols-rounded" aria-hidden="true">build</span>
-            <span data-i18n="installLibvirtBtn">Install libvirt</span>
-        </button>
-        <button id="refreshBtn" class="toolbar-icon-btn">
-            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-            <span data-i18n="refresh">Refresh</span>
-        </button>
-    </div>
+<!-- header row -->
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <div>
+    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
+    <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
+      <span style="color:var(--signal)">$</span> Virtual Machines<span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
+    </h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <select class="input" id="platformSelect" style="min-width:200px;">
+      <option value="">— select platform —</option>
+    </select>
+    <button class="btn btn-ghost" id="installBtn" disabled>&#9881; Install libvirt</button>
+    <button class="btn btn-ghost" id="refreshBtn">&#8635; Refresh</button>
+    <button class="btn btn-signal" id="createVmBtn">+ Create VM</button>
+  </div>
 </div>
 
-<div class="card table-card">
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th data-i18n="vmName">Name</th>
-                    <th data-i18n="vmUuid">UUID</th>
-                    <th data-i18n="vmState">State</th>
-                    <th data-i18n="vmMemory">Memory</th>
-                    <th data-i18n="vmVcpus">vCPUs</th>
-                    <th data-i18n="vmAutostart">Autostart</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="vmsBody">
-                <tr><td colspan="7" class="table-empty-state" data-i18n="vmSelectPlatform">Select a platform to load VMs.</td></tr>
-            </tbody>
-        </table>
-    </div>
+<!-- VMs table -->
+<div style="background:var(--surface-1);border:1px solid var(--surface-4);border-radius:var(--r-lg);overflow:hidden;">
+  <table class="tbl" id="vmsTable">
+    <thead>
+      <tr>
+        <th>NAME</th><th>UUID</th><th>STATE</th><th>MEMORY</th><th>vCPUs</th><th>AUTOSTART</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="vmsBody">
+      <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">$ select a platform to load VMs_</td></tr>
+    </tbody>
+  </table>
 </div>
 
-<!-- Create VM Modal -->
-<div id="createVmModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:560px">
-        <div class="modal-header">
-            <h2 class="modal-title">
-                <span class="material-symbols-rounded" aria-hidden="true">add_circle</span>
-                <span data-i18n="createVmTitle">Create Virtual Machine</span>
-            </h2>
-            <button class="modal-close" onclick="closeCreateVmModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <!-- Выбор платформы внутри модального окна -->
-            <div class="form-group">
-                <label class="form-label" data-i18n="platformLabel">Platform *</label>
-                <select id="vmModalPlatformSelect" class="form-input">
-                    <option value="">— select —</option>
-                </select>
-            </div>
-            <hr style="border:none;border-top:1px solid var(--md-outline-variant);margin:4px 0 16px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
-                <div class="form-group">
-                    <label class="form-label" data-i18n="vmNameLabel">Name *</label>
-                    <input type="text" id="vmName" class="form-input" placeholder="my-vm">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" data-i18n="vmMemoryLabel">Memory (MiB) *</label>
-                    <input type="number" id="vmMemory" class="form-input" placeholder="2048" min="128">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" data-i18n="vmVcpuLabel">vCPUs *</label>
-                    <input type="number" id="vmVcpu" class="form-input" placeholder="2" min="1">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" data-i18n="vmBridgeLabel">Network bridge</label>
-                    <input type="text" id="vmBridge" class="form-input" placeholder="virbr0" value="virbr0">
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label" data-i18n="vmDiskPathLabel">Disk image path *</label>
-                <input type="text" id="vmDiskPath" class="form-input"
-                       placeholder="/var/lib/libvirt/images/my-vm.qcow2">
-                <span style="font:var(--md-label-small);color:var(--md-on-surface-variant);margin-top:4px;display:block"
-                      data-i18n="vmDiskPathHint"></span>
-            </div>
-            <div class="form-group">
-                <label class="form-label" data-i18n="vmCdromLabel">CD-ROM ISO path *</label>
-                <input type="text" id="vmCdrom" class="form-input"
-                       placeholder="/var/lib/libvirt/images/ubuntu-24.04.iso">
-                <span style="font:var(--md-label-small);color:var(--md-on-surface-variant);margin-top:4px;display:block"
-                      data-i18n="vmCdromHint"></span>
-            </div>
-            <div class="form-group">
-                <label class="form-label" data-i18n="vmMacLabel">MAC address (optional)</label>
-                <input type="text" id="vmMac" class="form-input"
-                       placeholder="52:54:00:xx:xx:xx">
-                <span style="font:var(--md-label-small);color:var(--md-on-surface-variant);margin-top:4px;display:block"
-                      data-i18n="vmMacHint"></span>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeCreateVmModal()" data-i18n="cancel">Cancel</button>
-            <button id="confirmCreateVmBtn" class="btn btn-primary" data-i18n="createVm">Create VM</button>
-        </div>
+<!-- Create VM modal -->
+<div class="modal-overlay" id="createVmModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <span class="modal-title"><span style="color:var(--signal)">$</span> Create VM</span>
+      <button class="iconbtn" onclick="closeCreateVmModal()">&#10005;</button>
     </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label">Platform</label>
+        <select class="input" id="vmModalPlatformSelect"><option value="">— select —</option></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+        <div class="field"><label class="field-label">Name *</label><input type="text" class="input" id="vmName" placeholder="my-vm"></div>
+        <div class="field"><label class="field-label">Memory (MiB) *</label><input type="number" class="input" id="vmMemory" placeholder="2048" min="128"></div>
+        <div class="field"><label class="field-label">vCPUs *</label><input type="number" class="input" id="vmVcpu" placeholder="2" min="1"></div>
+        <div class="field"><label class="field-label">Network bridge</label><input type="text" class="input" id="vmBridge" placeholder="virbr0" value="virbr0"></div>
+      </div>
+      <div class="field"><label class="field-label">Disk image path *</label><input type="text" class="input" id="vmDiskPath" placeholder="/var/lib/libvirt/images/my-vm.qcow2"></div>
+      <div class="field"><label class="field-label">CD-ROM ISO path *</label><input type="text" class="input" id="vmCdrom" placeholder="/var/lib/libvirt/images/ubuntu-24.04.iso"></div>
+      <div class="field"><label class="field-label">MAC address (optional)</label><input type="text" class="input" id="vmMac" placeholder="52:54:00:xx:xx:xx"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeCreateVmModal()">Cancel</button>
+      <button class="btn btn-signal" id="confirmCreateVmBtn">&#9658; Create VM</button>
+    </div>
+  </div>
 </div>
 
-<!-- Delete VM Modal -->
-<div id="deleteModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:420px">
-        <div class="modal-header">
-            <h2 class="modal-title" data-i18n="deleteVmTitle">Delete VM</h2>
-            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p><strong id="deleteVmName"></strong> — <span data-i18n="deleteVmBody">The VM will be force-stopped and undefined.</span></p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
-            <button id="confirmDeleteBtn" class="btn btn-danger" data-i18n="delete">Delete</button>
-        </div>
+<!-- Delete VM modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <span class="modal-title"><span style="color:var(--err)">!</span> Delete VM</span>
+      <button class="iconbtn" onclick="closeDeleteModal()">&#10005;</button>
     </div>
+    <div class="modal-body">
+      <p style="color:var(--fg-muted);font-size:var(--t-sm);">Force-stop and undefine <strong id="deleteVmName" style="color:var(--fg)"></strong>?</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-err" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
 </div>
 
-<!-- Install libvirt Modal -->
-<div id="installModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:680px">
-        <div class="modal-header">
-            <h2 class="modal-title">
-                <span class="material-symbols-rounded" aria-hidden="true">build</span>
-                <span data-i18n="installModalTitle">Install libvirt &amp; dependencies</span>
-            </h2>
-            <button class="modal-close" id="installModalClose">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p style="margin-bottom:12px;color:var(--md-on-surface-variant)" data-i18n-html="installModalDesc"></p>
-            <div id="installOutput" class="install-output"></div>
-            <div id="installJobLink">
-                <a id="installJobAnchor" href="#" class="btn btn-ghost" target="_blank">
-                    <span class="material-symbols-rounded" aria-hidden="true">open_in_new</span>
-                    <span data-i18n="viewJob">View Job</span>
-                </a>
-                <a id="installMonitorAnchor" href="#" class="btn btn-ghost" target="_blank">
-                    <span class="material-symbols-rounded" aria-hidden="true">monitor_heart</span>
-                    <span data-i18n="liveMonitor">Live Monitor</span>
-                </a>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" id="installModalClose2" data-i18n="close">Close</button>
-            <button id="runInstallBtn" class="btn btn-primary">
-                <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
-                <span data-i18n="runInstall">Run Install</span>
-            </button>
-        </div>
+<!-- Install libvirt modal -->
+<div class="modal-overlay" id="installModal">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-head">
+      <span class="modal-title"><span style="color:var(--signal)">$</span> Install libvirt</span>
+      <button class="iconbtn" id="installModalClose">&#10005;</button>
     </div>
+    <div class="modal-body">
+      <div class="console" id="installOutput" style="min-height:120px;max-height:420px;overflow-y:auto;">
+        <div class="console-line" style="color:var(--fg-dim);">$ ready to install&#8230;</div>
+      </div>
+      <div id="installJobLink" style="display:none;gap:8px;margin-top:12px;">
+        <a id="installJobAnchor" href="#" class="btn btn-ghost" target="_blank">View Job &#8594;</a>
+        <a id="installMonitorAnchor" href="#" class="btn btn-ghost" target="_blank">Live Monitor &#8594;</a>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="installModalClose2">Close</button>
+      <button class="btn btn-signal" id="runInstallBtn">&#9658; Run Install</button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -233,21 +143,21 @@ async function loadPlatforms() {
 async function loadVMs(platformId) {
     currentPlatformId = platformId;
     const body = document.getElementById('vmsBody');
-    body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${t('loading')}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('loading')}</td></tr>`;
     try {
         const resp = await fetch(`/api/virt/${platformId}/vms`);
         const data = await resp.json();
         if (!resp.ok) {
-            body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${data.error || t('loading')}</td></tr>`;
+            body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${data.error || t('loading')}</td></tr>`;
             return;
         }
         if (!data.length) {
-            body.innerHTML = `<tr><td colspan="7" class="table-empty-state">${t('vmNoVms')}</td></tr>`;
+            body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('vmNoVms')}</td></tr>`;
             return;
         }
         body.innerHTML = data.map(renderRow).join('');
     } catch(e) {
-        body.innerHTML = `<tr><td colspan="7" class="table-empty-state">Error: ${e.message}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">Error: ${e.message}</td></tr>`;
     }
 }
 
@@ -256,34 +166,33 @@ function stateClass(s) {
     return m[s] || 'stopped';
 }
 
+function statePill(state) {
+    const sc = stateClass(state);
+    const pillMap = { running: 'pill pill-ok', stopped: 'pill pill-muted', paused: 'pill pill-warn', crashed: 'pill pill-err' };
+    const cls = pillMap[sc] || 'pill pill-muted';
+    return `<span class="${cls}" style="display:inline-flex;align-items:center;gap:5px;">
+        <span class="vm-state-dot ${sc}"></span>${state}
+    </span>`;
+}
+
 function renderRow(vm) {
     const shortUuid = vm.uuid ? vm.uuid.substring(0, 8) + '…' : '—';
     const memMb = vm.memory_kb ? (vm.memory_kb / 1024).toFixed(0) + ' MB' : '—';
-    const sc = stateClass(vm.state);
     const isRunning = vm.state === 'Running';
     return `<tr>
         <td><strong>${escapeHtml(vm.name)}</strong></td>
         <td><code title="${escapeHtml(vm.uuid || '')}">${shortUuid}</code></td>
-        <td><span class="vm-state ${sc}">
-            <span class="material-symbols-rounded" style="font-size:16px">${isRunning ? 'play_circle' : 'stop_circle'}</span>
-            ${vm.state}
-        </span></td>
+        <td>${statePill(vm.state)}</td>
         <td>${memMb}</td>
         <td>${vm.vcpus}</td>
         <td>${vm.autostart ? '✓' : '—'}</td>
         <td>
-            <div class="table-actions">
+            <div style="display:flex;gap:6px;">
                 ${isRunning
-                    ? `<button class="btn btn-ghost" onclick="stopVM('${escapeHtml(vm.name)}')">
-                           <span class="material-symbols-rounded">stop</span><span>${t('stopVm')}</span>
-                       </button>`
-                    : `<button class="btn btn-ghost" onclick="startVM('${escapeHtml(vm.name)}')">
-                           <span class="material-symbols-rounded">play_arrow</span><span>${t('startVm')}</span>
-                       </button>`
+                    ? `<button class="btn btn-ghost" onclick="stopVM('${escapeHtml(vm.name)}')">&#9632; ${t('stopVm')}</button>`
+                    : `<button class="btn btn-ghost" onclick="startVM('${escapeHtml(vm.name)}')">&#9658; ${t('startVm')}</button>`
                 }
-                <button class="btn btn-ghost" style="color:var(--md-error)" onclick="openDeleteModal('${escapeHtml(vm.name)}')">
-                    <span class="material-symbols-rounded">delete</span>
-                </button>
+                <button class="btn btn-ghost" style="color:var(--err)" onclick="openDeleteModal('${escapeHtml(vm.name)}')">&#10006;</button>
             </div>
         </td>
     </tr>`;
@@ -295,7 +204,7 @@ async function startVM(name) {
         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
     });
     const data = await resp.json();
-    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    showSnack(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'ok' : 'err');
     if (resp.ok) loadVMs(currentPlatformId);
 }
 
@@ -305,7 +214,7 @@ async function stopVM(name) {
         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
     });
     const data = await resp.json();
-    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    showSnack(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'ok' : 'err');
     if (resp.ok) loadVMs(currentPlatformId);
 }
 
@@ -314,9 +223,9 @@ let pendingDeleteName = null;
 function openDeleteModal(name) {
     pendingDeleteName = name;
     document.getElementById('deleteVmName').textContent = name;
-    document.getElementById('deleteModal').style.display = 'flex';
+    document.getElementById('deleteModal').classList.add('open');
 }
-function closeDeleteModal() { pendingDeleteName = null; document.getElementById('deleteModal').style.display = 'none'; }
+function closeDeleteModal() { pendingDeleteName = null; document.getElementById('deleteModal').classList.remove('open'); }
 document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
 document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
     if (!pendingDeleteName || !currentPlatformId) return;
@@ -326,28 +235,25 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})
     });
     const data = await resp.json();
-    showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+    showSnack(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'ok' : 'err');
     if (resp.ok) loadVMs(currentPlatformId);
 });
 
-// ── Create VM Modal ──────────────────────────────────────────────────────────
-
+// Create VM Modal
 function openCreateVmModal() {
-    // Клонируем список платформ из тулбара
     const toolbarSel = document.getElementById('platformSelect');
     const modalSel   = document.getElementById('vmModalPlatformSelect');
     modalSel.innerHTML = toolbarSel.innerHTML;
     if (currentPlatformId) modalSel.value = currentPlatformId;
 
-    // Сбрасываем поля
     ['vmName','vmDiskPath','vmCdrom','vmMac'].forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('vmMemory').value = '2048';
     document.getElementById('vmVcpu').value   = '2';
     document.getElementById('vmBridge').value = 'virbr0';
 
-    document.getElementById('createVmModal').style.display = 'flex';
+    document.getElementById('createVmModal').classList.add('open');
 }
-function closeCreateVmModal() { document.getElementById('createVmModal').style.display = 'none'; }
+function closeCreateVmModal() { document.getElementById('createVmModal').classList.remove('open'); }
 
 document.getElementById('createVmBtn').addEventListener('click', openCreateVmModal);
 document.getElementById('createVmModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeCreateVmModal(); });
@@ -362,12 +268,12 @@ document.getElementById('confirmCreateVmBtn').addEventListener('click', async ()
     const bridge     = document.getElementById('vmBridge').value.trim() || 'virbr0';
     const mac_address = document.getElementById('vmMac').value.trim() || null;
 
-    if (!platformId)    { showToast(t('selectPlatformRequired'), 'error'); return; }
-    if (!name)          { showToast(t('vmNameLabel') + ' required', 'error'); return; }
-    if (!memory || memory < 128) { showToast(t('vmMemoryLabel') + ' ≥ 128', 'error'); return; }
-    if (!vcpu  || vcpu  < 1)    { showToast(t('vmVcpuLabel')   + ' ≥ 1',   'error'); return; }
-    if (!disk_path)     { showToast(t('vmDiskPathLabel') + ' required', 'error'); return; }
-    if (!cdrom_iso_path) { showToast(t('vmCdromLabel') + ' required', 'error'); return; }
+    if (!platformId)    { showSnack(t('selectPlatformRequired'), 'err'); return; }
+    if (!name)          { showSnack(t('vmNameLabel') + ' required', 'err'); return; }
+    if (!memory || memory < 128) { showSnack(t('vmMemoryLabel') + ' ≥ 128', 'err'); return; }
+    if (!vcpu  || vcpu  < 1)    { showSnack(t('vmVcpuLabel')   + ' ≥ 1',   'err'); return; }
+    if (!disk_path)     { showSnack(t('vmDiskPathLabel') + ' required', 'err'); return; }
+    if (!cdrom_iso_path) { showSnack(t('vmCdromLabel') + ' required', 'err'); return; }
 
     const btn = document.getElementById('confirmCreateVmBtn');
     btn.disabled = true;
@@ -377,7 +283,7 @@ document.getElementById('confirmCreateVmBtn').addEventListener('click', async ()
             body: JSON.stringify({ name, memory, vcpu, disk_path, cdrom_iso_path, bridge, mac_address })
         });
         const data = await resp.json();
-        showToast(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'success' : 'error');
+        showSnack(resp.ok ? data.message : (data.error || 'Failed'), resp.ok ? 'ok' : 'err');
         if (resp.ok) {
             closeCreateVmModal();
             if (platformId !== currentPlatformId) {
@@ -403,23 +309,24 @@ document.getElementById('platformSelect').addEventListener('change', e => {
     } else {
         currentPlatformId = null;
         document.getElementById('vmsBody').innerHTML =
-            `<tr><td colspan="7" class="table-empty-state">${t('vmSelectPlatform')}</td></tr>`;
+            `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('vmSelectPlatform')}</td></tr>`;
     }
 });
 document.getElementById('refreshBtn').addEventListener('click', () => { if (currentPlatformId) loadVMs(currentPlatformId); });
 
 // Install modal
 function openInstallModal() {
-    document.getElementById('installOutput').textContent = t('installOutputPlaceholder');
+    const out = document.getElementById('installOutput');
+    out.innerHTML = '<div class="console-line" style="color:var(--fg-dim);">$ ready to install…</div>';
     document.getElementById('installJobLink').style.display = 'none';
     const btn = document.getElementById('runInstallBtn');
     btn.disabled = false;
-    btn.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">play_arrow</span> <span>${t('runInstall')}</span>`;
-    document.getElementById('installModal').style.display = 'flex';
+    btn.innerHTML = `&#9658; ${t('runInstall')}`;
+    document.getElementById('installModal').classList.add('open');
 }
 function closeInstallModal() {
     if (installPoller) { clearInterval(installPoller); installPoller = null; }
-    document.getElementById('installModal').style.display = 'none';
+    document.getElementById('installModal').classList.remove('open');
 }
 document.getElementById('installBtn').addEventListener('click', openInstallModal);
 document.getElementById('installModalClose').addEventListener('click', closeInstallModal);
@@ -434,17 +341,17 @@ document.getElementById('runInstallBtn').addEventListener('click', async () => {
     const linkBar = document.getElementById('installJobLink');
 
     btn.disabled = true;
-    btn.innerHTML = `<span class="material-symbols-rounded spin" aria-hidden="true">progress_activity</span> Starting…`;
-    out.textContent = 'Sending request…\n';
+    btn.innerHTML = '… Starting…';
+    out.innerHTML = '<div class="console-line">Sending request…</div>';
     linkBar.style.display = 'none';
 
     try {
         const resp = await fetch(`/api/virt/${currentPlatformId}/install`, { method: 'POST' });
         const data = await resp.json();
         if (!resp.ok) {
-            out.textContent = data.error || 'Failed to start';
+            out.innerHTML = `<div class="console-line" style="color:var(--err);">${data.error || 'Failed to start'}</div>`;
             btn.disabled = false;
-            btn.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">play_arrow</span> <span>${t('runInstall')}</span>`;
+            btn.innerHTML = `&#9658; ${t('runInstall')}`;
             return;
         }
 
@@ -453,7 +360,7 @@ document.getElementById('runInstallBtn').addEventListener('click', async () => {
         document.getElementById('installMonitorAnchor').href = `/tasks/${taskId}`;
         linkBar.style.display = 'flex';
 
-        btn.innerHTML = `<span class="material-symbols-rounded spin" aria-hidden="true">progress_activity</span> Running…`;
+        btn.innerHTML = '… Running…';
 
         if (installPoller) clearInterval(installPoller);
         installPoller = setInterval(async () => {
@@ -467,37 +374,34 @@ document.getElementById('runInstallBtn').addEventListener('click', async () => {
                     clearInterval(installPoller); installPoller = null;
                     btn.disabled = false;
                     if (task.status === 'success') {
-                        btn.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">check_circle</span> Done`;
-                        showToast('libvirt installed successfully', 'success');
+                        btn.innerHTML = '✓ Done';
+                        showSnack('libvirt installed successfully', 'ok');
                     } else {
-                        btn.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">error</span> Failed`;
-                        showToast('Install failed — check job output', 'error');
+                        btn.innerHTML = '✗ Failed';
+                        showSnack('Install failed — check job output', 'err');
                     }
                 }
             } catch(_) {}
         }, 2000);
 
     } catch(e) {
-        out.textContent = 'Error: ' + e.message;
+        out.innerHTML = `<div class="console-line" style="color:var(--err);">Error: ${e.message}</div>`;
         btn.disabled = false;
-        btn.innerHTML = `<span class="material-symbols-rounded" aria-hidden="true">play_arrow</span> <span>${t('runInstall')}</span>`;
+        btn.innerHTML = `&#9658; ${t('runInstall')}`;
     }
 });
 
 function colorizeOutput(text) {
     return text.split('\n').map(line => {
         const esc = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        if (line.startsWith('===')) return `<span class="line-head">${esc}</span>`;
-        if (line.startsWith('$'))   return `<span class="line-cmd">${esc}</span>`;
-        return esc;
-    }).join('\n');
+        if (line.startsWith('===')) return `<div class="console-line" style="color:var(--warn);font-weight:700;">${esc}</div>`;
+        if (line.startsWith('$'))   return `<div class="console-line" style="color:var(--signal);">${esc}</div>`;
+        return `<div class="console-line">${esc}</div>`;
+    }).join('');
 }
 
 function escapeHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function showToast(msg, type) {
-    if (window.showNotification) showNotification(msg, type); else alert(msg);
 }
 
 loadPlatforms();

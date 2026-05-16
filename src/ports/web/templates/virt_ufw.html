@@ -1,199 +1,165 @@
 {% extends "layout.html" %}
 {% set active_page = 'virt_ufw' %}
-
-{% block title %}Firewall (UFW) - Testum{% endblock %}
+{% block title %}Firewall · testum_{% endblock %}
 
 {% block extra_styles %}
 <style>
-    .platform-selector { display: flex; align-items: center; gap: 8px; }
-    .platform-selector label { font: var(--md-label-medium); color: var(--md-on-surface-variant); white-space: nowrap; }
-    .platform-selector select { min-width: 200px; }
+  .ufw-status-bar {
+    display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+    padding:14px 20px;
+    background:var(--surface-2);
+    border:1px solid var(--surface-4);
+    border-radius:var(--r-lg);
+    margin-bottom:20px;
+  }
+  .ufw-status-bar .ufw-stat { display:flex;align-items:center;gap:6px; }
+  .ufw-status-bar .ufw-stat-label { font-size:var(--t-xs);text-transform:uppercase;letter-spacing:1px;color:var(--fg-dim); }
+  .ufw-status-bar .ufw-stat-val { font-size:var(--t-sm);color:var(--fg); }
+  .ufw-status-bar .spacer { flex:1; }
+  .ufw-status-bar .ufw-actions { display:flex;gap:8px;flex-wrap:wrap; }
 
-    /* Статусная плашка файрвола */
-    .ufw-status-bar {
-        display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
-        padding: 14px 20px;
-        background: var(--md-surface-container);
-        border-radius: 12px;
-        margin-bottom: 24px;
-    }
-    .ufw-status-bar .status-section { display: flex; align-items: center; gap: 8px; }
-    .ufw-status-bar .label { font: var(--md-label-medium); color: var(--md-on-surface-variant); }
-    .ufw-status-bar .value { font: var(--md-label-large); color: var(--md-on-surface); }
-    .ufw-status-bar .spacer { flex: 1; }
-    .ufw-status-bar .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    .chip-active   { background: var(--md-primary-container); color: var(--md-on-primary-container);
-                     padding: 4px 12px; border-radius: 100px; font: var(--md-label-medium); font-weight: 600; }
-    .chip-inactive { background: var(--md-surface-container-highest); color: var(--md-on-surface-variant);
-                     padding: 4px 12px; border-radius: 100px; font: var(--md-label-medium); }
-
-    .action-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font: var(--md-label-small); font-weight: 600; }
-    .action-allow  { background: color-mix(in srgb, var(--md-primary) 15%, transparent);    color: var(--md-primary); }
-    .action-deny   { background: color-mix(in srgb, var(--md-error)   15%, transparent);    color: var(--md-error); }
-    .action-reject { background: color-mix(in srgb, var(--md-error)   15%, transparent);    color: var(--md-error); }
-    .action-limit  { background: color-mix(in srgb, var(--md-tertiary) 15%, transparent);   color: var(--md-tertiary); }
-
-    .modal-section-divider { border: none; border-top: 1px solid var(--md-outline-variant); margin: 4px 0 16px; }
+  .action-chip { display:inline-block;padding:2px 8px;border-radius:var(--r-sm);font-size:var(--t-xs);font-weight:700;letter-spacing:.5px; }
+  .action-allow  { background:color-mix(in srgb, var(--signal) 15%, transparent); color:var(--signal); }
+  .action-deny   { background:color-mix(in srgb, var(--err)    15%, transparent); color:var(--err); }
+  .action-reject { background:color-mix(in srgb, var(--err)    15%, transparent); color:var(--err); }
+  .action-limit  { background:color-mix(in srgb, var(--warn)   15%, transparent); color:var(--warn); }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="page-header-info">
-        <h1 class="page-title">
-            <span class="material-symbols-rounded" aria-hidden="true">shield</span>
-            <span data-i18n="virtUfw">Firewall (UFW)</span>
-        </h1>
-        <p class="page-subtitle" data-i18n="virtUfwSubtitle">Manage UFW firewall rules on remote platforms.</p>
-    </div>
-    <div class="page-actions">
-        <div class="platform-selector">
-            <label for="platformSelect" data-i18n="platformLabel">Platform:</label>
-            <select id="platformSelect">
-                <option value="">— select —</option>
-            </select>
-        </div>
-        <button id="addRuleBtn" class="toolbar-icon-btn primary">
-            <span class="material-symbols-rounded" aria-hidden="true">add</span>
-            <span data-i18n="ufwAddRule">Add Rule</span>
-        </button>
-        <button id="refreshBtn" class="toolbar-icon-btn">
-            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
-            <span data-i18n="refresh">Refresh</span>
-        </button>
-    </div>
+<!-- header row -->
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <div>
+    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
+    <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
+      <span style="color:var(--signal)">$</span> Firewall (UFW)<span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
+    </h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <select class="input" id="platformSelect" style="min-width:200px;">
+      <option value="">— select platform —</option>
+    </select>
+    <button class="btn btn-ghost" id="refreshBtn">&#8635; Refresh</button>
+    <button class="btn btn-signal" id="addRuleBtn">+ Add Rule</button>
+  </div>
 </div>
 
-<!-- Строка статуса файрвола -->
-<div id="ufwStatusBar" class="ufw-status-bar" style="display:none">
-    <div class="status-section">
-        <span class="label" data-i18n="platformLabel">Platform:</span>
-        <span id="statusPlatformName" class="value"></span>
-        <span id="statusChip"></span>
-    </div>
-    <div class="status-section">
-        <span class="label" data-i18n="ufwDefaultIncoming">Default incoming:</span>
-        <span id="statusDefaultIn" class="value"></span>
-    </div>
-    <div class="status-section">
-        <span class="label" data-i18n="ufwDefaultOutgoing">Default outgoing:</span>
-        <span id="statusDefaultOut" class="value"></span>
-    </div>
-    <div class="status-section">
-        <span class="label" data-i18n="ufwLogging">Logging:</span>
-        <span id="statusLogging" class="value"></span>
-    </div>
-    <div class="spacer"></div>
-    <div class="actions">
-        <button id="enableBtn"  class="btn btn-ghost" style="color:var(--md-primary)"  data-i18n="ufwEnableBtn">Enable</button>
-        <button id="disableBtn" class="btn btn-ghost" style="color:var(--md-error)"    data-i18n="ufwDisableBtn">Disable</button>
-        <button id="reloadBtn2" class="btn btn-ghost"                                  data-i18n="ufwReloadBtn">Reload</button>
-    </div>
+<!-- UFW status bar -->
+<div id="ufwStatusBar" class="ufw-status-bar" style="display:none;">
+  <div class="ufw-stat">
+    <span class="ufw-stat-label">Platform</span>
+    <span id="statusPlatformName" class="ufw-stat-val"></span>
+    <span id="statusChip"></span>
+  </div>
+  <div class="ufw-stat">
+    <span class="ufw-stat-label">Default in</span>
+    <span id="statusDefaultIn" class="ufw-stat-val"></span>
+  </div>
+  <div class="ufw-stat">
+    <span class="ufw-stat-label">Default out</span>
+    <span id="statusDefaultOut" class="ufw-stat-val"></span>
+  </div>
+  <div class="ufw-stat">
+    <span class="ufw-stat-label">Logging</span>
+    <span id="statusLogging" class="ufw-stat-val"></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="ufw-actions">
+    <button id="enableBtn"  class="btn btn-ghost" style="color:var(--signal);">Enable</button>
+    <button id="disableBtn" class="btn btn-ghost" style="color:var(--err);">Disable</button>
+    <button id="reloadBtn2" class="btn btn-ghost">Reload</button>
+  </div>
 </div>
 
-<!-- Таблица правил -->
-<div class="card table-card">
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th style="width:44px" data-i18n="ufwRuleColNum">#</th>
-                    <th data-i18n="ufwRuleColTo">To</th>
-                    <th data-i18n="ufwRuleColAction">Action</th>
-                    <th data-i18n="ufwRuleColFrom">From</th>
-                    <th style="width:52px"></th>
-                </tr>
-            </thead>
-            <tbody id="rulesBody">
-                <tr><td colspan="5" class="table-empty-state" data-i18n="ufwSelectPlatform">Select a platform to load firewall status.</td></tr>
-            </tbody>
-        </table>
-    </div>
+<!-- Rules table -->
+<div style="background:var(--surface-1);border:1px solid var(--surface-4);border-radius:var(--r-lg);overflow:hidden;">
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th style="width:44px;">#</th>
+        <th>TO</th>
+        <th>ACTION</th>
+        <th>FROM</th>
+        <th style="width:52px;"></th>
+      </tr>
+    </thead>
+    <tbody id="rulesBody">
+      <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">$ select a platform to load firewall status_</td></tr>
+    </tbody>
+  </table>
 </div>
 
-<!-- Add Rule Modal -->
-<div id="addRuleModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:500px">
-        <div class="modal-header">
-            <h2 class="modal-title">
-                <span class="material-symbols-rounded" aria-hidden="true">add_circle</span>
-                <span data-i18n="ufwAddRuleTitle">Add UFW Rule</span>
-            </h2>
-            <button class="modal-close" onclick="closeAddModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <!-- Выбор платформы -->
-            <div class="form-group">
-                <label class="form-label" data-i18n="platformLabel">Platform *</label>
-                <select id="modalPlatformSelect" class="form-input">
-                    <option value="">— select —</option>
-                </select>
-            </div>
-            <hr class="modal-section-divider">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
-                <div class="form-group">
-                    <label class="form-label" data-i18n="ufwActionLabel">Action *</label>
-                    <select id="ruleAction" class="form-input">
-                        <option value="allow">allow — разрешить</option>
-                        <option value="deny">deny — запретить (drop)</option>
-                        <option value="reject">reject — запретить (reject)</option>
-                        <option value="limit">limit — rate-limit</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" data-i18n="ufwDirectionLabel">Direction</label>
-                    <select id="ruleDirection" class="form-input">
-                        <option value="in">in — входящие</option>
-                        <option value="out">out — исходящие</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label" data-i18n="ufwTargetLabel">Port / Service *</label>
-                <input type="text" id="ruleTarget" class="form-input" placeholder="22, 80, 443, 8080/tcp, ssh, http">
-                <span style="font:var(--md-label-small);color:var(--md-on-surface-variant);margin-top:4px;display:block"
-                      data-i18n="ufwTargetHint"></span>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
-                <div class="form-group">
-                    <label class="form-label" data-i18n="ufwProtoLabel">Protocol</label>
-                    <select id="ruleProto" class="form-input">
-                        <option value="any">any</option>
-                        <option value="tcp">tcp</option>
-                        <option value="udp">udp</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" data-i18n="ufwFromIpLabel">Source IP / Subnet</label>
-                    <input type="text" id="ruleFromIp" class="form-input" placeholder="192.168.1.0/24">
-                    <span style="font:var(--md-label-small);color:var(--md-on-surface-variant);margin-top:4px;display:block"
-                          data-i18n="ufwFromIpHint"></span>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeAddModal()" data-i18n="cancel">Cancel</button>
-            <button id="confirmAddRuleBtn" class="btn btn-primary" data-i18n="ufwAddRule">Add Rule</button>
-        </div>
+<!-- Add Rule modal -->
+<div class="modal-overlay" id="addRuleModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-head">
+      <span class="modal-title"><span style="color:var(--signal)">$</span> Add UFW Rule</span>
+      <button class="iconbtn" onclick="closeAddModal()">&#10005;</button>
     </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label">Platform *</label>
+        <select class="input" id="modalPlatformSelect"><option value="">— select —</option></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+        <div class="field">
+          <label class="field-label">Action *</label>
+          <select class="input" id="ruleAction">
+            <option value="allow">allow — permit</option>
+            <option value="deny">deny — drop</option>
+            <option value="reject">reject — reject</option>
+            <option value="limit">limit — rate-limit</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Direction</label>
+          <select class="input" id="ruleDirection">
+            <option value="in">in — incoming</option>
+            <option value="out">out — outgoing</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Port / Service *</label>
+        <input type="text" class="input" id="ruleTarget" placeholder="22, 80, 443, 8080/tcp, ssh, http">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+        <div class="field">
+          <label class="field-label">Protocol</label>
+          <select class="input" id="ruleProto">
+            <option value="any">any</option>
+            <option value="tcp">tcp</option>
+            <option value="udp">udp</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Source IP / Subnet</label>
+          <input type="text" class="input" id="ruleFromIp" placeholder="192.168.1.0/24">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-signal" id="confirmAddRuleBtn">&#9658; Add Rule</button>
+    </div>
+  </div>
 </div>
 
-<!-- Delete Rule Confirm Modal -->
-<div id="deleteRuleModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:420px">
-        <div class="modal-header">
-            <h2 class="modal-title" data-i18n="ufwDeleteRuleTitle">Delete Rule</h2>
-            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p id="deleteRuleText"></p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
-            <button id="confirmDeleteRuleBtn" class="btn btn-danger" data-i18n="delete">Delete</button>
-        </div>
+<!-- Delete Rule modal -->
+<div class="modal-overlay" id="deleteRuleModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <span class="modal-title"><span style="color:var(--err)">!</span> Delete Rule</span>
+      <button class="iconbtn" onclick="closeDeleteModal()">&#10005;</button>
     </div>
+    <div class="modal-body">
+      <p id="deleteRuleText" style="color:var(--fg-muted);font-size:var(--t-sm);"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-err" id="confirmDeleteRuleBtn">Delete</button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -202,8 +168,6 @@
 let currentPlatformId   = null;
 let currentPlatformName = '';
 let pendingDeleteNumber = null;
-
-// ── Загрузка платформ ─────────────────────────────────────────────────────────
 
 async function loadPlatforms() {
     const sel = document.getElementById('platformSelect');
@@ -235,35 +199,33 @@ function onPlatformChange(pid) {
         history.replaceState({}, '', location.pathname);
         document.getElementById('ufwStatusBar').style.display = 'none';
         document.getElementById('rulesBody').innerHTML =
-            `<tr><td colspan="5" class="table-empty-state">${t('ufwSelectPlatform')}</td></tr>`;
+            `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('ufwSelectPlatform')}</td></tr>`;
     }
 }
 
-// ── Загрузка статуса ──────────────────────────────────────────────────────────
-
 async function loadStatus(platformId) {
     const body = document.getElementById('rulesBody');
-    body.innerHTML = `<tr><td colspan="5" class="table-empty-state">${t('loading')}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('loading')}</td></tr>`;
     document.getElementById('ufwStatusBar').style.display = 'none';
     try {
         const resp = await fetch(`/api/virt/${platformId}/firewall/status`);
         const data = await resp.json();
         if (!resp.ok || data.error) {
-            body.innerHTML = `<tr><td colspan="5" class="table-empty-state">${escapeHtml(data.error || 'Error')}</td></tr>`;
+            body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${escapeHtml(data.error || 'Error')}</td></tr>`;
             return;
         }
         renderStatusBar(data);
         renderRules(data.rules || []);
     } catch(e) {
-        body.innerHTML = `<tr><td colspan="5" class="table-empty-state">Error: ${escapeHtml(e.message)}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">Error: ${escapeHtml(e.message)}</td></tr>`;
     }
 }
 
 function renderStatusBar(data) {
     const isActive = data.active;
     document.getElementById('statusChip').innerHTML = isActive
-        ? `<span class="chip-active">${t('ufwStatusActive')}</span>`
-        : `<span class="chip-inactive">${t('ufwStatusInactive')}</span>`;
+        ? `<span class="pill pill-ok">${t('ufwStatusActive')}</span>`
+        : `<span class="pill pill-muted">${t('ufwStatusInactive')}</span>`;
     document.getElementById('statusDefaultIn').textContent  = data.default_incoming || '—';
     document.getElementById('statusDefaultOut').textContent = data.default_outgoing || '—';
     document.getElementById('statusLogging').textContent    = data.logging || '—';
@@ -284,42 +246,38 @@ function actionClass(action) {
 function renderRules(rules) {
     const body = document.getElementById('rulesBody');
     if (!rules.length) {
-        body.innerHTML = `<tr><td colspan="5" class="table-empty-state">${t('ufwNoRules')}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--fg-dim);font-size:var(--t-sm);">${t('ufwNoRules')}</td></tr>`;
         return;
     }
     body.innerHTML = rules.map(r => `<tr>
-        <td style="color:var(--md-on-surface-variant);font-variant-numeric:tabular-nums">${r.number}</td>
+        <td style="color:var(--fg-dim);font-variant-numeric:tabular-nums;">${r.number}</td>
         <td><strong>${escapeHtml(r.to)}</strong></td>
         <td><span class="action-chip ${actionClass(r.action)}">${escapeHtml(r.action)}</span></td>
         <td>${escapeHtml(r.from_)}</td>
         <td>
-            <button class="btn btn-ghost" style="color:var(--md-error);min-width:0;padding:6px"
-                    onclick="openDeleteModal(${r.number})">
-                <span class="material-symbols-rounded" style="font-size:18px">delete</span>
-            </button>
+            <button class="btn btn-ghost" style="color:var(--err);min-width:0;padding:6px;"
+                    onclick="openDeleteModal(${r.number})">&#10006;</button>
         </td>
     </tr>`).join('');
 }
 
-// ── Кнопки управления файрволом ───────────────────────────────────────────────
-
+// Firewall action buttons
 async function ufwAction(endpoint, method = 'POST') {
     if (!currentPlatformId) return;
     try {
         const resp = await fetch(`/api/virt/${currentPlatformId}/firewall/${endpoint}`, { method });
         const data = await resp.json();
-        showToast(resp.ok && !data.error ? data.message : (data.error || 'Failed'),
-                  resp.ok && !data.error ? 'success' : 'error');
+        showSnack(resp.ok && !data.error ? data.message : (data.error || 'Failed'),
+                  resp.ok && !data.error ? 'ok' : 'err');
         if (resp.ok && !data.error) loadStatus(currentPlatformId);
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { showSnack(e.message, 'err'); }
 }
 
 document.getElementById('enableBtn').addEventListener('click',  () => ufwAction('enable'));
 document.getElementById('disableBtn').addEventListener('click', () => ufwAction('disable'));
 document.getElementById('reloadBtn2').addEventListener('click', () => ufwAction('reload'));
 
-// ── Add Rule Modal ────────────────────────────────────────────────────────────
-
+// Add Rule Modal
 function openAddModal() {
     const toolbarSel = document.getElementById('platformSelect');
     const modalSel   = document.getElementById('modalPlatformSelect');
@@ -331,9 +289,9 @@ function openAddModal() {
     document.getElementById('ruleAction').selectedIndex    = 0;
     document.getElementById('ruleProto').selectedIndex     = 0;
     document.getElementById('ruleDirection').selectedIndex = 0;
-    document.getElementById('addRuleModal').style.display  = 'flex';
+    document.getElementById('addRuleModal').classList.add('open');
 }
-function closeAddModal() { document.getElementById('addRuleModal').style.display = 'none'; }
+function closeAddModal() { document.getElementById('addRuleModal').classList.remove('open'); }
 
 document.getElementById('addRuleBtn').addEventListener('click', openAddModal);
 document.getElementById('addRuleModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
@@ -346,8 +304,8 @@ document.getElementById('confirmAddRuleBtn').addEventListener('click', async () 
     const from_ip    = document.getElementById('ruleFromIp').value.trim() || null;
     const direction  = document.getElementById('ruleDirection').value;
 
-    if (!platformId) { showToast(t('selectPlatformRequired'), 'error'); return; }
-    if (!target)     { showToast(t('ufwTargetLabel') + ' required', 'error'); return; }
+    if (!platformId) { showSnack(t('selectPlatformRequired'), 'err'); return; }
+    if (!target)     { showSnack(t('ufwTargetLabel') + ' required', 'err'); return; }
 
     const btn = document.getElementById('confirmAddRuleBtn');
     btn.disabled = true;
@@ -357,8 +315,8 @@ document.getElementById('confirmAddRuleBtn').addEventListener('click', async () 
             body: JSON.stringify({ action, target, proto, from_ip, direction })
         });
         const data = await resp.json();
-        showToast(resp.ok && !data.error ? data.message : (data.error || 'Failed'),
-                  resp.ok && !data.error ? 'success' : 'error');
+        showSnack(resp.ok && !data.error ? data.message : (data.error || 'Failed'),
+                  resp.ok && !data.error ? 'ok' : 'err');
         if (resp.ok && !data.error) {
             closeAddModal();
             if (platformId !== currentPlatformId) {
@@ -373,15 +331,14 @@ document.getElementById('confirmAddRuleBtn').addEventListener('click', async () 
     }
 });
 
-// ── Delete Rule Modal ─────────────────────────────────────────────────────────
-
+// Delete Rule Modal
 function openDeleteModal(number) {
     pendingDeleteNumber = number;
     document.getElementById('deleteRuleText').textContent =
         t('ufwDeleteRuleBody').replace('{{n}}', number);
-    document.getElementById('deleteRuleModal').style.display = 'flex';
+    document.getElementById('deleteRuleModal').classList.add('open');
 }
-function closeDeleteModal() { pendingDeleteNumber = null; document.getElementById('deleteRuleModal').style.display = 'none'; }
+function closeDeleteModal() { pendingDeleteNumber = null; document.getElementById('deleteRuleModal').classList.remove('open'); }
 document.getElementById('deleteRuleModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
 
 document.getElementById('confirmDeleteRuleBtn').addEventListener('click', async () => {
@@ -394,19 +351,17 @@ document.getElementById('confirmDeleteRuleBtn').addEventListener('click', async 
             body: JSON.stringify({ number })
         });
         const data = await resp.json();
-        showToast(resp.ok && !data.error ? data.message : (data.error || 'Failed'),
-                  resp.ok && !data.error ? 'success' : 'error');
+        showSnack(resp.ok && !data.error ? data.message : (data.error || 'Failed'),
+                  resp.ok && !data.error ? 'ok' : 'err');
         if (resp.ok && !data.error) loadStatus(currentPlatformId);
-    } catch(e) { showToast(e.message, 'error'); }
+    } catch(e) { showSnack(e.message, 'err'); }
 });
 
-// ── Toolbar ───────────────────────────────────────────────────────────────────
-
+// Toolbar
 document.getElementById('platformSelect').addEventListener('change', e => onPlatformChange(e.target.value));
 document.getElementById('refreshBtn').addEventListener('click', () => { if (currentPlatformId) loadStatus(currentPlatformId); });
 
 function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function showToast(msg, type) { if (window.showNotification) showNotification(msg, type); else alert(msg); }
 
 loadPlatforms();
 </script>
