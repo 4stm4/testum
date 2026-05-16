@@ -30,14 +30,14 @@
 <!-- header row: title + buttons only -->
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
   <div>
-    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
+    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;" data-i18n="virtualization">VIRTUALIZATION</div>
     <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
-      <span style="color:var(--signal)">$</span> Firewall (UFW)<span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
+      <span style="color:var(--signal)">$</span> <span data-i18n="virtUfw">Firewall (UFW)</span><span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
     </h1>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <button class="btn btn-ghost" id="refreshBtn">&#8635; Refresh</button>
-    <button class="btn btn-signal" id="addRuleBtn">+ Add Rule</button>
+    <button class="btn btn-ghost" id="refreshBtn">&#8635; <span data-i18n="refresh">Refresh</span></button>
+    <button class="btn btn-signal" id="addRuleBtn">+ <span data-i18n="ufwAddRule">Add Rule</span></button>
   </div>
 </div>
 
@@ -51,22 +51,22 @@
     <span id="statusChip"></span>
   </div>
   <div class="ufw-stat">
-    <span class="ufw-stat-label">Default in</span>
+    <span class="ufw-stat-label" data-i18n="ufwDefaultIncoming">Default in</span>
     <span id="statusDefaultIn" class="ufw-stat-val"></span>
   </div>
   <div class="ufw-stat">
-    <span class="ufw-stat-label">Default out</span>
+    <span class="ufw-stat-label" data-i18n="ufwDefaultOutgoing">Default out</span>
     <span id="statusDefaultOut" class="ufw-stat-val"></span>
   </div>
   <div class="ufw-stat">
-    <span class="ufw-stat-label">Logging</span>
+    <span class="ufw-stat-label" data-i18n="ufwLogging">Logging</span>
     <span id="statusLogging" class="ufw-stat-val"></span>
   </div>
   <div class="spacer"></div>
   <div class="ufw-actions">
-    <button id="enableBtn"  class="btn btn-ghost" style="color:var(--signal);">Enable</button>
-    <button id="disableBtn" class="btn btn-ghost" style="color:var(--err);">Disable</button>
-    <button id="reloadBtn2" class="btn btn-ghost">Reload</button>
+    <button id="enableBtn"  class="btn btn-ghost" style="color:var(--signal);" data-i18n="ufwEnableBtn">Enable</button>
+    <button id="disableBtn" class="btn btn-ghost" style="color:var(--err);" data-i18n="ufwDisableBtn">Disable</button>
+    <button id="reloadBtn2" class="btn btn-ghost" data-i18n="ufwReloadBtn">Reload</button>
   </div>
 </div>
 
@@ -75,10 +75,10 @@
   <table class="tbl">
     <thead>
       <tr>
-        <th style="width:44px;">#</th>
-        <th>TO</th>
-        <th>ACTION</th>
-        <th>FROM</th>
+        <th style="width:44px;" data-i18n="ufwRuleColNum">#</th>
+        <th data-i18n="ufwRuleColTo">TO</th>
+        <th data-i18n="ufwRuleColAction">ACTION</th>
+        <th data-i18n="ufwRuleColFrom">FROM</th>
         <th style="width:52px;"></th>
       </tr>
     </thead>
@@ -92,17 +92,17 @@
 <div class="modal-overlay" id="addRuleModal">
   <div class="modal" style="max-width:500px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--signal)">$</span> Add UFW Rule</span>
-      <button class="iconbtn" onclick="closeAddModal()">&#10005;</button>
+      <span class="modal-title"><span style="color:var(--signal)">$</span> <span data-i18n="ufwAddRuleTitle">Add UFW Rule</span></span>
+      <button class="iconbtn" onclick="closeAddModal()"><span data-i18n="close">&#10005;</span></button>
     </div>
     <div class="modal-body">
       <div class="field">
-        <label class="field-label">Platform *</label>
+        <label class="field-label" data-i18n="platformLabel">Platform *</label>
         <select class="input" id="modalPlatformSelect"><option value="">— select —</option></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
         <div class="field">
-          <label class="field-label">Action *</label>
+          <label class="field-label" data-i18n="ufwActionLabel">Action *</label>
           <select class="input" id="ruleAction">
             <option value="allow">allow — permit</option>
             <option value="deny">deny — drop</option>
@@ -111,7 +111,7 @@
           </select>
         </div>
         <div class="field">
-          <label class="field-label">Direction</label>
+          <label class="field-label" data-i18n="ufwDirectionLabel">Direction</label>
           <select class="input" id="ruleDirection">
             <option value="in">in — incoming</option>
             <option value="out">out — outgoing</option>
@@ -119,12 +119,13 @@
         </div>
       </div>
       <div class="field">
-        <label class="field-label">Port / Service *</label>
+        <label class="field-label" data-i18n="ufwTargetLabel">Port / Service *</label>
         <input type="text" class="input" id="ruleTarget" placeholder="22, 80, 443, 8080/tcp, ssh, http">
+        <span data-i18n="ufwTargetHint" style="font-size:var(--t-xs);color:var(--fg-dim);">e.g. 22, 80, 443, 8080/tcp, ssh, http, https</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
         <div class="field">
-          <label class="field-label">Protocol</label>
+          <label class="field-label" data-i18n="ufwProtoLabel">Protocol</label>
           <select class="input" id="ruleProto">
             <option value="any">any</option>
             <option value="tcp">tcp</option>
@@ -132,14 +133,15 @@
           </select>
         </div>
         <div class="field">
-          <label class="field-label">Source IP / Subnet</label>
+          <label class="field-label" data-i18n="ufwFromIpLabel">Source IP / Subnet</label>
           <input type="text" class="input" id="ruleFromIp" placeholder="192.168.1.0/24">
+          <span data-i18n="ufwFromIpHint" style="font-size:var(--t-xs);color:var(--fg-dim);">e.g. 192.168.1.0/24, 10.0.0.5 — leave empty for Anywhere</span>
         </div>
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
-      <button class="btn btn-signal" id="confirmAddRuleBtn">&#9658; Add Rule</button>
+      <button class="btn btn-ghost" onclick="closeAddModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-signal" id="confirmAddRuleBtn">&#9658; <span data-i18n="ufwAddRule">Add Rule</span></button>
     </div>
   </div>
 </div>
@@ -148,15 +150,15 @@
 <div class="modal-overlay" id="deleteRuleModal">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--err)">!</span> Delete Rule</span>
-      <button class="iconbtn" onclick="closeDeleteModal()">&#10005;</button>
+      <span class="modal-title"><span style="color:var(--err)">!</span> <span data-i18n="ufwDeleteRuleTitle">Delete Rule</span></span>
+      <button class="iconbtn" onclick="closeDeleteModal()"><span data-i18n="close">&#10005;</span></button>
     </div>
     <div class="modal-body">
       <p id="deleteRuleText" style="color:var(--fg-muted);font-size:var(--t-sm);"></p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-      <button class="btn btn-err" id="confirmDeleteRuleBtn">Delete</button>
+      <button class="btn btn-ghost" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-err" id="confirmDeleteRuleBtn" data-i18n="delete">Delete</button>
     </div>
   </div>
 </div>

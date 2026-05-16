@@ -13,14 +13,14 @@
 <!-- header row: title + buttons only -->
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
   <div>
-    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
+    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;" data-i18n="virtualization">VIRTUALIZATION</div>
     <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
-      <span style="color:var(--signal)">$</span> Storage Pools<span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
+      <span style="color:var(--signal)">$</span> <span data-i18n="virtPools">Storage Pools</span><span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
     </h1>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <button class="btn btn-ghost" id="refreshBtn">&#8635; Refresh</button>
-    <button class="btn btn-signal" id="addPoolBtn">+ Add Pool</button>
+    <button class="btn btn-ghost" id="refreshBtn">&#8635; <span data-i18n="refresh">Refresh</span></button>
+    <button class="btn btn-signal" id="addPoolBtn">+ <span data-i18n="addPool">Add Pool</span></button>
   </div>
 </div>
 
@@ -31,7 +31,7 @@
   <table class="tbl">
     <thead>
       <tr>
-        <th>NAME</th><th>TYPE</th><th>STATE</th><th>VOLUMES</th><th>CAPACITY</th><th>USAGE</th><th>AUTOSTART</th><th></th>
+        <th data-i18n="poolColName">NAME</th><th>TYPE</th><th data-i18n="poolColState">STATE</th><th data-i18n="poolColVolumes">VOLUMES</th><th data-i18n="poolColCapacity">CAPACITY</th><th data-i18n="poolColUsage">USAGE</th><th data-i18n="poolColAutostart">AUTOSTART</th><th></th>
       </tr>
     </thead>
     <tbody id="poolsBody">
@@ -44,20 +44,20 @@
 <div class="modal-overlay" id="addPoolModal">
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--signal)">$</span> Add Storage Pool</span>
-      <button class="iconbtn" onclick="closeAddModal()">&#10005;</button>
+      <span class="modal-title"><span style="color:var(--signal)">$</span> <span data-i18n="addPoolTitle">Add Storage Pool</span></span>
+      <button class="iconbtn" onclick="closeAddModal()"><span data-i18n="close">&#10005;</span></button>
     </div>
     <div class="modal-body">
       <div class="field">
-        <label class="field-label">Platform *</label>
+        <label class="field-label" data-i18n="platformLabel">Platform *</label>
         <select class="input" id="modalPlatformSelect"><option value="">— select —</option></select>
       </div>
       <div class="field">
-        <label class="field-label">Name *</label>
+        <label class="field-label" data-i18n="poolNameLabel">Name *</label>
         <input type="text" class="input" id="poolName" placeholder="default">
       </div>
       <div class="field">
-        <label class="field-label">Type *</label>
+        <label class="field-label" data-i18n="poolTypeLabel">Type *</label>
         <select class="input" id="poolType">
           <option value="dir">dir — directory</option>
           <option value="fs">fs — filesystem</option>
@@ -72,21 +72,21 @@
         </select>
       </div>
       <div class="field">
-        <label class="field-label">Source (device / path / host)</label>
+        <label class="field-label" data-i18n="poolSourceLabel">Source (device / path / host)</label>
         <input type="text" class="input" id="poolSource" placeholder="/dev/sdb">
       </div>
       <div class="field">
-        <label class="field-label">Target path</label>
+        <label class="field-label" data-i18n="poolTargetLabel">Target path</label>
         <input type="text" class="input" id="poolTarget" placeholder="/var/lib/libvirt/images">
       </div>
       <div class="field">
-        <label class="field-label">Host (for netfs / iSCSI)</label>
+        <label class="field-label" data-i18n="poolHostLabel">Host (for netfs / iSCSI)</label>
         <input type="text" class="input" id="poolHost" placeholder="192.168.1.10">
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
-      <button class="btn btn-signal" id="createPoolBtn">&#9658; Create Pool</button>
+      <button class="btn btn-ghost" onclick="closeAddModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-signal" id="createPoolBtn">&#9658; <span data-i18n="createPool">Create Pool</span></button>
     </div>
   </div>
 </div>
@@ -95,15 +95,15 @@
 <div class="modal-overlay" id="deleteModal">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--err)">!</span> Delete Pool</span>
+      <span class="modal-title"><span style="color:var(--err)">!</span> <span data-i18n="deletePoolTitle">Delete Pool</span></span>
       <button class="iconbtn" onclick="closeDeleteModal()">&#10005;</button>
     </div>
     <div class="modal-body">
-      <p style="color:var(--fg-muted);font-size:var(--t-sm);">Undefine and delete <strong id="deletePoolName" style="color:var(--fg)"></strong>? This cannot be undone.</p>
+      <p style="color:var(--fg-muted);font-size:var(--t-sm);"><span data-i18n="deletePoolBody">Undefine and delete</span> <strong id="deletePoolName" style="color:var(--fg)"></strong>? This cannot be undone.</p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-      <button class="btn btn-err" id="confirmDeleteBtn">Delete</button>
+      <button class="btn btn-ghost" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-err" id="confirmDeleteBtn" data-i18n="delete">Delete</button>
     </div>
   </div>
 </div>

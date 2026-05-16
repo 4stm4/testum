@@ -12,14 +12,14 @@
 <!-- header row: title + buttons only -->
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
   <div>
-    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
+    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;" data-i18n="virtualization">VIRTUALIZATION</div>
     <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
-      <span style="color:var(--signal)">$</span> Volumes<span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
+      <span style="color:var(--signal)">$</span> <span data-i18n="virtVolumes">Volumes</span><span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
     </h1>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <button class="btn btn-ghost" id="refreshBtn">&#8635; Refresh</button>
-    <button class="btn btn-signal" id="addVolumeBtn">+ Add Volume</button>
+    <button class="btn btn-ghost" id="refreshBtn">&#8635; <span data-i18n="refresh">Refresh</span></button>
+    <button class="btn btn-signal" id="addVolumeBtn">+ <span data-i18n="addVolume">Add Volume</span></button>
   </div>
 </div>
 
@@ -31,7 +31,7 @@
   <table class="tbl">
     <thead>
       <tr>
-        <th>NAME</th><th>TYPE</th><th>CAPACITY (GB)</th><th>ALLOCATION (GB)</th><th></th>
+        <th data-i18n="volColName">NAME</th><th data-i18n="volColType">TYPE</th><th data-i18n="volColCapacity">CAPACITY (GB)</th><th data-i18n="volColAlloc">ALLOCATION (GB)</th><th></th>
       </tr>
     </thead>
     <tbody id="volumesBody">
@@ -44,35 +44,35 @@
 <div class="modal-overlay" id="addVolumeModal">
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--signal)">$</span> Add Volume</span>
+      <span class="modal-title"><span style="color:var(--signal)">$</span> <span data-i18n="addVolumeTitle">Add Volume</span></span>
       <button class="iconbtn" onclick="closeAddModal()">&#10005;</button>
     </div>
     <div class="modal-body">
       <div class="field">
-        <label class="field-label">Platform *</label>
+        <label class="field-label" data-i18n="platformLabel">Platform *</label>
         <select class="input" id="modalPlatformSelect"><option value="">— select —</option></select>
       </div>
       <div class="field">
-        <label class="field-label">Pool *</label>
+        <label class="field-label" data-i18n="poolLabel">Pool *</label>
         <select class="input" id="modalPoolSelect" disabled><option value="">— select —</option></select>
         <span id="modalPoolLoading" class="modal-pool-loading">Loading pools…</span>
       </div>
       <div class="field">
-        <label class="field-label">Name *</label>
+        <label class="field-label" data-i18n="volNameLabel">Name *</label>
         <input type="text" class="input" id="volName" placeholder="ubuntu-disk">
       </div>
       <div class="field">
-        <label class="field-label">Full path *</label>
+        <label class="field-label" data-i18n="volPathLabel">Full path *</label>
         <input type="text" class="input" id="volPath" placeholder="/var/lib/libvirt/images/ubuntu-disk.qcow2">
       </div>
       <div class="field">
-        <label class="field-label">Capacity (GB) *</label>
+        <label class="field-label" data-i18n="volCapLabel">Capacity (GB) *</label>
         <input type="number" class="input" id="volCapacity" placeholder="20" min="1">
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
-      <button class="btn btn-signal" id="createVolumeBtn">&#9658; Create Volume</button>
+      <button class="btn btn-ghost" onclick="closeAddModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-signal" id="createVolumeBtn">&#9658; <span data-i18n="createVolume">Create Volume</span></button>
     </div>
   </div>
 </div>
@@ -81,15 +81,15 @@
 <div class="modal-overlay" id="deleteModal">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--err)">!</span> Delete Volume</span>
+      <span class="modal-title"><span style="color:var(--err)">!</span> <span data-i18n="deleteVolumeTitle">Delete Volume</span></span>
       <button class="iconbtn" onclick="closeDeleteModal()">&#10005;</button>
     </div>
     <div class="modal-body">
-      <p style="color:var(--fg-muted);font-size:var(--t-sm);">Permanently delete <strong id="deleteVolName" style="color:var(--fg)"></strong>? This cannot be undone.</p>
+      <p style="color:var(--fg-muted);font-size:var(--t-sm);"><span data-i18n="deleteVolumeBody">Permanently delete</span> <strong id="deleteVolName" style="color:var(--fg)"></strong>? This cannot be undone.</p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-      <button class="btn btn-err" id="confirmDeleteBtn">Delete</button>
+      <button class="btn btn-ghost" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-err" id="confirmDeleteBtn" data-i18n="delete">Delete</button>
     </div>
   </div>
 </div>

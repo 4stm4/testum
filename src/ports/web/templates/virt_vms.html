@@ -16,15 +16,15 @@
 <!-- header row: title + buttons only -->
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
   <div>
-    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
+    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;" data-i18n="virtualization">VIRTUALIZATION</div>
     <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
-      <span style="color:var(--signal)">$</span> Virtual Machines<span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
+      <span style="color:var(--signal)">$</span> <span data-i18n="virtVms">Virtual Machines</span><span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
     </h1>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <button class="btn btn-ghost" id="installBtn" disabled>&#9881; Install libvirt</button>
-    <button class="btn btn-ghost" id="refreshBtn">&#8635; Refresh</button>
-    <button class="btn btn-signal" id="createVmBtn">+ Create VM</button>
+    <button class="btn btn-ghost" id="installBtn" disabled>&#9881; <span data-i18n="installLibvirtBtn">Install libvirt</span></button>
+    <button class="btn btn-ghost" id="refreshBtn">&#8635; <span data-i18n="refresh">Refresh</span></button>
+    <button class="btn btn-signal" id="createVmBtn">+ <span data-i18n="createVm">Create VM</span></button>
   </div>
 </div>
 
@@ -36,7 +36,7 @@
   <table class="tbl" id="vmsTable">
     <thead>
       <tr>
-        <th>NAME</th><th>UUID</th><th>STATE</th><th>MEMORY</th><th>vCPUs</th><th>AUTOSTART</th><th></th>
+        <th data-i18n="vmName">NAME</th><th data-i18n="vmUuid">UUID</th><th data-i18n="vmState">STATE</th><th data-i18n="vmMemory">MEMORY</th><th data-i18n="vmVcpus">vCPUs</th><th data-i18n="vmAutostart">AUTOSTART</th><th></th>
       </tr>
     </thead>
     <tbody id="vmsBody">
@@ -49,27 +49,27 @@
 <div class="modal-overlay" id="createVmModal">
   <div class="modal" style="max-width:560px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--signal)">$</span> Create VM</span>
+      <span class="modal-title"><span style="color:var(--signal)">$</span> <span data-i18n="createVmTitle">Create VM</span></span>
       <button class="iconbtn" onclick="closeCreateVmModal()">&#10005;</button>
     </div>
     <div class="modal-body">
       <div class="field">
-        <label class="field-label">Platform</label>
+        <label class="field-label" data-i18n="platformLabel">Platform</label>
         <select class="input" id="vmModalPlatformSelect"><option value="">— select —</option></select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
-        <div class="field"><label class="field-label">Name *</label><input type="text" class="input" id="vmName" placeholder="my-vm"></div>
-        <div class="field"><label class="field-label">Memory (MiB) *</label><input type="number" class="input" id="vmMemory" placeholder="2048" min="128"></div>
-        <div class="field"><label class="field-label">vCPUs *</label><input type="number" class="input" id="vmVcpu" placeholder="2" min="1"></div>
-        <div class="field"><label class="field-label">Network bridge</label><input type="text" class="input" id="vmBridge" placeholder="virbr0" value="virbr0"></div>
+        <div class="field"><label class="field-label" data-i18n="vmNameLabel">Name *</label><input type="text" class="input" id="vmName" placeholder="my-vm"></div>
+        <div class="field"><label class="field-label" data-i18n="vmMemoryLabel">Memory (MiB) *</label><input type="number" class="input" id="vmMemory" placeholder="2048" min="128"></div>
+        <div class="field"><label class="field-label" data-i18n="vmVcpuLabel">vCPUs *</label><input type="number" class="input" id="vmVcpu" placeholder="2" min="1"></div>
+        <div class="field"><label class="field-label" data-i18n="vmBridgeLabel">Network bridge</label><input type="text" class="input" id="vmBridge" placeholder="virbr0" value="virbr0"></div>
       </div>
-      <div class="field"><label class="field-label">Disk image path *</label><input type="text" class="input" id="vmDiskPath" placeholder="/var/lib/libvirt/images/my-vm.qcow2"></div>
-      <div class="field"><label class="field-label">CD-ROM ISO path *</label><input type="text" class="input" id="vmCdrom" placeholder="/var/lib/libvirt/images/ubuntu-24.04.iso"></div>
-      <div class="field"><label class="field-label">MAC address (optional)</label><input type="text" class="input" id="vmMac" placeholder="52:54:00:xx:xx:xx"></div>
+      <div class="field"><label class="field-label" data-i18n="vmDiskPathLabel">Disk image path *</label><input type="text" class="input" id="vmDiskPath" placeholder="/var/lib/libvirt/images/my-vm.qcow2"></div>
+      <div class="field"><label class="field-label" data-i18n="vmCdromLabel">CD-ROM ISO path *</label><input type="text" class="input" id="vmCdrom" placeholder="/var/lib/libvirt/images/ubuntu-24.04.iso"></div>
+      <div class="field"><label class="field-label" data-i18n="vmMacLabel">MAC address (optional)</label><input type="text" class="input" id="vmMac" placeholder="52:54:00:xx:xx:xx"></div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeCreateVmModal()">Cancel</button>
-      <button class="btn btn-signal" id="confirmCreateVmBtn">&#9658; Create VM</button>
+      <button class="btn btn-ghost" onclick="closeCreateVmModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-signal" id="confirmCreateVmBtn">&#9658; <span data-i18n="createVm">Create VM</span></button>
     </div>
   </div>
 </div>
@@ -78,15 +78,15 @@
 <div class="modal-overlay" id="deleteModal">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--err)">!</span> Delete VM</span>
+      <span class="modal-title"><span style="color:var(--err)">!</span> <span data-i18n="deleteVmTitle">Delete VM</span></span>
       <button class="iconbtn" onclick="closeDeleteModal()">&#10005;</button>
     </div>
     <div class="modal-body">
-      <p style="color:var(--fg-muted);font-size:var(--t-sm);">Force-stop and undefine <strong id="deleteVmName" style="color:var(--fg)"></strong>?</p>
+      <p style="color:var(--fg-muted);font-size:var(--t-sm);"><span data-i18n="deleteVmBody">Force-stop and undefine</span> <strong id="deleteVmName" style="color:var(--fg)"></strong>?</p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-      <button class="btn btn-err" id="confirmDeleteBtn">Delete</button>
+      <button class="btn btn-ghost" onclick="closeDeleteModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-err" id="confirmDeleteBtn" data-i18n="delete">Delete</button>
     </div>
   </div>
 </div>
@@ -95,7 +95,7 @@
 <div class="modal-overlay" id="installModal">
   <div class="modal" style="max-width:680px;">
     <div class="modal-head">
-      <span class="modal-title"><span style="color:var(--signal)">$</span> Install libvirt</span>
+      <span class="modal-title"><span style="color:var(--signal)">$</span> <span data-i18n="installModalTitle">Install libvirt</span></span>
       <button class="iconbtn" id="installModalClose">&#10005;</button>
     </div>
     <div class="modal-body">
@@ -103,13 +103,13 @@
         <div class="console-line" style="color:var(--fg-dim);">$ ready to install&#8230;</div>
       </div>
       <div id="installJobLink" style="display:none;gap:8px;margin-top:12px;">
-        <a id="installJobAnchor" href="#" class="btn btn-ghost" target="_blank">View Job &#8594;</a>
-        <a id="installMonitorAnchor" href="#" class="btn btn-ghost" target="_blank">Live Monitor &#8594;</a>
+        <a id="installJobAnchor" href="#" class="btn btn-ghost" target="_blank"><span data-i18n="viewJob">View Job</span> &#8594;</a>
+        <a id="installMonitorAnchor" href="#" class="btn btn-ghost" target="_blank"><span data-i18n="liveMonitor">Live Monitor</span> &#8594;</a>
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" id="installModalClose2">Close</button>
-      <button class="btn btn-signal" id="runInstallBtn">&#9658; Run Install</button>
+      <button class="btn btn-ghost" id="installModalClose2" data-i18n="close">Close</button>
+      <button class="btn btn-signal" id="runInstallBtn">&#9658; <span data-i18n="runInstall">Run Install</span></button>
     </div>
   </div>
 </div>
