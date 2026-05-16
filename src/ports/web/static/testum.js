@@ -49,8 +49,9 @@ function getCurrentTheme() {
 }
 
 // Get current language
+// Reads both storage keys for backwards compatibility (layout.html uses 'testum-lang')
 function getCurrentLanguage() {
-    return localStorage.getItem(LANG_KEY) || 'en';
+    return localStorage.getItem(LANG_KEY) || localStorage.getItem('testum-lang') || 'en';
 }
 
 // Apply theme
@@ -206,6 +207,15 @@ const translations = {
         ufwDeleteRuleTitle: 'Delete Rule',
         ufwDeleteRuleBody: 'Delete rule #{{n}}? This cannot be undone.',
         ufwSelectPlatform: 'Select a platform to load firewall status.',
+
+        // Sidebar section labels
+        overview: 'Overview',
+        health: 'Health',
+
+        // Run command modal
+        targetPlatform: 'Target platform',
+        command: 'Command',
+        run: 'Run',
 
         system: 'System',
         users: 'Users',
@@ -372,6 +382,52 @@ const translations = {
         edit: 'Edit',
         refresh: 'Refresh',
         details: 'Details',
+        name: 'Name',
+
+        // Audit page
+        timestamp: 'Timestamp',
+        user: 'User',
+        action: 'Action',
+        object: 'Object',
+        allActions: 'All actions',
+        last24h: 'Last 24h',
+        last7d: 'Last 7 days',
+        last30d: 'Last 30 days',
+        allTime: 'All time',
+        export: 'Export',
+
+        // Jobs page
+        jobId: 'ID',
+        type: 'Type',
+        status: 'Status',
+        platform: 'Platform',
+        started: 'Started',
+        finished: 'Finished',
+        actions: 'Actions',
+        statusAll: 'Status: All',
+        typeAll: 'Type: All',
+
+        // Dashboard fleet strip
+        needsAttention: 'Needs attention',
+        total: 'Total',
+        online: 'Online',
+        offline: 'Offline',
+        running: 'Running',
+        failed24h: 'Failed 24h',
+        liveJobs: 'Live jobs',
+
+        // Platform / Key form fields
+        host: 'Host',
+        port: 'Port',
+        auth: 'Auth',
+        timeoutSeconds: 'Timeout (s)',
+        publicKeyLabel: 'Public key',
+        privateKeyLabel: 'Private key',
+
+        // Pagination
+        prevPage: '← prev',
+        nextPage: 'next →',
+
         noTasksFound: 'No tasks found',
         noUsersFound: 'No users found',
         noAuditFound: 'No audit logs found',
@@ -529,6 +585,15 @@ const translations = {
         ufwDeleteRuleTitle: 'Удалить правило',
         ufwDeleteRuleBody: 'Удалить правило №{{n}}? Это действие нельзя отменить.',
         ufwSelectPlatform: 'Выберите платформу для загрузки состояния файрвола.',
+
+        // Sidebar section labels
+        overview: 'Обзор',
+        health: 'Здоровье',
+
+        // Run command modal
+        targetPlatform: 'Целевая платформа',
+        command: 'Команда',
+        run: 'Запустить',
 
         system: 'Система',
         users: 'Пользователи',
@@ -695,6 +760,52 @@ const translations = {
         edit: 'Редактировать',
         refresh: 'Обновить',
         details: 'Детали',
+        name: 'Название',
+
+        // Audit page
+        timestamp: 'Метка времени',
+        user: 'Пользователь',
+        action: 'Действие',
+        object: 'Объект',
+        allActions: 'Все действия',
+        last24h: 'Последние 24ч',
+        last7d: 'Последние 7 дней',
+        last30d: 'Последние 30 дней',
+        allTime: 'За всё время',
+        export: 'Экспорт',
+
+        // Jobs page
+        jobId: 'ID',
+        type: 'Тип',
+        status: 'Статус',
+        platform: 'Платформа',
+        started: 'Начато',
+        finished: 'Завершено',
+        actions: 'Действия',
+        statusAll: 'Статус: Все',
+        typeAll: 'Тип: Все',
+
+        // Dashboard fleet strip
+        needsAttention: 'Требует внимания',
+        total: 'Всего',
+        online: 'Онлайн',
+        offline: 'Офлайн',
+        running: 'Выполняется',
+        failed24h: 'Ошибок за 24ч',
+        liveJobs: 'Активные задачи',
+
+        // Platform / Key form fields
+        host: 'Хост',
+        port: 'Порт',
+        auth: 'Авторизация',
+        timeoutSeconds: 'Таймаут (с)',
+        publicKeyLabel: 'Публичный ключ',
+        privateKeyLabel: 'Приватный ключ',
+
+        // Pagination
+        prevPage: '← назад',
+        nextPage: 'вперёд →',
+
         noTasksFound: 'Задачи не найдены',
         noUsersFound: 'Пользователи не найдены',
         noAuditFound: 'Журнал пуст',
@@ -787,6 +898,7 @@ function toggleLanguage() {
     const currentLang = getCurrentLanguage();
     const newLang = currentLang === 'en' ? 'ru' : 'en';
     localStorage.setItem(LANG_KEY, newLang);
+    localStorage.setItem('testum-lang', newLang);
     applyTranslations();
 }
 

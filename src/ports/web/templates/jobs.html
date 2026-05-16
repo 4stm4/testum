@@ -22,14 +22,14 @@
 
 <div class="filters-row">
   <select class="input" id="filterStatus" style="width:160px;">
-    <option value="">Status: All</option>
+    <option value="" data-i18n="statusAll">Status: All</option>
     <option value="pending">Pending</option>
     <option value="running">Running</option>
     <option value="success">Success</option>
     <option value="failed">Failed</option>
   </select>
   <select class="input" id="filterType" style="width:180px;">
-    <option value="">Type: All</option>
+    <option value="" data-i18n="typeAll">Type: All</option>
     <option value="deploy">Deploy</option>
     <option value="run_command">Run Command</option>
   </select>
@@ -39,13 +39,13 @@
   <table class="tbl" id="tasksTable">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Type</th>
-        <th>Status</th>
-        <th>Platform</th>
-        <th>Started</th>
-        <th>Finished</th>
-        <th>Actions</th>
+        <th data-i18n="jobId">ID</th>
+        <th data-i18n="type">Type</th>
+        <th data-i18n="status">Status</th>
+        <th data-i18n="platform">Platform</th>
+        <th data-i18n="started">Started</th>
+        <th data-i18n="finished">Finished</th>
+        <th data-i18n="actions">Actions</th>
       </tr>
     </thead>
     <tbody id="tasksBody">
@@ -55,8 +55,8 @@
 </div>
 
 <div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-4);justify-content:flex-end;">
-  <button class="btn btn-ghost" id="prevPage" disabled>← prev</button>
-  <button class="btn btn-ghost" id="nextPage" disabled>next →</button>
+  <button class="btn btn-ghost" id="prevPage" disabled data-i18n="prevPage">← prev</button>
+  <button class="btn btn-ghost" id="nextPage" disabled data-i18n="nextPage">next →</button>
 </div>
 {% endblock %}
 

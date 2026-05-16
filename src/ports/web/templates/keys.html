@@ -29,17 +29,17 @@
         <input type="text" class="input" id="k-name" placeholder="prod-key">
       </div>
       <div class="field">
-        <label class="field-label">Public key</label>
+        <label class="field-label" data-i18n="publicKeyLabel">Public key</label>
         <textarea class="input" id="k-pubkey" rows="3" placeholder="ssh-ed25519 AAAA…" style="resize:vertical;"></textarea>
       </div>
       <div class="field">
-        <label class="field-label">Private key <span style="color:var(--fg-dim);font-size:10px;">(optional)</span></label>
+        <label class="field-label" data-i18n="privateKeyLabel">Private key</label>
         <textarea class="input" id="k-privkey" rows="4" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" style="resize:vertical;"></textarea>
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeAddKey()">Cancel</button>
-      <button class="btn btn-signal" onclick="submitAddKey()">+ Add</button>
+      <button class="btn btn-ghost" onclick="closeAddKey()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-signal" onclick="submitAddKey()">+ <span data-i18n="addKey">Add</span></button>
     </div>
   </div>
 </div>

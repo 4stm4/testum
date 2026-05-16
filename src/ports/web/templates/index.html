@@ -18,23 +18,23 @@
 <!-- Fleet strip -->
 <div class="fleet-strip" id="fleet-strip">
   <div class="fleet-cell">
-    <div class="fleet-cell-label">Total</div>
+    <div class="fleet-cell-label" data-i18n="total">Total</div>
     <div class="fleet-cell-val muted" id="ft-total">—</div>
   </div>
   <div class="fleet-cell">
-    <div class="fleet-cell-label">Online</div>
+    <div class="fleet-cell-label" data-i18n="online">Online</div>
     <div class="fleet-cell-val ok" id="ft-online">—</div>
   </div>
   <div class="fleet-cell">
-    <div class="fleet-cell-label">Offline</div>
+    <div class="fleet-cell-label" data-i18n="offline">Offline</div>
     <div class="fleet-cell-val err" id="ft-offline">—</div>
   </div>
   <div class="fleet-cell">
-    <div class="fleet-cell-label">Running</div>
+    <div class="fleet-cell-label" data-i18n="running">Running</div>
     <div class="fleet-cell-val warn" id="ft-running">—</div>
   </div>
   <div class="fleet-cell">
-    <div class="fleet-cell-label">Failed 24h</div>
+    <div class="fleet-cell-label" data-i18n="failed24h">Failed 24h</div>
     <div class="fleet-cell-val err" id="ft-failed">—</div>
   </div>
 </div>
@@ -43,7 +43,7 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6);">
   <!-- Left: needs attention -->
   <div>
-    <div class="card-title" style="margin-bottom:var(--sp-3);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:1.5px;color:var(--fg-dim);">Needs attention</div>
+    <div class="card-title" style="margin-bottom:var(--sp-3);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:1.5px;color:var(--fg-dim);" data-i18n="needsAttention">Needs attention</div>
     <div id="attn-list">
       <div class="empty-state"><span class="prompt">$</span> all systems nominal_</div>
     </div>

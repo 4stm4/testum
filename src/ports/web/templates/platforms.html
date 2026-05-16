@@ -51,11 +51,11 @@
           <input type="text" class="input" id="p-name" placeholder="web-01">
         </div>
         <div class="field">
-          <label class="field-label">Host</label>
+          <label class="field-label" data-i18n="host">Host</label>
           <input type="text" class="input" id="p-host" placeholder="192.168.1.1">
         </div>
         <div class="field">
-          <label class="field-label">Port</label>
+          <label class="field-label" data-i18n="port">Port</label>
           <input type="number" class="input" id="p-port" value="22" min="1" max="65535">
         </div>
         <div class="field">
@@ -63,10 +63,10 @@
           <input type="text" class="input" id="p-user" placeholder="ubuntu">
         </div>
         <div class="field">
-          <label class="field-label">Auth</label>
+          <label class="field-label" data-i18n="auth">Auth</label>
           <select class="input" id="p-auth" onchange="toggleAuthFields()">
-            <option value="password">Password</option>
-            <option value="private_key">SSH Key</option>
+            <option value="password" data-i18n="password">Password</option>
+            <option value="private_key" data-i18n="sshKey">SSH Key</option>
           </select>
         </div>
         <div class="field" style="grid-column:1/-1;" id="p-password-field">
@@ -74,7 +74,7 @@
           <input type="password" class="input" id="p-password" placeholder="••••••••">
         </div>
         <div class="field" style="grid-column:1/-1;display:none;" id="p-key-field">
-          <label class="field-label">SSH Key</label>
+          <label class="field-label" data-i18n="sshKey">SSH Key</label>
           <select class="input" id="p-key-select">
             <option value="">— select key —</option>
           </select>
@@ -82,8 +82,8 @@
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeAddPlatform()">Cancel</button>
-      <button class="btn btn-signal" onclick="submitAddPlatform()">+ Add</button>
+      <button class="btn btn-ghost" onclick="closeAddPlatform()" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-signal" onclick="submitAddPlatform()">+ <span data-i18n="addPlatform">Add</span></button>
     </div>
   </div>
 </div>

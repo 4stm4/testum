@@ -4,11 +4,11 @@
 {% block content %}
 <div class="pg-head">
   <div>
-    <div class="pg-title">Audit log<span class="cur"></span></div>
+    <div class="pg-title"><span data-i18n="auditLogs">Audit log</span><span class="cur"></span></div>
     <div class="pg-sub" id="audit-sub">—</div>
   </div>
   <div class="toolbar">
-    <button class="btn btn-ghost" onclick="exportAudit()">↓ Export</button>
+    <button class="btn btn-ghost" onclick="exportAudit()">↓ <span data-i18n="export">Export</span></button>
   </div>
 </div>
 
@@ -19,7 +19,7 @@
     <input type="text" id="audit-search" placeholder="search user, action…" oninput="applyFilters()">
   </div>
   <select class="input" id="audit-action" style="width:160px;" onchange="applyFilters()">
-    <option value="">All actions</option>
+    <option value="" data-i18n="allActions">All actions</option>
     <option value="create">create</option>
     <option value="delete">delete</option>
     <option value="login">login</option>
@@ -27,10 +27,10 @@
     <option value="deploy">deploy</option>
   </select>
   <select class="input" id="audit-range" style="width:140px;" onchange="applyFilters()">
-    <option value="24h">Last 24h</option>
-    <option value="7d">Last 7 days</option>
-    <option value="30d">Last 30 days</option>
-    <option value="all" selected>All time</option>
+    <option value="24h" data-i18n="last24h">Last 24h</option>
+    <option value="7d" data-i18n="last7d">Last 7 days</option>
+    <option value="30d" data-i18n="last30d">Last 30 days</option>
+    <option value="all" selected data-i18n="allTime">All time</option>
   </select>
 </div>
 
@@ -38,11 +38,11 @@
   <table class="tbl" id="audit-table">
     <thead>
       <tr>
-        <th>Timestamp</th>
-        <th>User</th>
-        <th>Action</th>
-        <th>Object</th>
-        <th>Details</th>
+        <th data-i18n="timestamp">Timestamp</th>
+        <th data-i18n="user">User</th>
+        <th data-i18n="action">Action</th>
+        <th data-i18n="object">Object</th>
+        <th data-i18n="details">Details</th>
       </tr>
     </thead>
     <tbody id="audit-body">
@@ -53,8 +53,8 @@
 <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--sp-4);">
   <span id="audit-count" style="font-size:var(--t-xs);color:var(--fg-dim);">—</span>
   <div style="display:flex;gap:var(--sp-2);">
-    <button class="btn btn-ghost" id="prev-btn" onclick="prevPage()" disabled>← prev</button>
-    <button class="btn btn-ghost" id="next-btn" onclick="nextPage()">next →</button>
+    <button class="btn btn-ghost" id="prev-btn" onclick="prevPage()" disabled data-i18n="prevPage">← prev</button>
+    <button class="btn btn-ghost" id="next-btn" onclick="nextPage()" data-i18n="nextPage">next →</button>
   </div>
 </div>
 {% endblock %}
