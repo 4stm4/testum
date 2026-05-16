@@ -3,13 +3,18 @@
   "configurations": [
     {
       "name": "testum-dev",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--port", "8765", "--reload"],
+      "runtimeExecutable": "/Users/aleksejzaharcenko/work/testum/.venv/bin/uvicorn",
+      "runtimeArgs": ["app.main:app", "--port", "8765", "--reload"],
       "port": 8765,
       "env": {
-        "DATABASE_URL": "sqlite:///./dev.db",
+        "PYTHONPATH": "/Users/aleksejzaharcenko/work/testum/src",
+        "DATABASE_URL": "sqlite:////Users/aleksejzaharcenko/work/testum/dev.db",
         "FERNET_KEY": "XvgfcADXX1oKcITCS8V7iQWr9VcweqQR7H3Vc_2qsFs=",
-        "SECRET_KEY": "dev-secret-key"
+        "SECRET_KEY": "dev-secret-key",
+        "ADMIN_USERNAME": "admin",
+        "ADMIN_PASSWORD": "admin123",
+        "APP_ENV": "development",
+        "SSH_HOST_KEY_POLICY": "auto_add"
       }
     }
   ]
