@@ -11,7 +11,7 @@
 
 {% block content %}
 <!-- header row: title + buttons only -->
-<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
   <div>
     <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;">VIRTUALIZATION</div>
     <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
@@ -24,12 +24,7 @@
   </div>
 </div>
 
-<!-- filter bar -->
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
-  <select class="input" id="platformSelect" style="min-width:220px;">
-    <option value="">— select platform —</option>
-  </select>
-</div>
+<select id="platformSelect" style="display:none;"></select>
 
 <!-- Pools table -->
 <div style="background:var(--surface-1);border:1px solid var(--surface-4);border-radius:var(--r-lg);overflow:hidden;">
