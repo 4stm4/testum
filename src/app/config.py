@@ -39,6 +39,13 @@ class Config:
     SMTP_FROM: str = os.getenv("SMTP_FROM", "testum@localhost")
     SMTP_TLS: bool = os.getenv("SMTP_TLS", "true").lower() == "true"
 
+    # Nervum SDN
+    NERVUM_URL: Optional[str] = os.getenv("NERVUM_URL")           # e.g. http://nervum:8080
+    NERVUM_TOKEN: Optional[str] = os.getenv("NERVUM_TOKEN")       # service account token
+    NERVUM_WEBHOOK_SECRET: Optional[str] = os.getenv("NERVUM_WEBHOOK_SECRET")  # HMAC secret (from nervum at sub creation)
+    NERVUM_WEBHOOK_PATH: str = os.getenv("NERVUM_WEBHOOK_PATH", "/webhooks/nervum")
+    NERVUM_SA_NAME: str = os.getenv("NERVUM_SA_NAME", "testum-sync")
+
     @classmethod
     def validate(cls):
         """Validate required configuration values."""

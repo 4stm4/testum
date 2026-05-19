@@ -259,3 +259,41 @@ class AuditLogRow(Base):
     object_id = Column(String(255), nullable=True, index=True)
     meta = Column(JSONString, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
+class NervumNetworkRow(Base):
+    __tablename__ = "nervum_networks"
+
+    id = Column(String(255), primary_key=True)          # nervum resource_id e.g. "net_b5c..."
+    name = Column(String(255), nullable=False, index=True)
+    type = Column(String(50), nullable=True)
+    vni = Column(Integer, nullable=True)
+    vlan_id = Column(Integer, nullable=True)
+    mtu = Column(Integer, nullable=True)
+    intent_version = Column(Integer, nullable=True)
+    spec_hash = Column(String(255), nullable=True)
+    node_ids = Column(JSON, nullable=True)              # list of node ids
+    raw = Column(JSON, nullable=True)                   # full payload
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumNodeRow(Base):
+    __tablename__ = "nervum_nodes"
+
+    id = Column(String(255), primary_key=True)
+    name = Column(String(255), nullable=False, index=True)
+    mgmt_ip = Column(String(100), nullable=True)
+    status = Column(String(50), nullable=True, index=True)
+    agent_version = Column(String(100), nullable=True)
+    raw = Column(JSON, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumSyncStateRow(Base):
+    __tablename__ = "nervum_sync_state"
+
+    id = Column(Integer, primary_key=True, default=1)   # singleton row
+    watermark = Column(Integer, nullable=False, default=0)   # max event_id seen
+    subscription_id = Column(String(255), nullable=True)     # active webhook sub id
+    last_synced_at = Column(DateTime, nullable=True)
+    consecutive_failures = Column(Integer, nullable=False, default=0)

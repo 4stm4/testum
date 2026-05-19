@@ -51,7 +51,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         
         # Allow public routes
-        if path in self.PUBLIC_ROUTES or path.startswith("/docs") or path.startswith("/openapi") or path.startswith("/static"):
+        if path in self.PUBLIC_ROUTES or path.startswith("/docs") or path.startswith("/openapi") or path.startswith("/static") or path.startswith("/webhooks/"):
             return await call_next(request)
         
         # Get token from cookie

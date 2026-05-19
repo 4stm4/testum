@@ -474,6 +474,29 @@ const translations = {
         // Theme & Language
         themeLight: 'Switch to Light Theme',
         themeDark: 'Switch to Dark Theme',
+
+        // SDN page
+        sdn: 'SDN',
+        sdnNetworks: 'Networks',
+        sdnNodes: 'Nodes',
+        sdnSyncStatus: 'Sync Status',
+        sdnWatermark: 'Watermark',
+        sdnLastSync: 'Last sync',
+        sdnSubscription: 'Subscription',
+        sdnResync: 'Resync',
+        sdnConnected: 'Connected',
+        sdnDisconnected: 'Not configured',
+        sdnColName: 'NAME',
+        sdnColType: 'TYPE',
+        sdnColVni: 'VNI',
+        sdnColVlan: 'VLAN',
+        sdnColNodes: 'NODES',
+        sdnColSpecHash: 'SPEC HASH',
+        sdnColMgmtIp: 'MGMT IP',
+        sdnColStatus: 'STATUS',
+        sdnColAgentVer: 'AGENT VER',
+        sdnNoneNetworks: 'No networks found',
+        sdnNoneNodes: 'No nodes found',
     },
     
     ru: {
@@ -854,6 +877,29 @@ const translations = {
         // Theme & Language
         themeLight: 'Переключить на светлую тему',
         themeDark: 'Переключить на темную тему',
+
+        // SDN page
+        sdn: 'SDN',
+        sdnNetworks: 'Сети',
+        sdnNodes: 'Узлы',
+        sdnSyncStatus: 'Статус синхронизации',
+        sdnWatermark: 'Водяной знак',
+        sdnLastSync: 'Последняя синхронизация',
+        sdnSubscription: 'Подписка',
+        sdnResync: 'Синхронизировать',
+        sdnConnected: 'Подключено',
+        sdnDisconnected: 'Не настроено',
+        sdnColName: 'ИМЯ',
+        sdnColType: 'ТИП',
+        sdnColVni: 'VNI',
+        sdnColVlan: 'VLAN',
+        sdnColNodes: 'УЗЛЫ',
+        sdnColSpecHash: 'ХЭШС',
+        sdnColMgmtIp: 'IP MGMT',
+        sdnColStatus: 'СТАТУС',
+        sdnColAgentVer: 'ВЕРСИЯ АГЕНТА',
+        sdnNoneNetworks: 'Сети не найдены',
+        sdnNoneNodes: 'Узлы не найдены',
     }
 };
 

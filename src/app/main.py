@@ -19,6 +19,7 @@ from starlette.templating import Jinja2Templates
 from ports.api.automations import automations_router
 from ports.api.virt import virt_router
 from ports.api.audit import audit_router
+from ports.api.nervum import nervum_router, webhook_receiver
 from ports.api.backup import backup_router
 from ports.api.gitops import gitops_router
 from ports.api.keys import keys_router
@@ -279,6 +280,10 @@ async def virt_ufw_page(request: Request):
     return templates.TemplateResponse(request, "virt_ufw.html", build_template_context(request, "virt_ufw"))
 
 
+async def sdn_page(request: Request):
+    return templates.TemplateResponse(request, "sdn.html", build_template_context(request, "sdn"))
+
+
 async def job_detail_page(request: Request):
     """Job detail page for a specific task."""
     task_id = request.path_params.get("task_id")
@@ -520,6 +525,8 @@ routes = [
     Route("/virt/pools", virt_pools_page),
     Route("/virt/ufw", virt_ufw_page),
     Route("/virt/volumes", virt_volumes_page),
+    Route("/sdn", sdn_page),
+    Route("/webhooks/nervum", webhook_receiver, methods=["POST"]),
     Route("/audit", audit_page),
     Route("/users", users_page),
     Route("/settings", settings_page),
@@ -543,6 +550,7 @@ routes = [
     Mount("/api/backup", backup_router),
     Mount("/api/gitops", gitops_router),
     Mount("/api/virt", virt_router),
+    Mount("/api/sdn", nervum_router),
     Mount("/static", StaticFiles(directory=str(_WEB_PORT / "static")), name="static"),
 ]
 
@@ -575,9 +583,17 @@ async def lifespan(app: Starlette):
         except Exception:
             logger.exception("In-process system_info refresher crashed")
 
+    from adapters.nervum.sync import run_sync_loop
+
+    async def _run_nervum():
+        try:
+            await run_sync_loop()
+        except Exception:
+            logger.exception("nervum sync loop crashed")
+
     background_tasks = [
         asyncio.create_task(coro())
-        for coro in (_run_worker, _run_scheduler, _run_refresher)
+        for coro in (_run_worker, _run_scheduler, _run_refresher, _run_nervum)
     ]
     logger.info("In-process worker, scheduler and refresher started")
 
