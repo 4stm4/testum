@@ -83,7 +83,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeAddPlatform()" data-i18n="cancel">Cancel</button>
-      <button class="btn btn-signal" onclick="submitAddPlatform()">+ <span data-i18n="addPlatform">Add</span></button>
+      <button class="btn btn-signal" id="addPlatformBtn" onclick="submitAddPlatform()">+ <span data-i18n="addPlatform">Add</span></button>
     </div>
   </div>
 </div>
@@ -269,19 +269,31 @@ async function submitAddPlatform() {
   const port = parseInt(document.getElementById('p-port').value) || 22;
   const username = document.getElementById('p-user').value.trim();
   const auth = document.getElementById('p-auth').value;
-  if (!name||!host||!username) { showSnack('✗ Fill required fields', 'err'); return; }
+  if (!name||!host||!username) { showSnack('✗ ' + t('fillRequired'), 'err'); return; }
   const body = { name, host, port, username, auth_method: auth };
   if (auth==='password') body.password = document.getElementById('p-password').value;
   else body.ssh_key_id = document.getElementById('p-key-select').value || null;
+
+  const btn = document.getElementById('addPlatformBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;"></span> <span data-i18n="connecting">connecting…</span></span>';
+
   try {
     const r = await fetch('/api/platforms/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
     const d = await r.json();
     if (r.ok) {
       closeAddPlatform();
-      showSnack('✓ Platform added', 'ok');
+      showSnack('✓ ' + t('platformAdded'), 'ok');
       await loadPlatforms();
-    } else showSnack('✗ ' + (d.error||d.details||'Failed'), 'err');
-  } catch(e) { showSnack('✗ Network error', 'err'); }
+    } else {
+      showSnack('✗ ' + (d.error||d.details||'Failed'), 'err');
+    }
+  } catch(e) {
+    showSnack('✗ ' + t('networkError'), 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '+ <span data-i18n="addPlatform">' + t('addPlatform') + '</span>';
+  }
 }
 
 loadPlatforms();

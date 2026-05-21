@@ -38,6 +38,7 @@
   animation: blink 1.1s step-end infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes spin  { to { transform: rotate(360deg); } }
 
 .by-4stm4 {
   font-size: var(--t-xs);
