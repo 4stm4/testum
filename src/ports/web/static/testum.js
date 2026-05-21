@@ -400,7 +400,7 @@ const translations = {
         allTime: 'All time',
         export: 'Export',
         auditSearchPlaceholder: 'search user, action…',
-        action_create: 'create', action_delete: 'delete', action_login: 'login',
+        action_create: 'create', action_create_failed: 'create failed', action_delete: 'delete', action_login: 'login',
         action_run: 'run', action_deploy: 'deploy', action_update: 'update',
         // Jobs page
         jobId: 'ID',
@@ -807,7 +807,7 @@ const translations = {
         allTime: 'За всё время',
         export: 'Экспорт',
         auditSearchPlaceholder: 'поиск по пользователю, действию…',
-        action_create: 'создать', action_delete: 'удалить', action_login: 'вход',
+        action_create: 'создать', action_create_failed: 'ошибка создания', action_delete: 'удалить', action_login: 'вход',
         action_run: 'запуск', action_deploy: 'деплой', action_update: 'обновить',
         // Jobs page
         jobId: 'ID',

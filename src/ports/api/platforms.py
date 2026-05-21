@@ -144,6 +144,18 @@ async def create_platform(request: Request):
 
             except Exception as conn_err:
                 logger.error("Connection test failed: %s", conn_err)
+                log_audit(
+                    db,
+                    user=user.username if user else "system",
+                    action="create_failed",
+                    object_type="platform",
+                    object_id=None,
+                    meta={
+                        "name": platform_data.name,
+                        "host": platform_data.host,
+                        "reason": str(conn_err),
+                    },
+                )
                 return JSONResponse(
                     {"error": "Connection test failed", "details": str(conn_err)},
                     status_code=400,

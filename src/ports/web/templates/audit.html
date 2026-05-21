@@ -21,6 +21,7 @@
   <select class="input" id="audit-action" style="width:160px;" onchange="applyFilters()">
     <option value="" data-i18n="allActions">All actions</option>
     <option value="create">create</option>
+    <option value="create_failed">create_failed</option>
     <option value="delete">delete</option>
     <option value="login">login</option>
     <option value="run">run</option>
@@ -101,7 +102,7 @@ function renderPage() {
     return;
   }
   tbody.innerHTML = slice.map(e => {
-    const cls = e.action&&e.action.includes('delete')?'err':e.action&&e.action.includes('create')?'ok':'muted';
+    const cls = (e.action&&(e.action.includes('delete')||e.action.includes('failed')))?'err':e.action&&e.action==='create'?'ok':'muted';
     const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : '—';
     const meta = e.meta ? JSON.stringify(e.meta).substring(0,60)+'…' : '—';
     return `<tr>
