@@ -296,8 +296,27 @@ class NervumNodeRow(Base):
 class NervumSyncStateRow(Base):
     __tablename__ = "nervum_sync_state"
 
-    id = Column(Integer, primary_key=True, default=1)   # singleton row
-    watermark = Column(Integer, nullable=False, default=0)   # max event_id seen
-    subscription_id = Column(String(255), nullable=True)     # active webhook sub id
-    last_synced_at = Column(DateTime, nullable=True)
-    consecutive_failures = Column(Integer, nullable=False, default=0)
+    id                   = Column(Integer,     primary_key=True, default=1)
+    watermark            = Column(Integer,     nullable=False, default=0)
+    subscription_id      = Column(String(255), nullable=True)
+    last_synced_at       = Column(DateTime,    nullable=True)
+    consecutive_failures = Column(Integer,     nullable=False, default=0)
+
+
+class NervumProjectBindingRow(Base):
+    """Maps a Testum project to a Nervum project (T2).
+
+    All SDN calls for a given Testum project MUST use nervum_project_id
+    from this table. Resources created without a binding are rejected.
+    """
+
+    __tablename__ = "nervum_project_bindings"
+
+    id                   = Column(GUID(),      primary_key=True, default=uuid.uuid4)
+    testum_project_id    = Column(String(255), nullable=False, unique=True, index=True)
+    nervum_project_id    = Column(String(255), nullable=False, index=True)
+    nervum_project_slug  = Column(String(255), nullable=True)
+    status               = Column(String(50),  nullable=False, default="active")  # active | suspended
+    last_sync_at         = Column(DateTime,    nullable=True)
+    created_at           = Column(DateTime,    default=datetime.utcnow, nullable=False)
+    updated_at           = Column(DateTime,    default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

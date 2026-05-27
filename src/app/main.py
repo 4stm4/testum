@@ -20,6 +20,7 @@ from ports.api.automations import automations_router
 from ports.api.virt import virt_router
 from ports.api.audit import audit_router
 from ports.api.nervum import nervum_router, webhook_receiver
+from ports.api.nervum_projects import project_bindings_router
 from ports.api.backup import backup_router
 from ports.api.gitops import gitops_router
 from ports.api.keys import keys_router
@@ -551,6 +552,7 @@ routes = [
     Mount("/api/gitops", gitops_router),
     Mount("/api/virt", virt_router),
     Mount("/api/sdn", nervum_router),
+    Mount("/api/sdn/projects", project_bindings_router),
     Mount("/static", StaticFiles(directory=str(_WEB_PORT / "static")), name="static"),
 ]
 
