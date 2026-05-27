@@ -264,29 +264,33 @@ class AuditLogRow(Base):
 class NervumNetworkRow(Base):
     __tablename__ = "nervum_networks"
 
-    id = Column(String(255), primary_key=True)          # nervum resource_id e.g. "net_b5c..."
-    name = Column(String(255), nullable=False, index=True)
-    type = Column(String(50), nullable=True)
-    vni = Column(Integer, nullable=True)
-    vlan_id = Column(Integer, nullable=True)
-    mtu = Column(Integer, nullable=True)
-    intent_version = Column(Integer, nullable=True)
-    spec_hash = Column(String(255), nullable=True)
-    node_ids = Column(JSON, nullable=True)              # list of node ids
-    raw = Column(JSON, nullable=True)                   # full payload
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    id             = Column(String(255), primary_key=True)
+    name           = Column(String(255), nullable=False, index=True)
+    type           = Column(String(50),  nullable=True)
+    project_id     = Column(String(255), nullable=True, index=True)   # T2 isolation key
+    vni            = Column(Integer,     nullable=True)
+    vlan_id        = Column(Integer,     nullable=True)
+    mtu            = Column(Integer,     nullable=True)
+    intent_version = Column(Integer,     nullable=True)
+    spec_hash      = Column(String(255), nullable=True)
+    node_ids       = Column(JSON,        nullable=True)               # list[str]
+    labels         = Column(JSON,        nullable=True)               # dict[str,str]
+    raw            = Column(JSON,        nullable=True)               # full NetworkOut
+    updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
 class NervumNodeRow(Base):
     __tablename__ = "nervum_nodes"
 
-    id = Column(String(255), primary_key=True)
-    name = Column(String(255), nullable=False, index=True)
-    mgmt_ip = Column(String(100), nullable=True)
-    status = Column(String(50), nullable=True, index=True)
+    id            = Column(String(255), primary_key=True)
+    name          = Column(String(255), nullable=False, index=True)
+    mgmt_ip       = Column(String(100), nullable=True)
+    status        = Column(String(50),  nullable=True, index=True)
     agent_version = Column(String(100), nullable=True)
-    raw = Column(JSON, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    roles         = Column(JSON,        nullable=True)               # list[str]
+    labels        = Column(JSON,        nullable=True)               # dict[str,str]
+    raw           = Column(JSON,        nullable=True)               # full NodeOut
+    updated_at    = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
 class NervumSyncStateRow(Base):
