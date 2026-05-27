@@ -12,7 +12,29 @@ from starlette.routing import Route, Router
 
 from adapters.nervum.client import verify_signature
 from adapters.nervum.sync import apply_event, _get_or_create_state
-from adapters.postgres.orm_models import NervumNetworkRow, NervumNodeRow, NervumSyncStateRow, SdnTaskRow
+from adapters.postgres.orm_models import (
+    NervumAddressPoolRow,
+    NervumApplyScheduleRow,
+    NervumBgpPeerRow,
+    NervumEventQuarantineRow,
+    NervumFloatingIpRow,
+    NervumGatewayBondRow,
+    NervumLoadBalancerRow,
+    NervumLogicalPortRow,
+    NervumMirrorSessionRow,
+    NervumNetworkRow,
+    NervumNodeRow,
+    NervumProjectRow,
+    NervumQosPolicyRow,
+    NervumRouterRow,
+    NervumSecurityGroupRow,
+    NervumSecurityPolicyRow,
+    NervumServiceObjectRow,
+    NervumSyncStateRow,
+    NervumTrunkPortRow,
+    NervumVpnTunnelRow,
+    SdnTaskRow,
+)
 from app.config import config
 from app.db import SessionLocal
 from app.rbac import require_roles, ALL_ROLES
@@ -78,17 +100,35 @@ async def list_nodes(request: Request):
 async def sync_status(request: Request):
     with SessionLocal() as db:
         state = _get_or_create_state(db)
-        nets  = db.query(NervumNetworkRow).count()
-        nodes = db.query(NervumNodeRow).count()
+        counts = {
+            "network_count":         db.query(NervumNetworkRow).count(),
+            "node_count":            db.query(NervumNodeRow).count(),
+            "logical_port_count":    db.query(NervumLogicalPortRow).count(),
+            "router_count":          db.query(NervumRouterRow).count(),
+            "floating_ip_count":     db.query(NervumFloatingIpRow).count(),
+            "security_group_count":  db.query(NervumSecurityGroupRow).count(),
+            "security_policy_count": db.query(NervumSecurityPolicyRow).count(),
+            "load_balancer_count":   db.query(NervumLoadBalancerRow).count(),
+            "vpn_tunnel_count":      db.query(NervumVpnTunnelRow).count(),
+            "bgp_peer_count":        db.query(NervumBgpPeerRow).count(),
+            "address_pool_count":    db.query(NervumAddressPoolRow).count(),
+            "service_object_count":  db.query(NervumServiceObjectRow).count(),
+            "qos_policy_count":      db.query(NervumQosPolicyRow).count(),
+            "trunk_port_count":      db.query(NervumTrunkPortRow).count(),
+            "gateway_bond_count":    db.query(NervumGatewayBondRow).count(),
+            "apply_schedule_count":  db.query(NervumApplyScheduleRow).count(),
+            "mirror_session_count":  db.query(NervumMirrorSessionRow).count(),
+            "project_count":         db.query(NervumProjectRow).count(),
+            "quarantine_count":      db.query(NervumEventQuarantineRow).count(),
+        }
         return JSONResponse({
             "watermark":            state.watermark,
             "subscription_id":      state.subscription_id,
             "last_synced_at":       state.last_synced_at.isoformat() if state.last_synced_at else None,
             "consecutive_failures": state.consecutive_failures,
-            "network_count":        nets,
-            "node_count":           nodes,
             "nervum_url":           config.NERVUM_URL or "",
             "nervum_configured":    bool(config.NERVUM_URL),
+            **counts,
         })
 
 

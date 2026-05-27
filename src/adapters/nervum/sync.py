@@ -13,7 +13,28 @@ import logging
 from datetime import datetime
 
 from adapters.nervum.client import NervumClient, SUPPORTED_SCHEMA_VERSION
-from adapters.postgres.orm_models import NervumNetworkRow, NervumNodeRow, NervumSyncStateRow
+from adapters.postgres.orm_models import (
+    NervumAddressPoolRow,
+    NervumApplyScheduleRow,
+    NervumBgpPeerRow,
+    NervumEventQuarantineRow,
+    NervumFloatingIpRow,
+    NervumGatewayBondRow,
+    NervumLoadBalancerRow,
+    NervumLogicalPortRow,
+    NervumMirrorSessionRow,
+    NervumNetworkRow,
+    NervumNodeRow,
+    NervumProjectRow,
+    NervumQosPolicyRow,
+    NervumRouterRow,
+    NervumSecurityGroupRow,
+    NervumSecurityPolicyRow,
+    NervumServiceObjectRow,
+    NervumSyncStateRow,
+    NervumTrunkPortRow,
+    NervumVpnTunnelRow,
+)
 from app.config import config
 from app.db import SessionLocal
 
@@ -45,24 +66,56 @@ def apply_event(db, event: dict) -> None:
         schema_version, project_id, occurred_at, payload
     """
     schema_v = event.get("schema_version", 1)
+    eid   = event.get("event_id", 0)
+    rtype = event.get("resource_type", "")
+
     if schema_v > SUPPORTED_SCHEMA_VERSION:
         logger.warning(
-            "nervum: unknown schema_version=%d on event_id=%s — skipping (quarantine)",
-            schema_v, event.get("event_id"),
+            "nervum: unknown schema_version=%d on event_id=%s — quarantined",
+            schema_v, eid,
         )
+        db.add(NervumEventQuarantineRow(
+            event_id=eid,
+            schema_version=schema_v,
+            event_type=event.get("event_type"),
+            resource_type=rtype,
+            resource_id=event.get("resource_id"),
+            raw=event,
+        ))
+        db.commit()
         return
 
-    etype = event.get("event_type", "")
-    rtype = event.get("resource_type", "")
-    rid   = event.get("resource_id") or ""
-    pid   = event.get("project_id")
+    etype   = event.get("event_type", "")
+    rid     = event.get("resource_id") or ""
+    pid     = event.get("project_id")
     payload = event.get("payload", {})
-    eid = event.get("event_id", 0)
 
-    if rtype == "network":
-        _apply_network_event(db, etype, rid, pid, payload)
-    elif rtype == "node":
-        _apply_node_event(db, etype, rid, payload)
+    _RESOURCE_HANDLERS = {
+        "network":         _apply_network_event,
+        "node":            _apply_node_event,
+        "logical_port":    _apply_logical_port_event,
+        "security_group":  _apply_security_group_event,
+        "address_pool":    _apply_address_pool_event,
+        "service_object":  _apply_service_object_event,
+        "qos_policy":      _apply_qos_policy_event,
+        "security_policy": _apply_security_policy_event,
+        "trunk_port":      _apply_trunk_port_event,
+        "router":          _apply_router_event,
+        "floating_ip":     _apply_floating_ip_event,
+        "bgp_peer":        _apply_bgp_peer_event,
+        "gateway_bond":    _apply_gateway_bond_event,
+        "load_balancer":   _apply_load_balancer_event,
+        "apply_schedule":  _apply_apply_schedule_event,
+        "mirror_session":  _apply_mirror_session_event,
+        "vpn_tunnel":      _apply_vpn_tunnel_event,
+        "project":         _apply_project_event,
+    }
+
+    handler = _RESOURCE_HANDLERS.get(rtype)
+    if handler:
+        handler(db, etype, rid, pid, payload)
+    else:
+        logger.debug("nervum: unhandled resource_type=%s event_type=%s — ignored", rtype, etype)
 
     # Advance watermark
     state = _get_or_create_state(db)
@@ -97,8 +150,8 @@ def _apply_network_event(db, etype: str, rid: str, project_id: str | None, paylo
             row.updated_at     = datetime.utcnow()
 
 
-def _apply_node_event(db, etype: str, rid: str, payload: dict) -> None:
-    if etype in ("node.registered", "node.enrolled"):
+def _apply_node_event(db, etype: str, rid: str, _pid: str | None, payload: dict) -> None:
+    if etype in ("node.registered", "node.enrolled", "node.updated"):
         row = db.query(NervumNodeRow).filter(NervumNodeRow.id == rid).first()
         if not row:
             row = NervumNodeRow(id=rid)
@@ -114,6 +167,161 @@ def _apply_node_event(db, etype: str, rid: str, payload: dict) -> None:
 
     elif etype == "node.removed":
         db.query(NervumNodeRow).filter(NervumNodeRow.id == rid).delete()
+
+
+def _upsert(db, model, rid: str, project_id: str | None, payload: dict, **extra) -> None:
+    """Generic upsert helper for simple replica rows."""
+    row = db.query(model).filter(model.id == rid).first()
+    if not row:
+        row = model(id=rid)
+        db.add(row)
+    if hasattr(row, "name"):
+        row.name = payload.get("name", getattr(row, "name", "") or "")
+    if hasattr(row, "project_id"):
+        row.project_id = project_id or payload.get("project_id", getattr(row, "project_id", None))
+    for attr, key in extra.items():
+        setattr(row, attr, payload.get(key, getattr(row, attr, None)))
+    if hasattr(row, "labels"):
+        row.labels = payload.get("labels", getattr(row, "labels", None))
+    row.raw        = payload
+    row.updated_at = datetime.utcnow()
+
+
+def _delete(db, model, rid: str) -> None:
+    db.query(model).filter(model.id == rid).delete()
+
+
+def _apply_logical_port_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("logical_port.created", "logical_port.updated", "logical_port.status_changed"):
+        _upsert(db, NervumLogicalPortRow, rid, pid, payload,
+                network_id="network_id", status="status",
+                mac="mac", ip_address="ip_address")
+    elif etype == "logical_port.deleted":
+        _delete(db, NervumLogicalPortRow, rid)
+
+
+def _apply_security_group_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("security_group.created", "security_group.updated", "security_group.rules_updated"):
+        row = db.query(NervumSecurityGroupRow).filter(NervumSecurityGroupRow.id == rid).first()
+        if not row:
+            row = NervumSecurityGroupRow(id=rid)
+            db.add(row)
+        row.name       = payload.get("name", row.name or "")
+        row.project_id = pid or payload.get("project_id", row.project_id)
+        row.rules      = payload.get("rules", row.rules)
+        row.labels     = payload.get("labels", row.labels)
+        row.raw        = payload
+        row.updated_at = datetime.utcnow()
+    elif etype == "security_group.deleted":
+        _delete(db, NervumSecurityGroupRow, rid)
+
+
+def _apply_address_pool_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("address_pool.created", "address_pool.updated"):
+        _upsert(db, NervumAddressPoolRow, rid, pid, payload, cidr="cidr")
+    elif etype == "address_pool.deleted":
+        _delete(db, NervumAddressPoolRow, rid)
+
+
+def _apply_service_object_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("service_object.created", "service_object.updated"):
+        _upsert(db, NervumServiceObjectRow, rid, pid, payload,
+                protocol="protocol", port_range="port_range")
+    elif etype == "service_object.deleted":
+        _delete(db, NervumServiceObjectRow, rid)
+
+
+def _apply_qos_policy_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("qos_policy.created", "qos_policy.updated"):
+        _upsert(db, NervumQosPolicyRow, rid, pid, payload)
+    elif etype == "qos_policy.deleted":
+        _delete(db, NervumQosPolicyRow, rid)
+
+
+def _apply_security_policy_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("security_policy.created", "security_policy.updated",
+                 "security_policy.compiled", "security_policy.applied",
+                 "security_policy.apply_failed"):
+        _upsert(db, NervumSecurityPolicyRow, rid, pid, payload, status="status")
+    elif etype == "security_policy.deleted":
+        _delete(db, NervumSecurityPolicyRow, rid)
+
+
+def _apply_trunk_port_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("trunk_port.created", "trunk_port.updated"):
+        _upsert(db, NervumTrunkPortRow, rid, pid, payload)
+    elif etype == "trunk_port.deleted":
+        _delete(db, NervumTrunkPortRow, rid)
+
+
+def _apply_router_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("router.created", "router.updated", "router.status_changed"):
+        _upsert(db, NervumRouterRow, rid, pid, payload, status="status", mode="mode")
+    elif etype == "router.deleted":
+        _delete(db, NervumRouterRow, rid)
+
+
+def _apply_floating_ip_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("floating_ip.created", "floating_ip.updated", "floating_ip.status_changed"):
+        _upsert(db, NervumFloatingIpRow, rid, pid, payload,
+                router_id="router_id", address="address", status="status")
+    elif etype == "floating_ip.deleted":
+        _delete(db, NervumFloatingIpRow, rid)
+
+
+def _apply_bgp_peer_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("bgp_peer.created", "bgp_peer.updated"):
+        _upsert(db, NervumBgpPeerRow, rid, pid, payload,
+                router_id="router_id", peer_ip="peer_ip", remote_asn="remote_asn")
+    elif etype == "bgp_peer.deleted":
+        _delete(db, NervumBgpPeerRow, rid)
+
+
+def _apply_gateway_bond_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("gateway_bond.created", "gateway_bond.updated"):
+        _upsert(db, NervumGatewayBondRow, rid, pid, payload, mode="mode")
+    elif etype == "gateway_bond.deleted":
+        _delete(db, NervumGatewayBondRow, rid)
+
+
+def _apply_load_balancer_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("load_balancer.created", "load_balancer.updated",
+                 "load_balancer.status_changed"):
+        _upsert(db, NervumLoadBalancerRow, rid, pid, payload,
+                router_id="router_id", status="status")
+    elif etype == "load_balancer.deleted":
+        _delete(db, NervumLoadBalancerRow, rid)
+
+
+def _apply_apply_schedule_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("apply_schedule.created", "apply_schedule.updated",
+                 "apply_schedule.status_changed"):
+        _upsert(db, NervumApplyScheduleRow, rid, pid, payload, status="status")
+    elif etype == "apply_schedule.deleted":
+        _delete(db, NervumApplyScheduleRow, rid)
+
+
+def _apply_mirror_session_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("mirror_session.created", "mirror_session.updated",
+                 "mirror_session.status_changed"):
+        _upsert(db, NervumMirrorSessionRow, rid, pid, payload, status="status")
+    elif etype == "mirror_session.deleted":
+        _delete(db, NervumMirrorSessionRow, rid)
+
+
+def _apply_vpn_tunnel_event(db, etype: str, rid: str, pid: str | None, payload: dict) -> None:
+    if etype in ("vpn_tunnel.created", "vpn_tunnel.updated", "vpn_tunnel.status_changed"):
+        _upsert(db, NervumVpnTunnelRow, rid, pid, payload, protocol="protocol", status="status")
+    elif etype == "vpn_tunnel.deleted":
+        _delete(db, NervumVpnTunnelRow, rid)
+
+
+def _apply_project_event(db, etype: str, rid: str, _pid: str | None, payload: dict) -> None:
+    if etype in ("project.created", "project.updated"):
+        _upsert(db, NervumProjectRow, rid, None, payload,
+                slug="slug", status="status")
+    elif etype == "project.deleted":
+        _delete(db, NervumProjectRow, rid)
 
 
 # ── Bootstrap ─────────────────────────────────────────────────────────────

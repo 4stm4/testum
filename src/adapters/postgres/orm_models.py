@@ -345,3 +345,251 @@ class NervumProjectBindingRow(Base):
     last_sync_at         = Column(DateTime,    nullable=True)
     created_at           = Column(DateTime,    default=datetime.utcnow, nullable=False)
     updated_at           = Column(DateTime,    default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+# ── T4: Full replica tables ───────────────────────────────────────────────
+
+
+class NervumProjectRow(Base):
+    """Replica of Nervum project objects."""
+
+    __tablename__ = "nervum_projects"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    slug       = Column(String(255), nullable=True)
+    status     = Column(String(50),  nullable=True, index=True)
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumLogicalPortRow(Base):
+    """Replica of Nervum logical_port objects."""
+
+    __tablename__ = "nervum_logical_ports"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    network_id = Column(String(255), nullable=True, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    status     = Column(String(50),  nullable=True, index=True)  # pending|active|detached
+    mac        = Column(String(50),  nullable=True)
+    ip_address = Column(String(100), nullable=True)
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumSecurityGroupRow(Base):
+    """Replica of Nervum security_group objects."""
+
+    __tablename__ = "nervum_security_groups"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    rules      = Column(JSON,        nullable=True)
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumAddressPoolRow(Base):
+    """Replica of Nervum address_pool objects."""
+
+    __tablename__ = "nervum_address_pools"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    cidr       = Column(String(100), nullable=True)
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumServiceObjectRow(Base):
+    """Replica of Nervum service_object objects."""
+
+    __tablename__ = "nervum_service_objects"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    protocol   = Column(String(50),  nullable=True)   # tcp|udp|icmp|any
+    port_range = Column(String(100), nullable=True)
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumQosPolicyRow(Base):
+    """Replica of Nervum qos_policy objects."""
+
+    __tablename__ = "nervum_qos_policies"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumSecurityPolicyRow(Base):
+    """Replica of Nervum security_policy objects."""
+
+    __tablename__ = "nervum_security_policies"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    status     = Column(String(50),  nullable=True, index=True)  # draft|compiled|applied|failed
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumTrunkPortRow(Base):
+    """Replica of Nervum trunk_port objects."""
+
+    __tablename__ = "nervum_trunk_ports"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumRouterRow(Base):
+    """Replica of Nervum router objects."""
+
+    __tablename__ = "nervum_routers"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    status     = Column(String(50),  nullable=True, index=True)  # build|active|down|error
+    mode       = Column(String(50),  nullable=True)              # ipv6: off|slaac|stateful|stateless
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumFloatingIpRow(Base):
+    """Replica of Nervum floating_ip objects."""
+
+    __tablename__ = "nervum_floating_ips"
+
+    id         = Column(String(255), primary_key=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    router_id  = Column(String(255), nullable=True, index=True)
+    address    = Column(String(100), nullable=True)
+    status     = Column(String(50),  nullable=True, index=True)  # down|active|error
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumBgpPeerRow(Base):
+    """Replica of Nervum bgp_peer objects."""
+
+    __tablename__ = "nervum_bgp_peers"
+
+    id         = Column(String(255), primary_key=True)
+    router_id  = Column(String(255), nullable=True, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    peer_ip    = Column(String(100), nullable=True)
+    remote_asn = Column(Integer,     nullable=True)
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumGatewayBondRow(Base):
+    """Replica of Nervum gateway_bond objects."""
+
+    __tablename__ = "nervum_gateway_bonds"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    mode       = Column(String(50),  nullable=True)   # none|active_backup|lacp
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumLoadBalancerRow(Base):
+    """Replica of Nervum load_balancer objects."""
+
+    __tablename__ = "nervum_load_balancers"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    router_id  = Column(String(255), nullable=True, index=True)
+    status     = Column(String(50),  nullable=True, index=True)  # build|active|down|error
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumApplyScheduleRow(Base):
+    """Replica of Nervum apply_schedule objects."""
+
+    __tablename__ = "nervum_apply_schedules"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    status     = Column(String(50),  nullable=True, index=True)  # active|paused|error
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumMirrorSessionRow(Base):
+    """Replica of Nervum mirror_session objects."""
+
+    __tablename__ = "nervum_mirror_sessions"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    status     = Column(String(50),  nullable=True, index=True)  # active|inactive|error
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumVpnTunnelRow(Base):
+    """Replica of Nervum vpn_tunnel objects."""
+
+    __tablename__ = "nervum_vpn_tunnels"
+
+    id         = Column(String(255), primary_key=True)
+    name       = Column(String(255), nullable=False, index=True)
+    project_id = Column(String(255), nullable=True, index=True)
+    protocol   = Column(String(50),  nullable=True)              # wireguard|ipsec
+    status     = Column(String(50),  nullable=True, index=True)  # build|active|down|error
+    labels     = Column(JSON,        nullable=True)
+    raw        = Column(JSON,        nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class NervumEventQuarantineRow(Base):
+    """Quarantine log for unrecognised or future-schema Nervum events."""
+
+    __tablename__ = "nervum_event_quarantine"
+
+    id             = Column(Integer,     primary_key=True, autoincrement=True)
+    event_id       = Column(Integer,     nullable=True, index=True)
+    schema_version = Column(Integer,     nullable=True)
+    event_type     = Column(String(255), nullable=True)
+    resource_type  = Column(String(100), nullable=True)
+    resource_id    = Column(String(255), nullable=True)
+    raw            = Column(JSON,        nullable=True)
+    received_at    = Column(DateTime,    default=datetime.utcnow, nullable=False, index=True)
