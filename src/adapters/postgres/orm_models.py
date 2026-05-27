@@ -580,6 +580,30 @@ class NervumVpnTunnelRow(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
+class VmSdnPortRow(Base):
+    """T7: tracks the Nervum LogicalPort bound to a VM NIC.
+
+    One row per VM per NIC — keyed by (platform_id, vm_name).
+    Deleted when the VM is destroyed.
+    """
+
+    __tablename__ = "vm_sdn_ports"
+
+    id          = Column(GUID(),      primary_key=True, default=uuid.uuid4)
+    platform_id = Column(GUID(),      ForeignKey("platforms.id", ondelete="CASCADE"), nullable=False)
+    vm_name     = Column(String(255), nullable=False, index=True)
+    port_id     = Column(String(255), nullable=False, index=True)
+    network_id  = Column(String(255), nullable=True)
+    project_id  = Column(String(255), nullable=True)
+    mac         = Column(String(50),  nullable=True)
+    ip_address  = Column(String(100), nullable=True)
+    created_at  = Column(DateTime,    default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("platform_id", "vm_name", name="uq_vm_sdn_port"),
+    )
+
+
 class NervumEventQuarantineRow(Base):
     """Quarantine log for unrecognised or future-schema Nervum events."""
 

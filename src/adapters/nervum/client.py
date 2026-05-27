@@ -137,6 +137,45 @@ class NervumClient:
 
     # ── Operations ────────────────────────────────────────────────────────
 
+    async def create_logical_port(
+        self,
+        network_id: str,
+        *,
+        name: str,
+        project_id: str | None = None,
+        task_id: str | None = None,
+    ) -> dict:
+        """POST /networks/{network_id}/logical-ports → LogicalPortOut.
+
+        Returns dict with at minimum: id, name, status, mac, ip_address.
+        The operation may be asynchronous; caller should poll if needed.
+        """
+        payload: dict = {"name": name}
+        if project_id:
+            payload["project_id"] = project_id
+        r = await _request(
+            "POST",
+            self._url(f"/networks/{network_id}/logical-ports"),
+            task_id=task_id,
+            json=payload,
+        )
+        return r.json()
+
+    async def delete_logical_port(
+        self,
+        port_id: str,
+        *,
+        task_id: str | None = None,
+    ) -> None:
+        """DELETE /logical-ports/{port_id} — 204 or 404 are both acceptable."""
+        try:
+            await _request("DELETE", self._url(f"/logical-ports/{port_id}"), task_id=task_id)
+        except Exception as exc:
+            # 404 means already gone — treat as success
+            if "404" in str(exc):
+                return
+            raise
+
     async def get_operation(self, operation_id: str) -> dict:
         """GET /operations/{id} → OperationOut."""
         r = await _request("GET", self._url(f"/operations/{operation_id}"))

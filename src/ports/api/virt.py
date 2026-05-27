@@ -8,7 +8,9 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Router
 
+from adapters.postgres.orm_models import VmSdnPortRow
 from app.audit import log_audit
+from app.config import config
 from app.crypto import crypto
 from app.db import SessionLocal
 from app.models import Platform, SSHKey, TaskRun, TaskStatusEnum, TaskTypeEnum
@@ -88,13 +90,15 @@ async def create_vm(request: Request):
         return JSONResponse({"error": "Platform not found"}, status_code=404)
     db.close()
     body = await request.json()
-    name          = body.get("name", "").strip()
-    memory        = body.get("memory")
-    vcpu          = body.get("vcpu")
-    disk_path     = body.get("disk_path", "").strip()
-    cdrom_iso_path = body.get("cdrom_iso_path", "").strip()
-    bridge        = body.get("bridge", "virbr0").strip() or "virbr0"
-    mac_address   = body.get("mac_address", "").strip() or None
+    name              = body.get("name", "").strip()
+    memory            = body.get("memory")
+    vcpu              = body.get("vcpu")
+    disk_path         = body.get("disk_path", "").strip()
+    cdrom_iso_path    = body.get("cdrom_iso_path", "").strip()
+    bridge            = body.get("bridge", "virbr0").strip() or "virbr0"
+    mac_address       = body.get("mac_address", "").strip() or None
+    nervum_network_id = body.get("nervum_network_id", "").strip() or None
+    nervum_project_id = body.get("nervum_project_id", "").strip() or None
 
     if not name:
         return JSONResponse({"error": "name is required"}, status_code=400)
@@ -107,12 +111,34 @@ async def create_vm(request: Request):
     if not cdrom_iso_path:
         return JSONResponse({"error": "cdrom_iso_path is required"}, status_code=400)
 
+    # ── Optional: create Nervum LogicalPort ────────────────────────────────
+    sdn_port: dict | None = None
+    if nervum_network_id and config.NERVUM_URL:
+        try:
+            from adapters.nervum.client import NervumClient
+            client = NervumClient()
+            sdn_port = await client.create_logical_port(
+                nervum_network_id,
+                name=f"vm-{name}",
+                project_id=nervum_project_id,
+            )
+            # Use MAC from SDN if none specified
+            if mac_address is None and sdn_port.get("mac"):
+                mac_address = sdn_port["mac"]
+            logger.info(
+                "create_vm: logical port id=%s mac=%s created for vm=%s",
+                sdn_port.get("id"), sdn_port.get("mac"), name,
+            )
+        except Exception:
+            logger.exception("create_vm: failed to create logical port for vm=%s — proceeding without SDN", name)
+            sdn_port = None
+
     try:
         from adapters.libvirt import VMManager
         from adapters.libvirt.models import VMConfig
         if mac_address is None:
             mac_address = VMConfig.generate_mac_address()
-        config = VMConfig(
+        vm_config = VMConfig(
             name=name,
             memory=int(memory),
             vcpu=int(vcpu),
@@ -122,9 +148,40 @@ async def create_vm(request: Request):
             bridge=bridge,
             mac_address=mac_address,
         )
-        await asyncio.to_thread(lambda: VMManager(uri).create_virtual_machine(config))
-        return JSONResponse({"message": f"VM {name!r} defined successfully"})
+        await asyncio.to_thread(lambda: VMManager(uri).create_virtual_machine(vm_config))
+
+        # Persist port binding after successful VM creation
+        if sdn_port and sdn_port.get("id"):
+            with SessionLocal() as bind_db:
+                bind_db.add(VmSdnPortRow(
+                    platform_id=platform_id,
+                    vm_name=name,
+                    port_id=sdn_port["id"],
+                    network_id=nervum_network_id,
+                    project_id=nervum_project_id,
+                    mac=sdn_port.get("mac"),
+                    ip_address=sdn_port.get("ip_address"),
+                ))
+                bind_db.commit()
+
+        resp: dict = {"message": f"VM {name!r} defined successfully"}
+        if sdn_port:
+            resp["sdn_port"] = {
+                "id":         sdn_port.get("id"),
+                "mac":        sdn_port.get("mac"),
+                "ip_address": sdn_port.get("ip_address"),
+                "status":     sdn_port.get("status"),
+            }
+        return JSONResponse(resp)
     except Exception as exc:
+        # If VM creation failed but we already created a port — clean it up
+        if sdn_port and sdn_port.get("id") and config.NERVUM_URL:
+            try:
+                from adapters.nervum.client import NervumClient
+                await NervumClient().delete_logical_port(sdn_port["id"])
+                logger.info("create_vm: cleaned up orphan port %s after VM failure", sdn_port["id"])
+            except Exception:
+                logger.warning("create_vm: could not clean up port %s", sdn_port.get("id"))
         logger.exception("create_vm failed for platform %s", platform_id)
         return JSONResponse({"error": str(exc)}, status_code=500)
 
@@ -180,9 +237,43 @@ async def delete_vm(request: Request):
     name = body.get("name")
     if not name:
         return JSONResponse({"error": "name is required"}, status_code=400)
+
+    # Resolve any bound SDN port before VM deletion
+    port_row: VmSdnPortRow | None = None
+    with SessionLocal() as bind_db:
+        port_row = (
+            bind_db.query(VmSdnPortRow)
+            .filter(
+                VmSdnPortRow.platform_id == platform_id,
+                VmSdnPortRow.vm_name == name,
+            )
+            .first()
+        )
+        if port_row:
+            port_id   = port_row.port_id
+            # Detach from session so we can use it after db closes
+            bind_db.expunge(port_row)
+
     try:
         from adapters.libvirt import VMManager
         msg = await asyncio.to_thread(lambda: VMManager(uri).delete(name))
+
+        # Delete SDN port after successful VM removal
+        if port_row and config.NERVUM_URL:
+            try:
+                from adapters.nervum.client import NervumClient
+                await NervumClient().delete_logical_port(port_row.port_id)
+                logger.info("delete_vm: deleted logical port %s for vm=%s", port_row.port_id, name)
+            except Exception:
+                logger.warning("delete_vm: failed to delete logical port %s — orphaned", port_row.port_id)
+            # Always remove the DB row regardless of Nervum outcome
+            with SessionLocal() as bind_db:
+                bind_db.query(VmSdnPortRow).filter(
+                    VmSdnPortRow.platform_id == platform_id,
+                    VmSdnPortRow.vm_name == name,
+                ).delete()
+                bind_db.commit()
+
         return JSONResponse({"message": msg})
     except Exception as exc:
         logger.exception("delete_vm failed")
