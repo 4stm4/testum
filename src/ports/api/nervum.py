@@ -12,7 +12,7 @@ from starlette.routing import Route, Router
 
 from adapters.nervum.client import verify_signature
 from adapters.nervum.sync import apply_event, _get_or_create_state
-from adapters.postgres.orm_models import NervumNetworkRow, NervumNodeRow, NervumSyncStateRow
+from adapters.postgres.orm_models import NervumNetworkRow, NervumNodeRow, NervumSyncStateRow, SdnTaskRow
 from app.config import config
 from app.db import SessionLocal
 from app.rbac import require_roles, ALL_ROLES
@@ -164,11 +164,72 @@ async def webhook_receiver(request: Request):
     return JSONResponse({"status": "accepted"}, status_code=202)
 
 
+# ── SDN Tasks (T5 operation bridge) ──────────────────────────────────────
+
+@require_roles(*ALL_ROLES)
+async def list_sdn_tasks(request: Request):
+    project_id = request.query_params.get("project_id")
+    status     = request.query_params.get("status")
+    limit      = min(int(request.query_params.get("limit", 50)), 200)
+    with SessionLocal() as db:
+        q = db.query(SdnTaskRow).order_by(SdnTaskRow.started_at.desc())
+        if project_id:
+            q = q.filter(SdnTaskRow.project_id == project_id)
+        if status:
+            q = q.filter(SdnTaskRow.status == status)
+        rows = q.limit(limit).all()
+        return JSONResponse([
+            {
+                "id":                  str(r.id),
+                "testum_task_id":      r.testum_task_id,
+                "nervum_operation_id": r.nervum_operation_id,
+                "project_id":          r.project_id,
+                "kind":                r.kind,
+                "resource_type":       r.resource_type,
+                "resource_id":         r.resource_id,
+                "status":              r.status,
+                "error_code":          r.error_code,
+                "error_message":       r.error_message,
+                "initiated_by":        r.initiated_by,
+                "started_at":          r.started_at.isoformat() if r.started_at else None,
+                "finished_at":         r.finished_at.isoformat() if r.finished_at else None,
+            }
+            for r in rows
+        ])
+
+
+@require_roles(*ALL_ROLES)
+async def get_sdn_task(request: Request):
+    task_id = request.path_params["task_id"]
+    with SessionLocal() as db:
+        row = db.query(SdnTaskRow).filter(SdnTaskRow.id == task_id).first()
+        if not row:
+            return JSONResponse({"error": "SDN task not found"}, status_code=404)
+        return JSONResponse({
+            "id":                  str(row.id),
+            "testum_task_id":      row.testum_task_id,
+            "nervum_operation_id": row.nervum_operation_id,
+            "project_id":          row.project_id,
+            "kind":                row.kind,
+            "resource_type":       row.resource_type,
+            "resource_id":         row.resource_id,
+            "status":              row.status,
+            "error_code":          row.error_code,
+            "error_message":       row.error_message,
+            "initiated_by":        row.initiated_by,
+            "started_at":          row.started_at.isoformat() if row.started_at else None,
+            "finished_at":         row.finished_at.isoformat() if row.finished_at else None,
+            "updated_at":          row.updated_at.isoformat() if row.updated_at else None,
+        })
+
+
 # ── Router ────────────────────────────────────────────────────────────────
 
 nervum_router = Router(routes=[
-    Route("/networks",     list_networks),
-    Route("/nodes",        list_nodes),
-    Route("/sync/status",  sync_status),
-    Route("/sync/trigger", trigger_resync, methods=["POST"]),
+    Route("/networks",          list_networks),
+    Route("/nodes",             list_nodes),
+    Route("/sync/status",       sync_status),
+    Route("/sync/trigger",      trigger_resync,  methods=["POST"]),
+    Route("/operations",        list_sdn_tasks),
+    Route("/operations/{task_id}", get_sdn_task),
 ])

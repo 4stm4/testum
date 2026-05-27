@@ -303,6 +303,31 @@ class NervumSyncStateRow(Base):
     consecutive_failures = Column(Integer,     nullable=False, default=0)
 
 
+class SdnTaskRow(Base):
+    """T5: Bridge between a Testum task and a Nervum operation.
+
+    Tracks the full lifecycle: accepted → planning → running → verifying →
+    succeeded | failed | cancelled | rolled_back
+    """
+
+    __tablename__ = "sdn_tasks"
+
+    id                  = Column(GUID(),      primary_key=True, default=uuid.uuid4)
+    testum_task_id      = Column(String(255), nullable=True,  index=True)  # TaskRun.id if spawned
+    nervum_operation_id = Column(String(255), nullable=False, index=True)
+    project_id          = Column(String(255), nullable=True,  index=True)  # nervum project_id
+    resource_type       = Column(String(100), nullable=True)
+    resource_id         = Column(String(255), nullable=True)
+    kind                = Column(String(100), nullable=True)               # network.create etc.
+    status              = Column(String(50),  nullable=False, default="accepted", index=True)
+    error_code          = Column(String(100), nullable=True)
+    error_message       = Column(Text,        nullable=True)
+    initiated_by        = Column(String(255), nullable=True)               # testum username
+    started_at          = Column(DateTime,    default=datetime.utcnow, nullable=False)
+    finished_at         = Column(DateTime,    nullable=True)
+    updated_at          = Column(DateTime,    default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
 class NervumProjectBindingRow(Base):
     """Maps a Testum project to a Nervum project (T2).
 
