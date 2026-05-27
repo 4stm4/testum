@@ -263,13 +263,90 @@ async def get_sdn_task(request: Request):
         })
 
 
+# ── Logical ports ─────────────────────────────────────────────────────────
+
+@require_roles(*ALL_ROLES)
+async def list_logical_ports(request: Request):
+    project_id = request.query_params.get("project_id")
+    network_id = request.query_params.get("network_id")
+    with SessionLocal() as db:
+        q = db.query(NervumLogicalPortRow).order_by(NervumLogicalPortRow.name)
+        if project_id:
+            q = q.filter(NervumLogicalPortRow.project_id == project_id)
+        if network_id:
+            q = q.filter(NervumLogicalPortRow.network_id == network_id)
+        rows = q.all()
+        return JSONResponse([
+            {
+                "id":         r.id,
+                "name":       r.name,
+                "network_id": r.network_id,
+                "project_id": r.project_id,
+                "status":     r.status,
+                "mac":        r.mac,
+                "ip_address": r.ip_address,
+                "labels":     r.labels or {},
+                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+            }
+            for r in rows
+        ])
+
+
+@require_roles(*ALL_ROLES)
+async def get_logical_port(request: Request):
+    port_id = request.path_params["port_id"]
+    with SessionLocal() as db:
+        row = db.query(NervumLogicalPortRow).filter(NervumLogicalPortRow.id == port_id).first()
+        if not row:
+            return JSONResponse({"error": "Logical port not found"}, status_code=404)
+        return JSONResponse({
+            "id":         row.id,
+            "name":       row.name,
+            "network_id": row.network_id,
+            "project_id": row.project_id,
+            "status":     row.status,
+            "mac":        row.mac,
+            "ip_address": row.ip_address,
+            "labels":     row.labels or {},
+            "raw":        row.raw,
+            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        })
+
+
+# ── Routers ────────────────────────────────────────────────────────────────
+
+@require_roles(*ALL_ROLES)
+async def list_sdn_routers(request: Request):
+    project_id = request.query_params.get("project_id")
+    with SessionLocal() as db:
+        q = db.query(NervumRouterRow).order_by(NervumRouterRow.name)
+        if project_id:
+            q = q.filter(NervumRouterRow.project_id == project_id)
+        rows = q.all()
+        return JSONResponse([
+            {
+                "id":         r.id,
+                "name":       r.name,
+                "project_id": r.project_id,
+                "status":     r.status,
+                "mode":       r.mode,
+                "labels":     r.labels or {},
+                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+            }
+            for r in rows
+        ])
+
+
 # ── Router ────────────────────────────────────────────────────────────────
 
 nervum_router = Router(routes=[
-    Route("/networks",          list_networks),
-    Route("/nodes",             list_nodes),
-    Route("/sync/status",       sync_status),
-    Route("/sync/trigger",      trigger_resync,  methods=["POST"]),
-    Route("/operations",        list_sdn_tasks),
-    Route("/operations/{task_id}", get_sdn_task),
+    Route("/networks",                  list_networks),
+    Route("/nodes",                     list_nodes),
+    Route("/sync/status",               sync_status),
+    Route("/sync/trigger",              trigger_resync,      methods=["POST"]),
+    Route("/logical-ports",             list_logical_ports),
+    Route("/logical-ports/{port_id}",   get_logical_port),
+    Route("/routers",                   list_sdn_routers),
+    Route("/operations",                list_sdn_tasks),
+    Route("/operations/{task_id}",      get_sdn_task),
 ])
