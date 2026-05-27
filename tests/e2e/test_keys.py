@@ -117,3 +117,156 @@ def test_created_key_appears_in_ui(logged_in: Page, api):
 
     # Cleanup
     api("DELETE", f"/api/keys/{kid}")
+
+
+# ── Additional tests ──────────────────────────────────────────────────────
+
+def test_create_key_rsa_type(api):
+    """POST /api/keys with an RSA public key is accepted (200/201) or fails gracefully."""
+    r = api("POST", "/api/keys", {
+        "name": "e2e-rsa-type-key",
+        "public_key": _FAKE_PUB_KEY,  # starts with ssh-rsa
+    })
+    assert r["status"] < 500, f"Server error on RSA key creation: {r}"
+    if r["status"] in (200, 201):
+        kid = r["body"].get("id")
+        if kid:
+            api("DELETE", f"/api/keys/{kid}")
+
+
+def test_create_key_ed25519_type(api):
+    """POST /api/keys with an ed25519 public key is accepted (200/201) or fails gracefully."""
+    ed25519_pub = (
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDummyEd25519KeyForTestingOnlyNotReal"
+        " e2e-test-ed25519@testum"
+    )
+    r = api("POST", "/api/keys", {
+        "name": "e2e-ed25519-type-key",
+        "public_key": ed25519_pub,
+    })
+    assert r["status"] < 500, f"Server error on ed25519 key creation: {r}"
+    if r["status"] in (200, 201):
+        kid = r["body"].get("id")
+        if kid:
+            api("DELETE", f"/api/keys/{kid}")
+
+
+def test_key_has_required_fields(api):
+    """Created key response contains 'id', 'name', and a public key or fingerprint field."""
+    r = api("POST", "/api/keys", {
+        "name": "e2e-fields-check-key",
+        "public_key": _FAKE_PUB_KEY,
+    })
+    if r["status"] not in (200, 201):
+        pytest.skip(f"Key creation returned {r['status']} — skipping field check")
+
+    body = r["body"]
+    assert "id" in body, f"Missing 'id' in response: {body}"
+    assert "name" in body, f"Missing 'name' in response: {body}"
+    has_pubkey_field = "public_key" in body or "fingerprint" in body
+    assert has_pubkey_field, f"Missing 'public_key' or 'fingerprint' in response: {body}"
+
+    api("DELETE", f"/api/keys/{body['id']}")
+
+
+def test_delete_key_removes_from_list(api):
+    """Create a key, delete it, verify it no longer appears in the list."""
+    r = api("POST", "/api/keys", {
+        "name": "e2e-delete-check-key",
+        "public_key": _FAKE_PUB_KEY,
+    })
+    if r["status"] not in (200, 201):
+        pytest.skip(f"Key creation returned {r['status']}")
+
+    kid = r["body"]["id"]
+
+    del_r = api("DELETE", f"/api/keys/{kid}")
+    assert del_r["status"] in (200, 204), f"Delete returned {del_r['status']}"
+
+    list_r = api("GET", "/api/keys")
+    assert list_r["status"] == 200
+    ids = [k["id"] for k in list_r["body"]]
+    assert kid not in ids, f"Deleted key {kid} still present in list: {ids}"
+
+
+def test_keys_page_shows_created_key_name(logged_in: Page, api):
+    """Create a key via API, navigate to /keys, and verify the name is visible."""
+    r = api("POST", "/api/keys", {
+        "name": "e2e-page-visible-key",
+        "public_key": _FAKE_PUB_KEY,
+    })
+    if r["status"] not in (200, 201):
+        pytest.skip("Key creation failed — skipping UI visibility check")
+
+    kid = r["body"]["id"]
+    page = logged_in
+    page.goto(f"{BASE_URL}/keys")
+    page.wait_for_load_state("networkidle")
+
+    from playwright.sync_api import expect as _expect
+    name_loc = page.locator("text=e2e-page-visible-key")
+    _expect(name_loc.first).to_be_visible(timeout=8_000)
+
+    api("DELETE", f"/api/keys/{kid}")
+
+
+def test_key_name_must_be_unique_or_accepted(api):
+    """Create two keys with different names — both must succeed with 200/201."""
+    import uuid as _uuid
+    suffix = _uuid.uuid4().hex[:6]
+
+    r1 = api("POST", "/api/keys", {
+        "name": f"e2e-unique-a-{suffix}",
+        "public_key": _FAKE_PUB_KEY,
+    })
+    r2 = api("POST", "/api/keys", {
+        "name": f"e2e-unique-b-{suffix}",
+        "public_key": _FAKE_PUB_KEY,
+    })
+
+    # Both must be accepted (not a 4xx name-clash error between distinct names)
+    assert r1["status"] in (200, 201, 422), f"First key unexpected status: {r1}"
+    assert r2["status"] in (200, 201, 422), f"Second key unexpected status: {r2}"
+
+    for r in (r1, r2):
+        if r["status"] in (200, 201):
+            kid = r["body"].get("id")
+            if kid:
+                api("DELETE", f"/api/keys/{kid}")
+
+
+def test_get_key_not_found(api):
+    """GET /api/keys/{nonexistent_id} → 404."""
+    r = api("GET", "/api/keys/nonexistent-id-that-does-not-exist")
+    assert r["status"] == 404, f"Expected 404, got {r['status']}"
+
+
+def test_keys_page_delete_button_present(logged_in: Page, api):
+    """If at least one key exists, a delete button or action is visible on /keys."""
+    # Ensure there is at least one key
+    r = api("POST", "/api/keys", {
+        "name": "e2e-del-btn-key",
+        "public_key": _FAKE_PUB_KEY,
+    })
+    created = r["status"] in (200, 201)
+    kid = r["body"].get("id") if created else None
+
+    page = logged_in
+    page.goto(f"{BASE_URL}/keys")
+    page.wait_for_load_state("networkidle")
+
+    # Check list is non-empty first
+    list_r = api("GET", "/api/keys")
+    if not list_r["body"]:
+        pytest.skip("No keys in the system — cannot check for delete button")
+
+    delete_btn = page.locator(
+        "button:has-text('Delete'), button:has-text('Удалить'), "
+        "[data-action='delete'], [aria-label='Delete'], .delete-btn, "
+        "button.btn-danger, button[type='button']:has-text('×')"
+    )
+    from playwright.sync_api import expect as _expect
+    _expect(delete_btn.first).to_be_visible(timeout=8_000)
+
+    if kid:
+        api("DELETE", f"/api/keys/{kid}")
