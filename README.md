@@ -149,8 +149,57 @@ PYTHONPATH=src \
 ### Тесты
 
 ```bash
-pytest tests/ -v --cov=src
+# Unit + integration (без E2E и MinIO)
+pytest tests/ --ignore=tests/e2e --ignore=tests/test_minio.py -q
+
+# С измерением покрытия
+pytest tests/ --ignore=tests/e2e --ignore=tests/test_minio.py \
+    --cov=src --cov-report=term-missing --cov-report=html
+
+# E2E (требует запущенного приложения + Playwright Chromium)
+pytest tests/e2e/ --browser=chromium --timeout=60
 ```
+
+## Покрытие тестами (Coverage)
+
+> Данные актуальны на последний запуск `pytest --cov=src`. Генерируется автоматически.
+
+**Итого: 62.5%** по исходному коду `src/` (unit + integration тесты, без E2E).
+
+| Слой / Модуль | Покрытие |
+|---|---|
+| `app/audit.py` | 100% |
+| `app/pagination.py` | 100% |
+| `app/security.py` | 100% |
+| `core/domain/` | 100% |
+| `adapters/ufw/status_parser.py` | 100% |
+| `adapters/postgres/orm_models.py` | 97% |
+| `app/rate_limiter.py` | 97% |
+| `app/config.py` | 97% |
+| `ports/api/scripts.py` | 95% |
+| `ports/api/users.py` | 92% |
+| `ports/api/audit.py` | 89% |
+| `ports/api/keys.py` | 89% |
+| `ports/api/nervum.py` | 88% |
+| `ports/api/schemas.py` | 90% |
+| `adapters/nervum/sync.py` | 61% |
+| `ports/api/automations.py` | 79% |
+| `ports/api/backup.py` | 61% |
+| `ports/api/platforms.py` | 37%* |
+| `ports/api/virt.py` | 29%* |
+| `ports/api/gitops.py` | 23%* |
+
+\* Низкое покрытие обусловлено зависимостью от реальной инфраструктуры (SSH, libvirt, git). Покрываются E2E-тестами на реальном окружении.
+
+### Тестовая база
+
+| Тип | Файлы | Тестов |
+|---|---|---|
+| Unit / Integration | `tests/test_*.py` | ~305 |
+| E2E (Playwright) | `tests/e2e/test_*.py` | ~650 |
+| **Итого** | | **~955** |
+
+Подробный HTML-отчёт покрытия: `htmlcov/index.html` (генерируется локально).
 
 ## Конфигурация (переменные окружения)
 

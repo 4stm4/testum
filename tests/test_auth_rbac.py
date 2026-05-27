@@ -33,6 +33,34 @@ from app.audit import log_audit
 from app.rate_limiter import RateLimiterMiddleware
 
 # ---------------------------------------------------------------------------
+# Per-test cleanup to prevent stale test.db from breaking fixtures.
+# The conftest.py teardown sometimes leaves test.db behind when the client
+# fixture's TestClient context exits after the DB has already been dropped;
+# this autouse fixture removes any leftover file before every test setup.
+# ---------------------------------------------------------------------------
+
+def _wipe_testdb():
+    """Remove test.db and its WAL/SHM siblings if they exist."""
+    import os as _os
+    for suffix in ("", "-wal", "-shm"):
+        p = f"./test.db{suffix}"
+        if _os.path.exists(p):
+            try:
+                _os.remove(p)
+            except OSError:
+                pass
+
+
+@pytest.fixture(autouse=True)
+def _remove_stale_testdb():
+    """Wipe any leftover test.db before AND after each test so consecutive
+    ``client``-fixture tests don't trip over a stale admin user row."""
+    _wipe_testdb()
+    yield
+    _wipe_testdb()
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -116,23 +144,28 @@ def test_verify_jwt_token_tampered():
 def test_auth_middleware_api_returns_401_without_cookie(client):
     """Unauthenticated request to a protected API endpoint returns 401.
 
-    The ``client`` fixture sets up the DB; we then fire a cookie-free request
-    against the same running app to exercise the middleware rejection path.
+    Reuse the ``client`` fixture's running app; temporarily clear the cookie
+    to simulate an unauthenticated request.
     """
-    from app.main import app as starlette_app
-    # Build a second TestClient with no cookies, sharing the already-running DB
-    with TestClient(starlette_app, raise_server_exceptions=False) as unauthenticated:
-        unauthenticated.cookies.clear()
-        resp = unauthenticated.get("/api/keys/", allow_redirects=False)
+    saved = dict(client.cookies)
+    client.cookies.clear()
+    try:
+        resp = client.get("/api/keys/", follow_redirects=False)
+    finally:
+        for k, v in saved.items():
+            client.cookies.set(k, v)
     assert resp.status_code == 401
 
 
 def test_auth_middleware_html_redirects_to_login_without_cookie(client):
     """Unauthenticated HTML request is redirected to /login."""
-    from app.main import app as starlette_app
-    with TestClient(starlette_app, raise_server_exceptions=False) as unauthenticated:
-        unauthenticated.cookies.clear()
-        resp = unauthenticated.get("/", allow_redirects=False)
+    saved = dict(client.cookies)
+    client.cookies.clear()
+    try:
+        resp = client.get("/", follow_redirects=False)
+    finally:
+        for k, v in saved.items():
+            client.cookies.set(k, v)
     assert resp.status_code in (302, 307)
     assert "/login" in resp.headers.get("location", "")
 
@@ -145,10 +178,14 @@ def test_auth_middleware_public_health_route_accessible(client):
 
 def test_auth_middleware_invalid_token_returns_401_for_api(client):
     """An invalid JWT cookie on an API route yields 401."""
-    from app.main import app as starlette_app
-    with TestClient(starlette_app, raise_server_exceptions=False) as c:
-        c.cookies.set("access_token", "invalid.token.value")
-        resp = c.get("/api/keys/", allow_redirects=False)
+    saved = dict(client.cookies)
+    client.cookies.set("access_token", "invalid.token.value")
+    try:
+        resp = client.get("/api/keys/", follow_redirects=False)
+    finally:
+        client.cookies.clear()
+        for k, v in saved.items():
+            client.cookies.set(k, v)
     assert resp.status_code == 401
 
 
@@ -285,8 +322,8 @@ def test_require_roles_returns_403_when_no_user():
         return MagicMock(status_code=200)
 
     req = MagicMock(spec=Request)
-    # Make state.user absent
-    type(req.state).user = property(lambda self: None)
+    # Simulate missing 'user' on state so get_request_user returns None
+    req.state = MagicMock(spec=[])  # no 'user' attribute
     response = _run(handler(req))
     assert response.status_code == 403
 
