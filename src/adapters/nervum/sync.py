@@ -141,6 +141,9 @@ def _apply_network_event(db, etype: str, rid: str, project_id: str | None, paylo
         row.raw            = payload
         row.updated_at     = datetime.utcnow()
 
+    elif etype == "network.deleted":
+        _delete(db, NervumNetworkRow, rid)
+
     elif etype in ("network.applied", "network.apply_failed"):
         row = db.query(NervumNetworkRow).filter(NervumNetworkRow.id == rid).first()
         if row:

@@ -7,16 +7,66 @@
   <link rel="stylesheet" href="/static/fonts.css">
   <link rel="stylesheet" href="/static/terminal.css">
   <link rel="stylesheet" href="/static/components.css">
+  <style>
+    /* ── Sidebar accordion ────────────────────────────────────────────── */
+    .sb { height: 100vh; overflow: hidden; flex-shrink: 0; }
+    .sb-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; }
+
+    .sb-section-label {
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      user-select: none;
+    }
+    .sb-section-label:hover { color: var(--fg); }
+
+    .sb-chv {
+      font-size: 8px; color: var(--fg-dim);
+      padding-left: 6px; flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .sb-section.closed .sb-chv { transform: rotate(-90deg); }
+
+    .sb-section-body { overflow: hidden; transition: max-height 0.2s ease; }
+    .sb-section.closed .sb-section-body { max-height: 0; }
+
+    /* SDN group dividers */
+    .sb-group {
+      font-size: 8px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--fg-dim);
+      padding: 10px var(--sp-4) 2px;
+      display: flex; align-items: center; gap: 6px;
+      opacity: 0.55; pointer-events: none;
+    }
+    .sb-group::after {
+      content: ''; flex: 1; height: 1px; background: var(--line);
+    }
+  </style>
   {% block extra_styles %}{% endblock %}
 </head>
 <body>
   {% set active_page = active_page | default('') %}
   {% set current_user = current_user | default(None) %}
 
+  {# Determine which section starts open #}
+  {% if active_page in ('', 'dashboard', 'jobs', 'audit') %}
+    {% set _sb_open = 'overview' %}
+  {% elif active_page in ('platforms', 'keys', 'scripts', 'automations') %}
+    {% set _sb_open = 'resources' %}
+  {% elif active_page in ('virt_vms', 'virt_pools', 'virt_volumes', 'virt_ufw') %}
+    {% set _sb_open = 'virt' %}
+  {% elif active_page == 'sdn' %}
+    {% set _sb_open = 'sdn' %}
+  {% elif active_page in ('users', 'settings', 'health') %}
+    {% set _sb_open = 'system' %}
+  {% else %}
+    {% set _sb_open = 'overview' %}
+  {% endif %}
+
   <div class="app-layout">
     <!-- Sidebar -->
     <nav class="sb">
-      <!-- Brand -->
+      <!-- Brand (not collapsible) -->
       <div class="sb-brand">
         <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
           <div class="glyph s32">&gt;_</div>
@@ -27,96 +77,139 @@
         </a>
       </div>
 
-      <!-- Overview -->
-      <div class="sb-section-label" data-i18n="overview">Overview</div>
-      <a href="/" class="sb-link{% if active_page == '' or active_page == 'dashboard' %} active{% endif %}">
-        <span class="sb-link-inner">
-          <span class="sb-pip"></span>
-          <span data-i18n="dashboard">Operations</span>
-        </span>
-      </a>
-      <a href="/jobs" class="sb-link{% if active_page == 'jobs' %} active{% endif %}">
-        <span class="sb-link-inner">
-          <span class="sb-pip"></span>
-          <span data-i18n="jobs">Jobs</span>
-        </span>
-        <span class="count">{{ sidebar_counts['jobs'] }}</span>
-      </a>
-      <a href="/audit" class="sb-link{% if active_page == 'audit' %} active{% endif %}">
-        <span class="sb-link-inner">
-          <span class="sb-pip"></span>
-          <span data-i18n="auditLogs">Audit log</span>
-        </span>
-      </a>
+      <!-- Scrollable accordion area -->
+      <div class="sb-scroll">
 
-      <!-- Resources -->
-      <div class="sb-section-label" data-i18n="resources">Resources</div>
-      <a href="/platforms" class="sb-link{% if active_page == 'platforms' %} active{% endif %}">
-        <span class="sb-link-inner">
-          <span class="sb-pip"></span>
-          <span data-i18n="platforms">Platforms</span>
-        </span>
-        <span class="count">{{ sidebar_counts['platforms'] }}</span>
-      </a>
-      <a href="/keys" class="sb-link{% if active_page == 'keys' %} active{% endif %}">
-        <span class="sb-link-inner">
-          <span class="sb-pip"></span>
-          <span data-i18n="sshKeys">SSH keys</span>
-        </span>
-        <span class="count">{{ sidebar_counts['keys'] }}</span>
-      </a>
-      <a href="/scripts" class="sb-link{% if active_page == 'scripts' %} active{% endif %}">
-        <span class="sb-link-inner">
-          <span class="sb-pip"></span>
-          <span data-i18n="scripts">Scripts</span>
-        </span>
-        <span class="count">{{ sidebar_counts['scripts'] }}</span>
-      </a>
-      <a href="/automations" class="sb-link{% if active_page == 'automations' %} active{% endif %}">
-        <span class="sb-link-inner">
-          <span class="sb-pip"></span>
-          <span data-i18n="automations">Automations</span>
-        </span>
-        <span class="count">{{ sidebar_counts['automations'] }}</span>
-      </a>
+        <!-- Overview -->
+        <div class="sb-section{% if _sb_open != 'overview' %} closed{% endif %}" data-section="overview">
+          <div class="sb-section-label" onclick="sbToggle(this)">
+            <span data-i18n="overview">Overview</span>
+            <span class="sb-chv">▾</span>
+          </div>
+          <div class="sb-section-body">
+            <a href="/" class="sb-link{% if active_page == '' or active_page == 'dashboard' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="dashboard">Operations</span></span>
+            </a>
+            <a href="/jobs" class="sb-link{% if active_page == 'jobs' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="jobs">Jobs</span></span>
+              <span class="count">{{ sidebar_counts['jobs'] }}</span>
+            </a>
+            <a href="/audit" class="sb-link{% if active_page == 'audit' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="auditLogs">Audit log</span></span>
+            </a>
+          </div>
+        </div>
 
-      <!-- Virtualization -->
-      <div class="sb-section-label" data-i18n="virtualization">Virtualization</div>
-      <a href="/virt/vms" class="sb-link{% if active_page == 'virt_vms' %} active{% endif %}">
-        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="virtVms">VMs</span></span>
-      </a>
-      <a href="/virt/pools" class="sb-link{% if active_page == 'virt_pools' %} active{% endif %}">
-        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="virtPools">Storage Pools</span></span>
-      </a>
-      <a href="/virt/volumes" class="sb-link{% if active_page == 'virt_volumes' %} active{% endif %}">
-        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="virtVolumes">Volumes</span></span>
-      </a>
-      <a href="/virt/ufw" class="sb-link{% if active_page == 'virt_ufw' %} active{% endif %}">
-        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="virtUfw">Firewall</span></span>
-      </a>
+        <!-- Resources -->
+        <div class="sb-section{% if _sb_open != 'resources' %} closed{% endif %}" data-section="resources">
+          <div class="sb-section-label" onclick="sbToggle(this)">
+            <span data-i18n="resources">Resources</span>
+            <span class="sb-chv">▾</span>
+          </div>
+          <div class="sb-section-body">
+            <a href="/platforms" class="sb-link{% if active_page == 'platforms' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="platforms">Platforms</span></span>
+              <span class="count">{{ sidebar_counts['platforms'] }}</span>
+            </a>
+            <a href="/keys" class="sb-link{% if active_page == 'keys' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="sshKeys">SSH keys</span></span>
+              <span class="count">{{ sidebar_counts['keys'] }}</span>
+            </a>
+            <a href="/scripts" class="sb-link{% if active_page == 'scripts' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="scripts">Scripts</span></span>
+              <span class="count">{{ sidebar_counts['scripts'] }}</span>
+            </a>
+            <a href="/automations" class="sb-link{% if active_page == 'automations' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="automations">Automations</span></span>
+              <span class="count">{{ sidebar_counts['automations'] }}</span>
+            </a>
+          </div>
+        </div>
 
-      <!-- SDN -->
-      <div class="sb-section-label" data-i18n="sdn">SDN</div>
-      <a href="/sdn" class="sb-link{% if active_page == 'sdn' %} active{% endif %}">
-        <span class="sb-link-inner">
-          <span class="sb-pip"></span>
-          <span data-i18n="sdnNetworks">Networks</span>
-        </span>
-      </a>
+        <!-- Virtualization -->
+        <div class="sb-section{% if _sb_open != 'virt' %} closed{% endif %}" data-section="virt">
+          <div class="sb-section-label" onclick="sbToggle(this)">
+            <span data-i18n="virtualization">Virtualization</span>
+            <span class="sb-chv">▾</span>
+          </div>
+          <div class="sb-section-body">
+            <a href="/virt/vms" class="sb-link{% if active_page == 'virt_vms' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="virtVms">VMs</span></span>
+            </a>
+            <a href="/virt/pools" class="sb-link{% if active_page == 'virt_pools' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="virtPools">Storage Pools</span></span>
+            </a>
+            <a href="/virt/volumes" class="sb-link{% if active_page == 'virt_volumes' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="virtVolumes">Volumes</span></span>
+            </a>
+            <a href="/virt/ufw" class="sb-link{% if active_page == 'virt_ufw' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="virtUfw">Firewall</span></span>
+            </a>
+          </div>
+        </div>
 
-      <!-- System -->
-      <div class="sb-section-label" data-i18n="system">System</div>
-      <a href="/users" class="sb-link{% if active_page == 'users' %} active{% endif %}">
-        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="users">Users</span></span>
-      </a>
-      <a href="/settings" class="sb-link{% if active_page == 'settings' %} active{% endif %}">
-        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="settings">Settings</span></span>
-      </a>
-      <a href="/health" class="sb-link{% if active_page == 'health' %} active{% endif %}">
-        <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="health">Health</span></span>
-      </a>
+        <!-- SDN -->
+        <div class="sb-section{% if _sb_open != 'sdn' %} closed{% endif %}" data-section="sdn">
+          <div class="sb-section-label" onclick="sbToggle(this)">
+            <span data-i18n="sdn">SDN</span>
+            <span class="sb-chv">▾</span>
+          </div>
+          <div class="sb-section-body">
+            <div class="sb-group">Core</div>
+            <a href="/sdn#networks"   class="sb-link" data-sdn-tab="networks"><span class="sb-link-inner"><span class="sb-pip"></span>Networks</span></a>
+            <a href="/sdn#nodes"      class="sb-link" data-sdn-tab="nodes"><span class="sb-link-inner"><span class="sb-pip"></span>Nodes</span></a>
+            <a href="/sdn#ports"      class="sb-link" data-sdn-tab="ports"><span class="sb-link-inner"><span class="sb-pip"></span>Ports</span></a>
+            <a href="/sdn#routers"    class="sb-link" data-sdn-tab="routers"><span class="sb-link-inner"><span class="sb-pip"></span>Routers</span></a>
 
-      <!-- Footer -->
+            <div class="sb-group">Security</div>
+            <a href="/sdn#secgroups"  class="sb-link" data-sdn-tab="secgroups"><span class="sb-link-inner"><span class="sb-pip"></span>Sec Groups</span></a>
+            <a href="/sdn#secpol"     class="sb-link" data-sdn-tab="secpol"><span class="sb-link-inner"><span class="sb-pip"></span>Sec Policy</span></a>
+
+            <div class="sb-group">Services</div>
+            <a href="/sdn#fips"       class="sb-link" data-sdn-tab="fips"><span class="sb-link-inner"><span class="sb-pip"></span>Floating IPs</span></a>
+            <a href="/sdn#lbs"        class="sb-link" data-sdn-tab="lbs"><span class="sb-link-inner"><span class="sb-pip"></span>Load Balancers</span></a>
+            <a href="/sdn#vpn"        class="sb-link" data-sdn-tab="vpn"><span class="sb-link-inner"><span class="sb-pip"></span>VPN</span></a>
+
+            <div class="sb-group">Routing</div>
+            <a href="/sdn#bgp"        class="sb-link" data-sdn-tab="bgp"><span class="sb-link-inner"><span class="sb-pip"></span>BGP Peers</span></a>
+            <a href="/sdn#pools"      class="sb-link" data-sdn-tab="pools"><span class="sb-link-inner"><span class="sb-pip"></span>Addr Pools</span></a>
+            <a href="/sdn#gwbond"     class="sb-link" data-sdn-tab="gwbond"><span class="sb-link-inner"><span class="sb-pip"></span>GW Bonds</span></a>
+
+            <div class="sb-group">Policy</div>
+            <a href="/sdn#qos"        class="sb-link" data-sdn-tab="qos"><span class="sb-link-inner"><span class="sb-pip"></span>QoS</span></a>
+            <a href="/sdn#svcobj"     class="sb-link" data-sdn-tab="svcobj"><span class="sb-link-inner"><span class="sb-pip"></span>Svc Objects</span></a>
+            <a href="/sdn#trunk"      class="sb-link" data-sdn-tab="trunk"><span class="sb-link-inner"><span class="sb-pip"></span>Trunk Ports</span></a>
+            <a href="/sdn#sched"      class="sb-link" data-sdn-tab="sched"><span class="sb-link-inner"><span class="sb-pip"></span>Apply Sched</span></a>
+            <a href="/sdn#mirror"     class="sb-link" data-sdn-tab="mirror"><span class="sb-link-inner"><span class="sb-pip"></span>Mirror</span></a>
+
+            <div class="sb-group">Mgmt</div>
+            <a href="/sdn#projects"   class="sb-link" data-sdn-tab="projects"><span class="sb-link-inner"><span class="sb-pip"></span>Projects</span></a>
+            <a href="/sdn#operations" class="sb-link" data-sdn-tab="ops"><span class="sb-link-inner"><span class="sb-pip"></span>Operations</span></a>
+          </div>
+        </div>
+
+        <!-- System -->
+        <div class="sb-section{% if _sb_open != 'system' %} closed{% endif %}" data-section="system">
+          <div class="sb-section-label" onclick="sbToggle(this)">
+            <span data-i18n="system">System</span>
+            <span class="sb-chv">▾</span>
+          </div>
+          <div class="sb-section-body">
+            <a href="/users" class="sb-link{% if active_page == 'users' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="users">Users</span></span>
+            </a>
+            <a href="/settings" class="sb-link{% if active_page == 'settings' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="settings">Settings</span></span>
+            </a>
+            <a href="/health" class="sb-link{% if active_page == 'health' %} active{% endif %}">
+              <span class="sb-link-inner"><span class="sb-pip"></span><span data-i18n="health">Health</span></span>
+            </a>
+          </div>
+        </div>
+
+      </div><!-- /sb-scroll -->
+
+      <!-- Footer (not collapsible) -->
       <div class="sb-footer">
         <div class="sb-avatar" id="sb-avatar">A</div>
         <div>
@@ -177,7 +270,46 @@
 
   <script src="/static/testum.js?v=8"></script>
   <script>
-    // Snackbar
+    // ── Sidebar accordion ──────────────────────────────────────────────────
+    function sbToggle(labelEl) {
+      const section = labelEl.closest('.sb-section');
+      const willOpen = section.classList.contains('closed');
+
+      // Close all open sections
+      document.querySelectorAll('.sb-section:not(.closed)').forEach(s => {
+        if (s === section) return;
+        const body = s.querySelector('.sb-section-body');
+        body.style.maxHeight = body.scrollHeight + 'px';
+        s.classList.add('closed');
+        requestAnimationFrame(() => { body.style.maxHeight = ''; });
+      });
+
+      if (willOpen) {
+        // Open: start from 0, animate to scrollHeight
+        const body = section.querySelector('.sb-section-body');
+        body.style.maxHeight = '0';
+        section.classList.remove('closed');
+        requestAnimationFrame(() => {
+          body.style.maxHeight = body.scrollHeight + 'px';
+        });
+        try { localStorage.setItem('sb-open', section.dataset.section); } catch(e) {}
+      } else {
+        // Close: animate from scrollHeight to 0
+        const body = section.querySelector('.sb-section-body');
+        body.style.maxHeight = body.scrollHeight + 'px';
+        section.classList.add('closed');
+        requestAnimationFrame(() => { body.style.maxHeight = ''; });
+        try { localStorage.removeItem('sb-open'); } catch(e) {}
+      }
+    }
+
+    // Set explicit maxHeight on the initially-open section so close animation works
+    (function() {
+      const open = document.querySelector('.sb-section:not(.closed) .sb-section-body');
+      if (open) open.style.maxHeight = open.scrollHeight + 'px';
+    })();
+
+    // ── Snackbar ───────────────────────────────────────────────────────────
     function showSnack(msg, type='') {
       const s = document.getElementById('snackbar');
       s.textContent = msg;
@@ -186,7 +318,7 @@
       s._t = setTimeout(() => { s.className = 'snackbar ' + type; }, 3200);
     }
 
-    // Run modal
+    // ── Run modal ──────────────────────────────────────────────────────────
     function openRunModal(platformId) {
       const sel = document.getElementById('modal-platform-select');
       if (platformId) sel.value = platformId;
@@ -221,7 +353,7 @@
       if (e.target === document.getElementById('runModal')) closeRunModal();
     });
 
-    // Populate run modal platform list
+    // ── Populate run modal platform list ───────────────────────────────────
     async function loadPlatformsForModal() {
       try {
         const r = await fetch('/api/platforms/');
@@ -238,17 +370,17 @@
     }
     loadPlatformsForModal();
 
-    // Sidebar user info
+    // ── Sidebar user info ──────────────────────────────────────────────────
     async function loadSidebarUser() {
       try {
         const r = await fetch('/api/users/me');
         if (r.ok) {
           const u = await r.json();
-          const el = document.getElementById('sb-username');
+          const el  = document.getElementById('sb-username');
           const rol = document.getElementById('sb-role');
-          const av = document.getElementById('sb-avatar');
-          if (el) el.textContent = u.username || 'admin';
-          if (av) av.textContent = (u.username || 'A')[0].toUpperCase();
+          const av  = document.getElementById('sb-avatar');
+          if (el)  el.textContent  = u.username || 'admin';
+          if (av)  av.textContent  = (u.username || 'A')[0].toUpperCase();
           const lang = localStorage.getItem('testum-language') || localStorage.getItem('testum-lang') || 'en';
           if (rol) rol.textContent = (u.role || 'admin') + ' · ' + lang.toUpperCase();
         }
@@ -256,14 +388,14 @@
     }
     loadSidebarUser();
 
-    // Language toggle — delegates to toggleLanguage() in testum.js which handles both storage keys
+    // ── Language toggle ────────────────────────────────────────────────────
     const langBtn = document.getElementById('langToggle');
     if (langBtn) {
       const curLang = localStorage.getItem('testum-language') || localStorage.getItem('testum-lang') || 'en';
       document.documentElement.setAttribute('lang', curLang);
       langBtn.textContent = curLang === 'en' ? 'RU' : 'EN';
       langBtn.addEventListener('click', () => {
-        const cur = localStorage.getItem('testum-language') || localStorage.getItem('testum-lang') || 'en';
+        const cur  = localStorage.getItem('testum-language') || localStorage.getItem('testum-lang') || 'en';
         const next = cur === 'en' ? 'ru' : 'en';
         document.documentElement.setAttribute('lang', next);
         try {

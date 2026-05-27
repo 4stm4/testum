@@ -4,7 +4,6 @@
 
 {% block extra_styles %}
 <style>
-  /* ── Status bar ──────────────────────────────────────────────────── */
   .sdn-status-bar {
     display:flex;align-items:center;gap:20px;flex-wrap:wrap;
     padding:12px 18px;
@@ -16,37 +15,45 @@
   .sdn-stat { display:flex;flex-direction:column;gap:2px;min-width:72px; }
   .sdn-stat-label { font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--fg-dim); }
   .sdn-stat-val { font-size:var(--t-sm);color:var(--fg); }
-  .sdn-stat-spacer { flex:1; }
-
-  /* ── Tabs ────────────────────────────────────────────────────────── */
-  .sdn-tabs { display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap; }
-  .sdn-tab {
-    padding:5px 14px;font-size:var(--t-xs);font-family:var(--font-mono);
-    text-transform:uppercase;letter-spacing:1px;
-    background:var(--surface-2);border:1px solid var(--surface-4);
-    border-radius:var(--r-sm);cursor:pointer;color:var(--fg-dim);
-    transition:color .15s, background .15s, border-color .15s;
-  }
-  .sdn-tab:hover { color:var(--fg);border-color:var(--surface-5); }
-  .sdn-tab.active { background:var(--signal);color:#000;border-color:var(--signal); }
 
   .sdn-panel { display:none; }
   .sdn-panel.active { display:block; }
 
-  /* ── Misc ────────────────────────────────────────────────────────── */
-  .spec-hash-cell {
-    font-family:monospace;font-size:var(--t-xs);color:var(--fg-dim);
-    max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  .sdn-panel-hdr {
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;margin-bottom:12px;flex-wrap:wrap;
   }
-  .mono-id {
+  .sdn-panel-hdr-label {
+    font-size:var(--t-xs);text-transform:uppercase;letter-spacing:1px;color:var(--fg-dim);
+  }
+
+  .spec-hash-cell,.mono-id {
     font-family:monospace;font-size:var(--t-xs);color:var(--fg-dim);
     max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
+
+  /* shared modal */
+  .modal-bd {
+    position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;
+    display:none;align-items:center;justify-content:center;
+  }
+  .modal-bd.open { display:flex; }
+  .modal-box {
+    background:var(--surface-1);border:1px solid var(--surface-4);
+    border-radius:var(--r-lg);padding:28px;min-width:380px;max-width:480px;width:100%;
+    max-height:90vh;overflow-y:auto;
+  }
+  .modal-title {
+    font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;
+    color:var(--fg-dim);margin-bottom:16px;
+  }
+  .modal-fields { display:flex;flex-direction:column;gap:14px; }
+  .modal-actions { display:flex;gap:8px;justify-content:flex-end;margin-top:20px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- ── Header ──────────────────────────────────────────────────────── -->
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
   <div>
     <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;" data-i18n="sdn">SDN</div>
@@ -64,198 +71,279 @@
   </div>
 </div>
 
-<!-- ── Sync status bar ─────────────────────────────────────────────── -->
+<!-- ── Sync status bar ──────────────────────────────────────────────────── -->
 <div class="sdn-status-bar">
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnWatermark">Watermark</span>
-    <span id="syncWatermark" class="sdn-stat-val">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnLastSync">Last sync</span>
-    <span id="syncLastAt" class="sdn-stat-val">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnSubscription">Sub ID</span>
-    <span id="syncSubId" class="sdn-stat-val mono-id">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnFailures">Failures</span>
-    <span id="syncFailures" class="sdn-stat-val">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnNetworks">Networks</span>
-    <span id="syncNetCount" class="sdn-stat-val">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnNodes">Nodes</span>
-    <span id="syncNodeCount" class="sdn-stat-val">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnPortCount">Ports</span>
-    <span id="syncPortCount" class="sdn-stat-val">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnRouterCount">Routers</span>
-    <span id="syncRouterCount" class="sdn-stat-val">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnLbCount">LBs</span>
-    <span id="syncLbCount" class="sdn-stat-val">—</span>
-  </div>
-  <div class="sdn-stat">
-    <span class="sdn-stat-label" data-i18n="sdnVpnCount">VPNs</span>
-    <span id="syncVpnCount" class="sdn-stat-val">—</span>
-  </div>
+  <div class="sdn-stat"><span class="sdn-stat-label">Watermark</span><span id="syncWatermark" class="sdn-stat-val">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">Last sync</span><span id="syncLastAt" class="sdn-stat-val">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">Sub ID</span><span id="syncSubId" class="sdn-stat-val mono-id">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">Failures</span><span id="syncFailures" class="sdn-stat-val">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">Networks</span><span id="syncNetCount" class="sdn-stat-val">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">Nodes</span><span id="syncNodeCount" class="sdn-stat-val">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">Ports</span><span id="syncPortCount" class="sdn-stat-val">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">Routers</span><span id="syncRouterCount" class="sdn-stat-val">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">LBs</span><span id="syncLbCount" class="sdn-stat-val">—</span></div>
+  <div class="sdn-stat"><span class="sdn-stat-label">VPNs</span><span id="syncVpnCount" class="sdn-stat-val">—</span></div>
 </div>
 
-<!-- ── Tab bar ────────────────────────────────────────────────────── -->
-<div class="sdn-tabs" id="sdnTabs">
-  <button class="sdn-tab active" data-tab="networks"  data-i18n="sdnTabNetworks">Networks</button>
-  <button class="sdn-tab"        data-tab="nodes"     data-i18n="sdnTabNodes">Nodes</button>
-  <button class="sdn-tab"        data-tab="ports"     data-i18n="sdnTabPorts">Ports</button>
-  <button class="sdn-tab"        data-tab="routers"   data-i18n="sdnTabRouters">Routers</button>
-  <button class="sdn-tab"        data-tab="ops"       data-i18n="sdnTabOps">Operations</button>
-  <button class="sdn-tab"        data-tab="projects"  data-i18n="sdnTabProjects">Projects</button>
-</div>
-
-<!-- ── Networks ───────────────────────────────────────────────────── -->
+<!-- ── Networks ───────────────────────────────────────────────────────── -->
 <div class="sdn-panel active" id="panel-networks">
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th data-i18n="sdnColName">NAME</th>
-          <th data-i18n="sdnColType">TYPE</th>
-          <th data-i18n="sdnColProject">PROJECT</th>
-          <th data-i18n="sdnColVni">VNI</th>
-          <th data-i18n="sdnColVlan">VLAN</th>
-          <th data-i18n="sdnColNodes">NODES</th>
-          <th data-i18n="sdnColSpecHash">SPEC HASH</th>
-          <th data-i18n="updated">UPDATED</th>
-        </tr>
-      </thead>
-      <tbody id="networksBody">
-        <tr><td colspan="8" class="empty-row" data-i18n="loading">Loading…</td></tr>
-      </tbody>
-    </table>
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Networks</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('networks')">+ Create</button>
   </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>NAME</th><th>TYPE</th><th>PROJECT</th><th>VNI</th>
+      <th>VLAN</th><th>NODES</th><th>SPEC HASH</th><th>UPDATED</th><th></th>
+    </tr></thead>
+    <tbody id="networksBody"><tr><td colspan="9" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
 </div>
 
-<!-- ── Nodes ─────────────────────────────────────────────────────── -->
+<!-- ── Nodes ─────────────────────────────────────────────────────────── -->
 <div class="sdn-panel" id="panel-nodes">
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th data-i18n="sdnColName">NAME</th>
-          <th data-i18n="sdnColMgmtIp">MGMT IP</th>
-          <th data-i18n="sdnColStatus">STATUS</th>
-          <th data-i18n="sdnColAgentVer">AGENT VER</th>
-          <th>ROLES</th>
-          <th data-i18n="updated">UPDATED</th>
-        </tr>
-      </thead>
-      <tbody id="nodesBody">
-        <tr><td colspan="6" class="empty-row" data-i18n="loading">Loading…</td></tr>
-      </tbody>
-    </table>
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Nodes</span>
   </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>NAME</th><th>MGMT IP</th><th>STATUS</th><th>AGENT VER</th><th>ROLES</th><th>UPDATED</th><th></th>
+    </tr></thead>
+    <tbody id="nodesBody"><tr><td colspan="7" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
 </div>
 
-<!-- ── Logical Ports ─────────────────────────────────────────────── -->
+<!-- ── Logical Ports ──────────────────────────────────────────────────── -->
 <div class="sdn-panel" id="panel-ports">
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th data-i18n="sdnColName">NAME</th>
-          <th data-i18n="sdnColNetwork">NETWORK</th>
-          <th data-i18n="sdnColProject">PROJECT</th>
-          <th data-i18n="sdnColStatus">STATUS</th>
-          <th data-i18n="sdnColMac">MAC</th>
-          <th data-i18n="sdnColIp">IP</th>
-          <th data-i18n="updated">UPDATED</th>
-        </tr>
-      </thead>
-      <tbody id="portsBody">
-        <tr><td colspan="7" class="empty-row" data-i18n="loading">Loading…</td></tr>
-      </tbody>
-    </table>
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Logical Ports</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('ports')">+ Create</button>
   </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>NAME</th><th>NETWORK</th><th>PROJECT</th><th>STATUS</th>
+      <th>MAC</th><th>IP</th><th>UPDATED</th><th></th>
+    </tr></thead>
+    <tbody id="portsBody"><tr><td colspan="8" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
 </div>
 
-<!-- ── Routers ───────────────────────────────────────────────────── -->
+<!-- ── Routers ───────────────────────────────────────────────────────── -->
 <div class="sdn-panel" id="panel-routers">
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th data-i18n="sdnColName">NAME</th>
-          <th data-i18n="sdnColProject">PROJECT</th>
-          <th data-i18n="sdnColStatus">STATUS</th>
-          <th data-i18n="sdnColMode">MODE</th>
-          <th data-i18n="updated">UPDATED</th>
-        </tr>
-      </thead>
-      <tbody id="routersBody">
-        <tr><td colspan="5" class="empty-row" data-i18n="loading">Loading…</td></tr>
-      </tbody>
-    </table>
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Routers</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('routers')">+ Create</button>
   </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>NAME</th><th>PROJECT</th><th>STATUS</th><th>MODE</th><th>UPDATED</th><th></th>
+    </tr></thead>
+    <tbody id="routersBody"><tr><td colspan="6" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
 </div>
 
-<!-- ── Operations ────────────────────────────────────────────────── -->
-<div class="sdn-panel" id="panel-ops">
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th data-i18n="sdnColKind">KIND</th>
-          <th data-i18n="sdnColStatus">STATUS</th>
-          <th data-i18n="sdnColProject">PROJECT</th>
-          <th data-i18n="sdnColNervumId">NERVUM OP</th>
-          <th data-i18n="sdnColStarted">STARTED</th>
-          <th data-i18n="sdnColFinished">FINISHED</th>
-          <th data-i18n="sdnColError">ERROR</th>
-        </tr>
-      </thead>
-      <tbody id="opsBody">
-        <tr><td colspan="7" class="empty-row" data-i18n="loading">Loading…</td></tr>
-      </tbody>
-    </table>
+<!-- ── Security Groups ────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-secgroups">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Security Groups</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('secgroups')">+ Create</button>
   </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>RULES</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="secgroupsBody"><tr><td colspan="5" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
 </div>
 
-<!-- ── Project bindings ───────────────────────────────────────────── -->
+<!-- ── Floating IPs ───────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-fips">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Floating IPs</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('fips')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>ADDRESS</th><th>PROJECT</th><th>ROUTER</th><th>STATUS</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="fipsBody"><tr><td colspan="6" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── VPN Tunnels ────────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-vpn">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">VPN Tunnels</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('vpn')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>PROTOCOL</th><th>STATUS</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="vpnBody"><tr><td colspan="6" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Load Balancers ─────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-lbs">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Load Balancers</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('lbs')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>ROUTER</th><th>STATUS</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="lbsBody"><tr><td colspan="6" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── BGP Peers ──────────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-bgp">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">BGP Peers</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('bgp')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>PEER IP</th><th>REMOTE ASN</th><th>ROUTER</th><th>PROJECT</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="bgpBody"><tr><td colspan="6" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Address Pools ──────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-pools">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Address Pools</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('pools')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>CIDR</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="poolsBody"><tr><td colspan="5" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Service Objects ────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-svcobj">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Service Objects</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('svcobj')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>PROTOCOL</th><th>PORT RANGE</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="svcobjBody"><tr><td colspan="6" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── QoS Policies ───────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-qos">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">QoS Policies</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('qos')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="qosBody"><tr><td colspan="4" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Security Policies ─────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-secpol">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Security Policies</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('secpol')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>STATUS</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="secpolBody"><tr><td colspan="5" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Trunk Ports ────────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-trunk">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Trunk Ports</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('trunk')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="trunkBody"><tr><td colspan="4" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Gateway Bonds ──────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-gwbond">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Gateway Bonds</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('gwbond')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>MODE</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="gwbondBody"><tr><td colspan="4" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Apply Schedules ────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-sched">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Apply Schedules</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('sched')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>STATUS</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="schedBody"><tr><td colspan="5" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Mirror Sessions ────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-mirror">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Mirror Sessions</span>
+    <button class="btn btn-signal btn-sm" onclick="openCreate('mirror')">+ Create</button>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>NAME</th><th>PROJECT</th><th>STATUS</th><th>UPDATED</th><th></th></tr></thead>
+    <tbody id="mirrorBody"><tr><td colspan="5" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Project bindings ───────────────────────────────────────────────── -->
 <div class="sdn-panel" id="panel-projects">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-    <span style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:1px;color:var(--fg-dim);" data-i18n="sdnProjects">Projects</span>
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Projects</span>
     <button class="btn btn-signal btn-sm" onclick="showBindModal()" data-i18n="sdnBindProject">Bind Project</button>
   </div>
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th data-i18n="sdnColTestumProject">TESTUM PROJECT</th>
-          <th data-i18n="sdnColNervumProject">NERVUM PROJECT</th>
-          <th data-i18n="sdnColSlug">SLUG</th>
-          <th data-i18n="sdnColBoundStatus">STATUS</th>
-          <th data-i18n="sdnColLastSync">LAST SYNC</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="projectsBody">
-        <tr><td colspan="6" class="empty-row" data-i18n="loading">Loading…</td></tr>
-      </tbody>
-    </table>
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>TESTUM PROJECT</th><th>NERVUM PROJECT</th><th>SLUG</th>
+      <th>STATUS</th><th>LAST SYNC</th><th></th>
+    </tr></thead>
+    <tbody id="projectsBody"><tr><td colspan="6" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Operations ────────────────────────────────────────────────────── -->
+<div class="sdn-panel" id="panel-ops">
+  <div class="sdn-panel-hdr">
+    <span class="sdn-panel-hdr-label">Operations</span>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>KIND</th><th>STATUS</th><th>PROJECT</th>
+      <th>NERVUM OP</th><th>STARTED</th><th>FINISHED</th><th>ERROR</th>
+    </tr></thead>
+    <tbody id="opsBody"><tr><td colspan="7" class="empty-row">Loading…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- ── Shared Create Modal ─────────────────────────────────────────────── -->
+<div id="createModal" class="modal-bd">
+  <div class="modal-box">
+    <div class="modal-title" id="createModalTitle">Create</div>
+    <div class="modal-fields" id="createModalFields"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="hideCreate()">Cancel</button>
+      <button class="btn btn-signal" onclick="submitCreate()" id="createSubmitBtn">Create</button>
+    </div>
   </div>
 </div>
 
-<!-- ── Bind Project Modal ──────────────────────────────────────────── -->
-<div id="bindModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center;">
-  <div style="background:var(--surface-1);border:1px solid var(--surface-4);border-radius:var(--r-lg);padding:28px;min-width:380px;max-width:480px;width:100%;">
-    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:16px;" data-i18n="sdnBindProject">Bind Project</div>
-    <div style="display:flex;flex-direction:column;gap:14px;">
+<!-- ── Bind Project Modal ──────────────────────────────────────────────── -->
+<div id="bindModal" class="modal-bd">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="sdnBindProject">Bind Project</div>
+    <div class="modal-fields">
       <div>
         <label class="field-label" for="bindTestumId">Testum Project ID</label>
         <input id="bindTestumId" class="field" type="text" placeholder="e.g. proj-abc123">
@@ -269,9 +357,9 @@
         <input id="bindSlug" class="field" type="text" placeholder="my-project">
       </div>
     </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+    <div class="modal-actions">
       <button class="btn btn-ghost" onclick="hideBindModal()">Cancel</button>
-      <button class="btn btn-signal" onclick="submitBinding()" id="bindSubmitBtn" data-i18n="sdnBindProject">Bind Project</button>
+      <button class="btn btn-signal" onclick="submitBinding()" id="bindSubmitBtn">Bind Project</button>
     </div>
   </div>
 </div>
@@ -292,7 +380,7 @@ function statusPill(s) {
     return `<span class="pill pill-ok">${s}</span>`;
   if (['error','failed','apply_failed','down'].includes(sl))
     return `<span class="pill pill-err">${s}</span>`;
-  if (['build','planning','running','verifying','pending'].includes(sl))
+  if (['build','planning','running','verifying','pending','draft'].includes(sl))
     return `<span class="pill pill-warn">${s}</span>`;
   return `<span class="pill pill-muted">${s}</span>`;
 }
@@ -308,17 +396,23 @@ function opPill(s) {
 
 function shortId(id) {
   if (!id) return '—';
-  return `<span class="mono-id" title="${id}">${id.length > 18 ? id.slice(0,18)+'…' : id}</span>`;
+  return `<span class="mono-id" title="${id}">${id.length > 16 ? id.slice(0,16)+'…' : id}</span>`;
 }
 
-// ── Data loading ───────────────────────────────────────────────────────────
+function delBtn(endpoint, id, resKey) {
+  const eid  = id.replace(/'/g, "\\'");
+  const ekey = resKey.replace(/'/g, "\\'");
+  return `<button class="btn btn-ghost btn-sm" onclick="deleteRes('${endpoint}','${eid}','${ekey}')" title="Delete">✕</button>`;
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
 async function loadStatus() {
   const r = await fetch('/api/sdn/sync/status');
   if (!r.ok) return;
   const st = await r.json();
   document.getElementById('syncWatermark').textContent   = st.watermark ?? '—';
   document.getElementById('syncLastAt').textContent      = fmtDate(st.last_synced_at);
-  document.getElementById('syncSubId').textContent       = st.subscription_id ? st.subscription_id.slice(0,22)+'…' : '—';
+  document.getElementById('syncSubId').textContent       = st.subscription_id ? st.subscription_id.slice(0,20)+'…' : '—';
   document.getElementById('syncFailures').textContent    = st.consecutive_failures ?? '—';
   document.getElementById('syncNetCount').textContent    = st.network_count ?? '—';
   document.getElementById('syncNodeCount').textContent   = st.node_count ?? '—';
@@ -329,139 +423,338 @@ async function loadStatus() {
 
   const connEl = document.getElementById('nervumConnStatus');
   if (st.nervum_configured) {
-    connEl.textContent = t('sdnConnected');
-    connEl.className = 'pill pill-ok';
+    connEl.textContent = t('sdnConnected'); connEl.className = 'pill pill-ok';
   } else {
-    connEl.textContent = t('sdnDisconnected');
-    connEl.className = 'pill pill-muted';
+    connEl.textContent = t('sdnDisconnected'); connEl.className = 'pill pill-muted';
   }
 }
 
+// ── Loaders ────────────────────────────────────────────────────────────────
 async function loadNetworks() {
   const r = await fetch('/api/sdn/networks');
   const tbody = document.getElementById('networksBody');
-  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="8" class="empty-row">${t('failedToLoad')}</td></tr>`; return; }
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="9" class="empty-row">Failed to load</td></tr>`; return; }
   const nets = await r.json();
-  if (!nets.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-row">${t('sdnNoneNetworks')}</td></tr>`; return; }
-  tbody.innerHTML = nets.map(n => `
-    <tr>
-      <td>${n.name || '—'}</td>
-      <td>${n.type || '—'}</td>
-      <td>${n.project_id || '—'}</td>
-      <td>${n.vni ?? '—'}</td>
-      <td>${n.vlan_id ?? '—'}</td>
-      <td>${(n.node_ids || []).length}</td>
-      <td class="spec-hash-cell" title="${n.spec_hash || ''}">${n.spec_hash ? n.spec_hash.slice(0,16)+'…' : '—'}</td>
-      <td>${fmtDate(n.updated_at)}</td>
-    </tr>`).join('');
+  if (!nets.length) { tbody.innerHTML = `<tr><td colspan="9" class="empty-row">No networks</td></tr>`; return; }
+  tbody.innerHTML = nets.map(n => `<tr>
+    <td>${n.name||'—'}</td>
+    <td>${n.type||'—'}</td>
+    <td>${n.project_id||'—'}</td>
+    <td>${n.vni??'—'}</td>
+    <td>${n.vlan_id??'—'}</td>
+    <td>${(n.node_ids||[]).length}</td>
+    <td class="spec-hash-cell" title="${n.spec_hash||''}">${n.spec_hash?n.spec_hash.slice(0,14)+'…':'—'}</td>
+    <td>${fmtDate(n.updated_at)}</td>
+    <td>${delBtn('/api/sdn/networks', n.id, 'networks')}</td>
+  </tr>`).join('');
 }
 
 async function loadNodes() {
   const r = await fetch('/api/sdn/nodes');
   const tbody = document.getElementById('nodesBody');
-  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">${t('failedToLoad')}</td></tr>`; return; }
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">Failed to load</td></tr>`; return; }
   const nodes = await r.json();
-  if (!nodes.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">${t('sdnNoneNodes')}</td></tr>`; return; }
-  tbody.innerHTML = nodes.map(n => `
-    <tr>
-      <td>${n.name || '—'}</td>
-      <td>${n.mgmt_ip || '—'}</td>
-      <td>${statusPill(n.status)}</td>
-      <td>${n.agent_version || '—'}</td>
-      <td>${(n.roles || []).join(', ') || '—'}</td>
-      <td>${fmtDate(n.updated_at)}</td>
-    </tr>`).join('');
+  if (!nodes.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">No nodes</td></tr>`; return; }
+  tbody.innerHTML = nodes.map(n => `<tr>
+    <td>${n.name||'—'}</td>
+    <td>${n.mgmt_ip||'—'}</td>
+    <td>${statusPill(n.status)}</td>
+    <td>${n.agent_version||'—'}</td>
+    <td>${(n.roles||[]).join(', ')||'—'}</td>
+    <td>${fmtDate(n.updated_at)}</td>
+    <td>${delBtn('/api/sdn/nodes', n.id, 'nodes')}</td>
+  </tr>`).join('');
 }
 
 async function loadPorts() {
   const r = await fetch('/api/sdn/logical-ports');
   const tbody = document.getElementById('portsBody');
-  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">${t('failedToLoad')}</td></tr>`; return; }
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="8" class="empty-row">Failed to load</td></tr>`; return; }
   const ports = await r.json();
-  if (!ports.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">${t('sdnNonePorts')}</td></tr>`; return; }
-  tbody.innerHTML = ports.map(p => `
-    <tr>
-      <td>${p.name || '—'}</td>
-      <td>${p.network_id || '—'}</td>
-      <td>${p.project_id || '—'}</td>
-      <td>${statusPill(p.status)}</td>
-      <td>${p.mac || '—'}</td>
-      <td>${p.ip_address || '—'}</td>
-      <td>${fmtDate(p.updated_at)}</td>
-    </tr>`).join('');
+  if (!ports.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-row">No ports</td></tr>`; return; }
+  tbody.innerHTML = ports.map(p => `<tr>
+    <td>${p.name||'—'}</td>
+    <td>${p.network_id||'—'}</td>
+    <td>${p.project_id||'—'}</td>
+    <td>${statusPill(p.status)}</td>
+    <td>${p.mac||'—'}</td>
+    <td>${p.ip_address||'—'}</td>
+    <td>${fmtDate(p.updated_at)}</td>
+    <td>${delBtn('/api/sdn/logical-ports', p.id, 'ports')}</td>
+  </tr>`).join('');
 }
 
 async function loadRouters() {
   const r = await fetch('/api/sdn/routers');
   const tbody = document.getElementById('routersBody');
-  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">${t('failedToLoad')}</td></tr>`; return; }
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Failed to load</td></tr>`; return; }
   const rows = await r.json();
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">${t('sdnNoneRouters')}</td></tr>`; return; }
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      <td>${r.name || '—'}</td>
-      <td>${r.project_id || '—'}</td>
-      <td>${statusPill(r.status)}</td>
-      <td>${r.mode || '—'}</td>
-      <td>${fmtDate(r.updated_at)}</td>
-    </tr>`).join('');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No routers</td></tr>`; return; }
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td>${r.name||'—'}</td>
+    <td>${r.project_id||'—'}</td>
+    <td>${statusPill(r.status)}</td>
+    <td>${r.mode||'—'}</td>
+    <td>${fmtDate(r.updated_at)}</td>
+    <td>${delBtn('/api/sdn/routers', r.id, 'routers')}</td>
+  </tr>`).join('');
 }
 
-async function loadOps() {
-  const r = await fetch('/api/sdn/operations?limit=50');
-  const tbody = document.getElementById('opsBody');
-  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">${t('failedToLoad')}</td></tr>`; return; }
-  const ops = await r.json();
-  if (!ops.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">${t('sdnNoneOps')}</td></tr>`; return; }
-  tbody.innerHTML = ops.map(o => `
-    <tr>
-      <td>${o.kind || '—'}</td>
-      <td>${opPill(o.status)}</td>
-      <td>${o.project_id || '—'}</td>
-      <td>${shortId(o.nervum_operation_id)}</td>
-      <td>${fmtDate(o.started_at)}</td>
-      <td>${fmtDate(o.finished_at)}</td>
-      <td style="color:var(--fg-dim);font-size:var(--t-xs);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${o.error_message||''}">${o.error_message ? o.error_code+': '+o.error_message.slice(0,60) : '—'}</td>
-    </tr>`).join('');
+async function loadSecgroups() {
+  const tbody = document.getElementById('secgroupsBody');
+  const r = await fetch('/api/sdn/security-groups');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No security groups</td></tr>`; return; }
+  tbody.innerHTML = rows.map(g => `<tr>
+    <td>${g.name||'—'}</td>
+    <td>${g.project_id||'—'}</td>
+    <td>${(g.rules||[]).length}</td>
+    <td>${fmtDate(g.updated_at)}</td>
+    <td>${delBtn('/api/sdn/security-groups', g.id, 'secgroups')}</td>
+  </tr>`).join('');
+}
+
+async function loadFips() {
+  const tbody = document.getElementById('fipsBody');
+  const r = await fetch('/api/sdn/floating-ips');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No floating IPs</td></tr>`; return; }
+  tbody.innerHTML = rows.map(f => `<tr>
+    <td>${f.address||'—'}</td>
+    <td>${f.project_id||'—'}</td>
+    <td>${f.router_id||'—'}</td>
+    <td>${statusPill(f.status)}</td>
+    <td>${fmtDate(f.updated_at)}</td>
+    <td>${delBtn('/api/sdn/floating-ips', f.id, 'fips')}</td>
+  </tr>`).join('');
+}
+
+async function loadVpn() {
+  const tbody = document.getElementById('vpnBody');
+  const r = await fetch('/api/sdn/vpn-tunnels');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No VPN tunnels</td></tr>`; return; }
+  tbody.innerHTML = rows.map(v => `<tr>
+    <td>${v.name||'—'}</td>
+    <td>${v.project_id||'—'}</td>
+    <td>${v.protocol||'—'}</td>
+    <td>${statusPill(v.status)}</td>
+    <td>${fmtDate(v.updated_at)}</td>
+    <td>${delBtn('/api/sdn/vpn-tunnels', v.id, 'vpn')}</td>
+  </tr>`).join('');
+}
+
+async function loadLbs() {
+  const tbody = document.getElementById('lbsBody');
+  const r = await fetch('/api/sdn/load-balancers');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No load balancers</td></tr>`; return; }
+  tbody.innerHTML = rows.map(l => `<tr>
+    <td>${l.name||'—'}</td>
+    <td>${l.project_id||'—'}</td>
+    <td>${l.router_id||'—'}</td>
+    <td>${statusPill(l.status)}</td>
+    <td>${fmtDate(l.updated_at)}</td>
+    <td>${delBtn('/api/sdn/load-balancers', l.id, 'lbs')}</td>
+  </tr>`).join('');
+}
+
+async function loadBgp() {
+  const tbody = document.getElementById('bgpBody');
+  const r = await fetch('/api/sdn/bgp-peers');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No BGP peers</td></tr>`; return; }
+  tbody.innerHTML = rows.map(b => `<tr>
+    <td>${b.peer_ip||'—'}</td>
+    <td>${b.remote_asn??'—'}</td>
+    <td>${b.router_id||'—'}</td>
+    <td>${b.project_id||'—'}</td>
+    <td>${fmtDate(b.updated_at)}</td>
+    <td>${delBtn('/api/sdn/bgp-peers', b.id, 'bgp')}</td>
+  </tr>`).join('');
+}
+
+async function loadPools() {
+  const tbody = document.getElementById('poolsBody');
+  const r = await fetch('/api/sdn/address-pools');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No address pools</td></tr>`; return; }
+  tbody.innerHTML = rows.map(p => `<tr>
+    <td>${p.name||'—'}</td>
+    <td>${p.project_id||'—'}</td>
+    <td>${p.cidr||'—'}</td>
+    <td>${fmtDate(p.updated_at)}</td>
+    <td>${delBtn('/api/sdn/address-pools', p.id, 'pools')}</td>
+  </tr>`).join('');
+}
+
+async function loadSvcobj() {
+  const tbody = document.getElementById('svcobjBody');
+  const r = await fetch('/api/sdn/service-objects');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No service objects</td></tr>`; return; }
+  tbody.innerHTML = rows.map(s => `<tr>
+    <td>${s.name||'—'}</td>
+    <td>${s.project_id||'—'}</td>
+    <td>${s.protocol||'—'}</td>
+    <td>${s.port_range||'—'}</td>
+    <td>${fmtDate(s.updated_at)}</td>
+    <td>${delBtn('/api/sdn/service-objects', s.id, 'svcobj')}</td>
+  </tr>`).join('');
+}
+
+async function loadQos() {
+  const tbody = document.getElementById('qosBody');
+  const r = await fetch('/api/sdn/qos-policies');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="4" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty-row">No QoS policies</td></tr>`; return; }
+  tbody.innerHTML = rows.map(q => `<tr>
+    <td>${q.name||'—'}</td>
+    <td>${q.project_id||'—'}</td>
+    <td>${fmtDate(q.updated_at)}</td>
+    <td>${delBtn('/api/sdn/qos-policies', q.id, 'qos')}</td>
+  </tr>`).join('');
+}
+
+async function loadSecpol() {
+  const tbody = document.getElementById('secpolBody');
+  const r = await fetch('/api/sdn/security-policies');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No security policies</td></tr>`; return; }
+  tbody.innerHTML = rows.map(s => `<tr>
+    <td>${s.name||'—'}</td>
+    <td>${s.project_id||'—'}</td>
+    <td>${statusPill(s.status)}</td>
+    <td>${fmtDate(s.updated_at)}</td>
+    <td>${delBtn('/api/sdn/security-policies', s.id, 'secpol')}</td>
+  </tr>`).join('');
+}
+
+async function loadTrunk() {
+  const tbody = document.getElementById('trunkBody');
+  const r = await fetch('/api/sdn/trunk-ports');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="4" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty-row">No trunk ports</td></tr>`; return; }
+  tbody.innerHTML = rows.map(t => `<tr>
+    <td>${t.name||'—'}</td>
+    <td>${t.project_id||'—'}</td>
+    <td>${fmtDate(t.updated_at)}</td>
+    <td>${delBtn('/api/sdn/trunk-ports', t.id, 'trunk')}</td>
+  </tr>`).join('');
+}
+
+async function loadGwbond() {
+  const tbody = document.getElementById('gwbondBody');
+  const r = await fetch('/api/sdn/gateway-bonds');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="4" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty-row">No gateway bonds</td></tr>`; return; }
+  tbody.innerHTML = rows.map(g => `<tr>
+    <td>${g.name||'—'}</td>
+    <td>${g.project_id||'—'}</td>
+    <td>${g.mode||'—'}</td>
+    <td>${fmtDate(g.updated_at)}</td>
+    <td>${delBtn('/api/sdn/gateway-bonds', g.id, 'gwbond')}</td>
+  </tr>`).join('');
+}
+
+async function loadSched() {
+  const tbody = document.getElementById('schedBody');
+  const r = await fetch('/api/sdn/apply-schedules');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No apply schedules</td></tr>`; return; }
+  tbody.innerHTML = rows.map(s => `<tr>
+    <td>${s.name||'—'}</td>
+    <td>${s.project_id||'—'}</td>
+    <td>${statusPill(s.status)}</td>
+    <td>${fmtDate(s.updated_at)}</td>
+    <td>${delBtn('/api/sdn/apply-schedules', s.id, 'sched')}</td>
+  </tr>`).join('');
+}
+
+async function loadMirror() {
+  const tbody = document.getElementById('mirrorBody');
+  const r = await fetch('/api/sdn/mirror-sessions');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">Failed to load</td></tr>`; return; }
+  const rows = await r.json();
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No mirror sessions</td></tr>`; return; }
+  tbody.innerHTML = rows.map(m => `<tr>
+    <td>${m.name||'—'}</td>
+    <td>${m.project_id||'—'}</td>
+    <td>${statusPill(m.status)}</td>
+    <td>${fmtDate(m.updated_at)}</td>
+    <td>${delBtn('/api/sdn/mirror-sessions', m.id, 'mirror')}</td>
+  </tr>`).join('');
 }
 
 async function loadProjects() {
   const r = await fetch('/api/sdn/projects');
   const tbody = document.getElementById('projectsBody');
-  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">${t('failedToLoad')}</td></tr>`; return; }
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Failed to load</td></tr>`; return; }
   const rows = await r.json();
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">${t('sdnNoneProjects')}</td></tr>`; return; }
-  tbody.innerHTML = rows.map(b => `
-    <tr>
-      <td>${b.testum_project_id || '—'}</td>
-      <td>${b.nervum_project_id || '—'}</td>
-      <td>${b.nervum_project_slug || '—'}</td>
-      <td>${statusPill(b.status)}</td>
-      <td>${fmtDate(b.last_sync_at)}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="unbindProject('${b.id}')" data-i18n="sdnUnbind">Unbind</button></td>
-    </tr>`).join('');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No project bindings</td></tr>`; return; }
+  tbody.innerHTML = rows.map(b => `<tr>
+    <td>${b.testum_project_id||'—'}</td>
+    <td>${b.nervum_project_id||'—'}</td>
+    <td>${b.nervum_project_slug||'—'}</td>
+    <td>${statusPill(b.status)}</td>
+    <td>${fmtDate(b.last_sync_at)}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="unbindProject('${b.id}')">Unbind</button></td>
+  </tr>`).join('');
+}
+
+async function loadOps() {
+  const r = await fetch('/api/sdn/operations?limit=50');
+  const tbody = document.getElementById('opsBody');
+  if (!r.ok) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">Failed to load</td></tr>`; return; }
+  const ops = await r.json();
+  if (!ops.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-row">No operations</td></tr>`; return; }
+  tbody.innerHTML = ops.map(o => `<tr>
+    <td>${o.kind||'—'}</td>
+    <td>${opPill(o.status)}</td>
+    <td>${o.project_id||'—'}</td>
+    <td>${shortId(o.nervum_operation_id)}</td>
+    <td>${fmtDate(o.started_at)}</td>
+    <td>${fmtDate(o.finished_at)}</td>
+    <td style="color:var(--fg-dim);font-size:var(--t-xs);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${o.error_message||''}">${o.error_message?o.error_code+': '+o.error_message.slice(0,60):'—'}</td>
+  </tr>`).join('');
 }
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 const LOADERS = {
-  networks: loadNetworks,
-  nodes: loadNodes,
-  ports: loadPorts,
-  routers: loadRouters,
-  ops: loadOps,
-  projects: loadProjects,
+  networks: loadNetworks, nodes: loadNodes, ports: loadPorts, routers: loadRouters,
+  secgroups: loadSecgroups, fips: loadFips, vpn: loadVpn, lbs: loadLbs,
+  bgp: loadBgp, pools: loadPools, svcobj: loadSvcobj, qos: loadQos,
+  secpol: loadSecpol, trunk: loadTrunk, gwbond: loadGwbond,
+  sched: loadSched, mirror: loadMirror,
+  projects: loadProjects, ops: loadOps,
 };
 const loaded = {};
 
 function switchTab(tabId) {
-  document.querySelectorAll('.sdn-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+  if (!LOADERS[tabId]) tabId = 'networks';
   document.querySelectorAll('.sdn-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-'+tabId));
+  // sync sidebar active state
+  document.querySelectorAll('[data-sdn-tab]').forEach(el => el.classList.toggle('active', el.dataset.sdnTab === tabId));
+  history.replaceState(null, '', '#' + tabId);
   if (!loaded[tabId]) { loaded[tabId] = true; LOADERS[tabId]?.(); }
 }
 
-document.getElementById('sdnTabs').addEventListener('click', e => {
-  const tab = e.target.closest('.sdn-tab');
-  if (tab) switchTab(tab.dataset.tab);
+// ── Handle browser back/forward and direct hash links ──────────────────────
+window.addEventListener('hashchange', () => {
+  const tabId = location.hash.slice(1) || 'networks';
+  switchTab(tabId);
 });
 
 // ── Resync ────────────────────────────────────────────────────────────────
@@ -477,16 +770,199 @@ async function triggerResync() {
   finally    { btn.disabled = false; }
 }
 
+// ── Generic Create Modal ──────────────────────────────────────────────────
+const CREATE_FIELDS = {
+  networks: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'type',       label:'Type',       ph:'vxlan / vlan / flat'},
+    {name:'project_id', label:'Project ID'},
+    {name:'vni',        label:'VNI',        type:'number'},
+    {name:'mtu',        label:'MTU',        type:'number', ph:'1500'},
+  ],
+  ports: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'network_id', label:'Network ID', req:true},
+    {name:'project_id', label:'Project ID'},
+  ],
+  routers: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+    {name:'mode',       label:'IPv6 Mode',  ph:'off / slaac / stateful'},
+  ],
+  secgroups: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+  ],
+  fips: [
+    {name:'address',    label:'IP Address', ph:'e.g. 10.0.0.100'},
+    {name:'project_id', label:'Project ID'},
+    {name:'router_id',  label:'Router ID'},
+  ],
+  vpn: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+    {name:'protocol',   label:'Protocol',   ph:'wireguard / ipsec'},
+  ],
+  lbs: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+    {name:'router_id',  label:'Router ID'},
+  ],
+  bgp: [
+    {name:'peer_ip',    label:'Peer IP',    req:true},
+    {name:'remote_asn', label:'Remote ASN', type:'number'},
+    {name:'router_id',  label:'Router ID'},
+    {name:'project_id', label:'Project ID'},
+  ],
+  pools: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'cidr',       label:'CIDR',       ph:'e.g. 10.1.0.0/24'},
+    {name:'project_id', label:'Project ID'},
+  ],
+  svcobj: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'protocol',   label:'Protocol',   ph:'tcp / udp / icmp / any'},
+    {name:'port_range', label:'Port Range', ph:'e.g. 80-443'},
+    {name:'project_id', label:'Project ID'},
+  ],
+  qos: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+  ],
+  secpol: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+  ],
+  trunk: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+  ],
+  gwbond: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'mode',       label:'Bond Mode',  ph:'none / active_backup / lacp'},
+    {name:'project_id', label:'Project ID'},
+  ],
+  sched: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+  ],
+  mirror: [
+    {name:'name',       label:'Name',       req:true},
+    {name:'project_id', label:'Project ID'},
+  ],
+};
+
+const CREATE_ENDPOINTS = {
+  networks: '/api/sdn/networks',
+  ports:    '/api/sdn/logical-ports',
+  routers:  '/api/sdn/routers',
+  secgroups:'/api/sdn/security-groups',
+  fips:     '/api/sdn/floating-ips',
+  vpn:      '/api/sdn/vpn-tunnels',
+  lbs:      '/api/sdn/load-balancers',
+  bgp:      '/api/sdn/bgp-peers',
+  pools:    '/api/sdn/address-pools',
+  svcobj:   '/api/sdn/service-objects',
+  qos:      '/api/sdn/qos-policies',
+  secpol:   '/api/sdn/security-policies',
+  trunk:    '/api/sdn/trunk-ports',
+  gwbond:   '/api/sdn/gateway-bonds',
+  sched:    '/api/sdn/apply-schedules',
+  mirror:   '/api/sdn/mirror-sessions',
+};
+
+let _activeCreate = null;
+
+function openCreate(resKey) {
+  const fields = CREATE_FIELDS[resKey];
+  if (!fields) return;
+  _activeCreate = resKey;
+  const label = resKey.replace(/([A-Z])/g, ' $1').trim();
+  document.getElementById('createModalTitle').textContent = 'Create ' + resKey;
+  document.getElementById('createModalFields').innerHTML = fields.map(f => `
+    <div>
+      <label class="field-label" for="cf_${f.name}">${f.label}${f.req?' *':''}</label>
+      <input id="cf_${f.name}" class="field" type="${f.type||'text'}"
+             placeholder="${f.ph||''}" autocomplete="off">
+    </div>
+  `).join('');
+  const modal = document.getElementById('createModal');
+  modal.classList.add('open');
+  modal.querySelector('input')?.focus();
+}
+
+function hideCreate() {
+  document.getElementById('createModal').classList.remove('open');
+  _activeCreate = null;
+}
+
+document.getElementById('createModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) hideCreate();
+});
+
+async function submitCreate() {
+  if (!_activeCreate) return;
+  const fields   = CREATE_FIELDS[_activeCreate];
+  const endpoint = CREATE_ENDPOINTS[_activeCreate];
+  const body = {};
+  for (const f of fields) {
+    const el  = document.getElementById('cf_' + f.name);
+    const val = el ? el.value.trim() : '';
+    if (f.req && !val) { showSnack('✗ ' + f.label + ' is required', 'err'); return; }
+    if (val !== '') body[f.name] = f.type === 'number' ? Number(val) : val;
+  }
+  const btn = document.getElementById('createSubmitBtn');
+  btn.disabled = true;
+  try {
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 200 || r.status === 201) {
+      showSnack('✓ Created', 'ok');
+      const resKey = _activeCreate;
+      hideCreate();
+      loaded[resKey] = false;
+      LOADERS[resKey]?.();
+    } else {
+      showSnack('✗ ' + (d.error || d.detail || 'Failed'), 'err');
+    }
+  } catch(e) { showSnack('✗ Network error', 'err'); }
+  finally    { btn.disabled = false; }
+}
+
+// ── Generic Delete ─────────────────────────────────────────────────────────
+async function deleteRes(endpoint, id, resKey) {
+  if (!confirm('Delete this item?')) return;
+  try {
+    const r = await fetch(`${endpoint}/${encodeURIComponent(id)}`, {method: 'DELETE'});
+    if (r.ok) {
+      showSnack('✓ Deleted', 'ok');
+      loaded[resKey] = false;
+      LOADERS[resKey]?.();
+    } else {
+      const d = await r.json().catch(() => ({}));
+      showSnack('✗ ' + (d.error || 'Failed'), 'err');
+    }
+  } catch(e) { showSnack('✗ Network error', 'err'); }
+}
+
 // ── Project binding ───────────────────────────────────────────────────────
 function showBindModal() {
-  document.getElementById('bindModal').style.display = 'flex';
+  document.getElementById('bindModal').classList.add('open');
   document.getElementById('bindTestumId').focus();
 }
 function hideBindModal() {
-  document.getElementById('bindModal').style.display = 'none';
-  ['bindTestumId','bindNervumId','bindSlug'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('bindModal').classList.remove('open');
+  ['bindTestumId','bindNervumId','bindSlug'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
 }
-document.getElementById('bindModal').addEventListener('click', e => { if (e.target === e.currentTarget) hideBindModal(); });
+document.getElementById('bindModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) hideBindModal();
+});
 
 async function submitBinding() {
   const testumId = document.getElementById('bindTestumId').value.trim();
@@ -497,8 +973,13 @@ async function submitBinding() {
   btn.disabled = true;
   try {
     const r = await fetch('/api/sdn/projects', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({testum_project_id: testumId, nervum_project_id: nervumId, nervum_project_slug: slug||null}),
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        testum_project_id: testumId,
+        nervum_project_id: nervumId,
+        nervum_project_slug: slug || null,
+      }),
     });
     const d = await r.json();
     if (r.ok || r.status === 201) {
@@ -521,25 +1002,23 @@ async function unbindProject(bindingId) {
     loaded.projects = false;
     loadProjects();
   } else {
-    const d = await r.json().catch(()=>({}));
+    const d = await r.json().catch(() => ({}));
     showSnack('✗ ' + (d.error||'Failed'), 'err');
   }
 }
 
-// ── Load all (refresh) ────────────────────────────────────────────────────
+// ── Refresh all ────────────────────────────────────────────────────────────
 function loadAll() {
   Object.keys(loaded).forEach(k => { loaded[k] = false; });
   loadStatus();
-  // Re-load whichever tab is active
-  const activeTab = document.querySelector('.sdn-tab.active')?.dataset?.tab || 'networks';
+  const activeTab = location.hash.slice(1) || 'networks';
   loaded[activeTab] = true;
   LOADERS[activeTab]?.();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
 loadStatus();
-loaded.networks = true;
-loadNetworks();
+switchTab(location.hash.slice(1) || 'networks');
 if (typeof applyTranslations === 'function') applyTranslations();
 </script>
 {% endblock %}
