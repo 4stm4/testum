@@ -551,8 +551,8 @@ routes = [
     Mount("/api/backup", backup_router),
     Mount("/api/gitops", gitops_router),
     Mount("/api/virt", virt_router),
-    Mount("/api/sdn", nervum_router),
     Mount("/api/sdn/projects", project_bindings_router),
+    Mount("/api/sdn", nervum_router),
     Mount("/static", StaticFiles(directory=str(_WEB_PORT / "static")), name="static"),
 ]
 

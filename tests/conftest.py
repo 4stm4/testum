@@ -28,6 +28,8 @@ os.environ["APP_ENV"] = "testing"
 
 import app.db as app_db
 from app import models  # noqa: F401 - ensure models are imported for table creation
+import adapters.postgres.orm_models  # noqa: F401 - register all ORM models
+from adapters.postgres.session import Base as AdaptersBase
 from app.config import config
 from app.crypto import CryptoHelper
 from app.db import Base, get_db
@@ -35,12 +37,15 @@ from app.main import app, create_jwt_token
 from app.models import User, UserRole
 from app.security import hash_password
 
+# Alias: all tables live in AdaptersBase
+AllTablesBase = AdaptersBase
+
 
 @pytest.fixture(scope="function")
 def test_db():
     """Create test database."""
     engine = create_engine("sqlite:///./test.db", connect_args={"check_same_thread": False})
-    Base.metadata.create_all(bind=engine)
+    AllTablesBase.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     original_session_local = app_db.SessionLocal
     app_db.SessionLocal = TestingSessionLocal
@@ -55,6 +60,28 @@ def test_db():
     if hasattr(app, "dependency_overrides"):
         app.dependency_overrides[get_db] = override_get_db
 
+    # Patch SessionLocal in every module that imported it directly
+    import importlib
+    _patched = {}
+    _modules_to_patch = [
+        "app.db",
+        "adapters.postgres.session",
+        "adapters.nervum.sync",
+        "adapters.nervum.operations",
+        "adapters.postgres.storage",
+        "ports.api.nervum",
+        "ports.api.nervum_projects",
+        "ports.api.virt",
+    ]
+    for mod_name in _modules_to_patch:
+        try:
+            mod = importlib.import_module(mod_name)
+            if hasattr(mod, "SessionLocal"):
+                _patched[mod_name] = mod.SessionLocal
+                mod.SessionLocal = TestingSessionLocal
+        except ImportError:
+            pass
+
     session = TestingSessionLocal()
     yield session
 
@@ -62,7 +89,14 @@ def test_db():
         del app.dependency_overrides[get_db]
 
     app_db.SessionLocal = original_session_local
-    Base.metadata.drop_all(bind=engine)
+    for mod_name, original in _patched.items():
+        try:
+            mod = importlib.import_module(mod_name)
+            mod.SessionLocal = original
+        except ImportError:
+            pass
+
+    AllTablesBase.metadata.drop_all(bind=engine)
     if os.path.exists("./test.db"):
         os.remove("./test.db")
 
