@@ -116,6 +116,7 @@ async def create_vm(request: Request):
     if nervum_network_id and config.NERVUM_URL:
         try:
             from adapters.nervum.client import NervumClient
+            from adapters.nervum.operations import create_sdn_task, spawn_watch
             client = NervumClient()
             sdn_port = await client.create_logical_port(
                 nervum_network_id,
@@ -129,6 +130,19 @@ async def create_vm(request: Request):
                 "create_vm: logical port id=%s mac=%s created for vm=%s",
                 sdn_port.get("id"), sdn_port.get("mac"), name,
             )
+            # Track the Nervum async operation if one was returned
+            operation_id = sdn_port.get("operation_id")
+            if operation_id:
+                user_ctx = get_request_user(request)
+                sdn_task = create_sdn_task(
+                    operation_id,
+                    project_id=nervum_project_id,
+                    kind="logical_port.create",
+                    resource_type="logical_port",
+                    resource_id=sdn_port.get("id"),
+                    initiated_by=user_ctx.username if user_ctx else None,
+                )
+                spawn_watch(str(sdn_task.id))
         except Exception:
             logger.exception("create_vm: failed to create logical port for vm=%s — proceeding without SDN", name)
             sdn_port = None

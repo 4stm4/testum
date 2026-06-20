@@ -237,7 +237,7 @@ async def test_create_logical_port_payload():
 
 @pytest.mark.asyncio
 async def test_delete_logical_port_404_is_ok():
-    """delete_logical_port should not raise on 404."""
+    """delete_logical_port should not raise on 404 (via RuntimeError wrapping)."""
     import os
     os.environ.setdefault("FERNET_KEY", "XvgfcADXX1oKcITCS8V7iQWr9VcweqQR7H3Vc_2qsFs=")
     os.environ.setdefault("NERVUM_URL", "http://nervum:8080")
@@ -245,7 +245,24 @@ async def test_delete_logical_port_404_is_ok():
     from adapters.nervum.client import NervumClient
 
     with patch("adapters.nervum.client._request", new_callable=AsyncMock) as mock_req:
-        mock_req.side_effect = Exception("404 Not Found")
+        # _request raises RuntimeError with "HTTP 404" after all retries exhausted
+        mock_req.side_effect = RuntimeError("nervum: all 3 attempts failed: HTTP 404")
         client = NervumClient()
         # должно не падать
         await client.delete_logical_port("port-gone")
+
+
+@pytest.mark.asyncio
+async def test_delete_logical_port_non_404_reraises():
+    """delete_logical_port should re-raise non-404 errors."""
+    import os
+    os.environ.setdefault("FERNET_KEY", "XvgfcADXX1oKcITCS8V7iQWr9VcweqQR7H3Vc_2qsFs=")
+    os.environ.setdefault("NERVUM_URL", "http://nervum:8080")
+
+    from adapters.nervum.client import NervumClient
+
+    with patch("adapters.nervum.client._request", new_callable=AsyncMock) as mock_req:
+        mock_req.side_effect = RuntimeError("nervum: all 3 attempts failed: HTTP 503")
+        client = NervumClient()
+        with pytest.raises(RuntimeError, match="503"):
+            await client.delete_logical_port("port-alive")

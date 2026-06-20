@@ -82,6 +82,11 @@ def apply_event(db, event: dict) -> None:
             resource_id=event.get("resource_id"),
             raw=event,
         ))
+        # Advance watermark so recovery doesn't replay this event indefinitely.
+        state = _get_or_create_state(db)
+        if eid > state.watermark:
+            state.watermark = eid
+            state.last_synced_at = datetime.utcnow()
         db.commit()
         return
 
@@ -89,27 +94,6 @@ def apply_event(db, event: dict) -> None:
     rid     = event.get("resource_id") or ""
     pid     = event.get("project_id")
     payload = event.get("payload", {})
-
-    _RESOURCE_HANDLERS = {
-        "network":         _apply_network_event,
-        "node":            _apply_node_event,
-        "logical_port":    _apply_logical_port_event,
-        "security_group":  _apply_security_group_event,
-        "address_pool":    _apply_address_pool_event,
-        "service_object":  _apply_service_object_event,
-        "qos_policy":      _apply_qos_policy_event,
-        "security_policy": _apply_security_policy_event,
-        "trunk_port":      _apply_trunk_port_event,
-        "router":          _apply_router_event,
-        "floating_ip":     _apply_floating_ip_event,
-        "bgp_peer":        _apply_bgp_peer_event,
-        "gateway_bond":    _apply_gateway_bond_event,
-        "load_balancer":   _apply_load_balancer_event,
-        "apply_schedule":  _apply_apply_schedule_event,
-        "mirror_session":  _apply_mirror_session_event,
-        "vpn_tunnel":      _apply_vpn_tunnel_event,
-        "project":         _apply_project_event,
-    }
 
     handler = _RESOURCE_HANDLERS.get(rtype)
     if handler:
@@ -325,6 +309,29 @@ def _apply_project_event(db, etype: str, rid: str, _pid: str | None, payload: di
                 slug="slug", status="status")
     elif etype == "project.deleted":
         _delete(db, NervumProjectRow, rid)
+
+
+# Module-level constant — built once after all handler functions are defined.
+_RESOURCE_HANDLERS = {
+    "network":         _apply_network_event,
+    "node":            _apply_node_event,
+    "logical_port":    _apply_logical_port_event,
+    "security_group":  _apply_security_group_event,
+    "address_pool":    _apply_address_pool_event,
+    "service_object":  _apply_service_object_event,
+    "qos_policy":      _apply_qos_policy_event,
+    "security_policy": _apply_security_policy_event,
+    "trunk_port":      _apply_trunk_port_event,
+    "router":          _apply_router_event,
+    "floating_ip":     _apply_floating_ip_event,
+    "bgp_peer":        _apply_bgp_peer_event,
+    "gateway_bond":    _apply_gateway_bond_event,
+    "load_balancer":   _apply_load_balancer_event,
+    "apply_schedule":  _apply_apply_schedule_event,
+    "mirror_session":  _apply_mirror_session_event,
+    "vpn_tunnel":      _apply_vpn_tunnel_event,
+    "project":         _apply_project_event,
+}
 
 
 # ── Bootstrap ─────────────────────────────────────────────────────────────

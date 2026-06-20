@@ -66,6 +66,25 @@ async def create_binding(request: Request):
             .first()
         )
         if existing:
+            if (
+                existing.nervum_project_id != nervum_pid
+                or existing.nervum_project_slug != nervum_slug
+            ):
+                existing.nervum_project_id = nervum_pid
+                existing.nervum_project_slug = nervum_slug
+                db.commit()
+                db.refresh(existing)
+                log_audit(
+                    db,
+                    user=user.username if user else "system",
+                    action="update",
+                    object_type="nervum_project_binding",
+                    object_id=str(existing.id),
+                    meta={
+                        "testum_project_id": testum_pid,
+                        "nervum_project_id": nervum_pid,
+                    },
+                )
             return JSONResponse(_binding_dict(existing))
 
         row = NervumProjectBindingRow(

@@ -38,7 +38,7 @@ from adapters.postgres.orm_models import (
 )
 from app.config import config
 from app.db import SessionLocal
-from app.rbac import require_roles, ALL_ROLES
+from app.rbac import require_roles, ALL_ROLES, WRITE_ROLES
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ def _make_create(RowClass, build_fn):
                 {"id": result.id, "name": getattr(result, "name", result.id)},
                 status_code=201,
             )
-    return require_roles(*ALL_ROLES)(_h)
+    return require_roles(*WRITE_ROLES)(_h)
 
 
 def _make_delete(RowClass):
@@ -102,7 +102,7 @@ def _make_delete(RowClass):
             db.delete(row)
             db.commit()
         return JSONResponse({"status": "deleted"})
-    return require_roles(*ALL_ROLES)(_h)
+    return require_roles(*WRITE_ROLES)(_h)
 
 
 def _req(body, field):
@@ -193,9 +193,13 @@ async def webhook_receiver(request: Request):
         if delivery_id in _seen_delivery_ids:
             logger.debug("nervum webhook: duplicate delivery_id=%s — ignored", delivery_id)
             return JSONResponse({"status": "duplicate"}, status_code=200)
+        # Evict when full — keep the set bounded without losing the id just added.
+        # In-process only; multi-worker setups rely on apply_event idempotency.
+        if len(_seen_delivery_ids) >= _MAX_SEEN:
+            # Discard an arbitrary half to amortise eviction cost
+            to_drop = set(list(_seen_delivery_ids)[: _MAX_SEEN // 2])
+            _seen_delivery_ids.difference_update(to_drop)
         _seen_delivery_ids.add(delivery_id)
-        if len(_seen_delivery_ids) > _MAX_SEEN:
-            _seen_delivery_ids.clear()
 
     async def _apply():
         try:
@@ -223,7 +227,10 @@ async def webhook_receiver(request: Request):
 async def list_sdn_tasks(request: Request):
     project_id = request.query_params.get("project_id")
     status     = request.query_params.get("status")
-    limit      = min(int(request.query_params.get("limit", 50)), 200)
+    try:
+        limit = min(int(request.query_params.get("limit", 50)), 200)
+    except (ValueError, TypeError):
+        return JSONResponse({"error": "limit must be an integer"}, status_code=400)
     with SessionLocal() as db:
         q = db.query(SdnTaskRow).order_by(SdnTaskRow.started_at.desc())
         if project_id:
@@ -376,7 +383,7 @@ async def list_logical_ports(request: Request):
 
 @require_roles(*ALL_ROLES)
 async def get_logical_port(request: Request):
-    port_id = request.path_params["port_id"]
+    port_id = request.path_params["id"]
     with SessionLocal() as db:
         row = db.query(NervumLogicalPortRow).filter(NervumLogicalPortRow.id == port_id).first()
         if not row:
@@ -748,7 +755,7 @@ nervum_router = Router(routes=[
     # Logical Ports
     Route("/logical-ports",                 list_logical_ports,      methods=["GET"]),
     Route("/logical-ports",                 create_port,             methods=["POST"]),
-    Route("/logical-ports/{port_id}",       get_logical_port,        methods=["GET"]),
+    Route("/logical-ports/{id}",            get_logical_port,        methods=["GET"]),
     Route("/logical-ports/{id}",            delete_port,             methods=["DELETE"]),
     # Routers
     Route("/routers",                       list_sdn_routers,        methods=["GET"]),

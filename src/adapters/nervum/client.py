@@ -170,9 +170,13 @@ class NervumClient:
         """DELETE /logical-ports/{port_id} — 204 or 404 are both acceptable."""
         try:
             await _request("DELETE", self._url(f"/logical-ports/{port_id}"), task_id=task_id)
-        except Exception as exc:
-            # 404 means already gone — treat as success
-            if "404" in str(exc):
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                return  # already gone — treat as success
+            raise
+        except RuntimeError as exc:
+            # _request wraps final-attempt failures as RuntimeError; check embedded status
+            if "HTTP 404" in str(exc):
                 return
             raise
 
