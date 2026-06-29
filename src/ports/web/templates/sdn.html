@@ -63,6 +63,7 @@
     </h1>
     <div style="font-size:var(--t-xs);color:var(--fg-dim);margin-top:2px;">
       NERVUM · <span id="nervumConnStatus" class="pill pill-muted" data-i18n="sdnDisconnected">Not configured</span>
+      <span id="nervumEndpoint" style="color:var(--fg-dim);font-family:var(--font-mono);font-size:var(--t-xs);"></span>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
@@ -406,6 +407,8 @@ function delBtn(endpoint, id, resKey) {
 }
 
 // ── Status ─────────────────────────────────────────────────────────────────
+let _nervumUrl = '';
+
 async function loadStatus() {
   const r = await fetch('/api/sdn/sync/status');
   if (!r.ok) return;
@@ -424,8 +427,15 @@ async function loadStatus() {
   const connEl = document.getElementById('nervumConnStatus');
   if (st.nervum_configured) {
     connEl.textContent = t('sdnConnected'); connEl.className = 'pill pill-ok';
+    _nervumUrl = st.nervum_url || '';
+    try {
+      const host = new URL(_nervumUrl).host;
+      document.getElementById('nervumEndpoint').textContent = '· ' + host;
+    } catch(e) {}
   } else {
     connEl.textContent = t('sdnDisconnected'); connEl.className = 'pill pill-muted';
+    _nervumUrl = '';
+    document.getElementById('nervumEndpoint').textContent = '';
   }
 }
 
@@ -877,9 +887,23 @@ function openCreate(resKey) {
   const fields = CREATE_FIELDS[resKey];
   if (!fields) return;
   _activeCreate = resKey;
-  const label = resKey.replace(/([A-Z])/g, ' $1').trim();
   document.getElementById('createModalTitle').textContent = 'Create ' + resKey;
-  document.getElementById('createModalFields').innerHTML = fields.map(f => `
+
+  let targetHint = '';
+  if (_nervumUrl) {
+    try {
+      const host = new URL(_nervumUrl).host;
+      targetHint = `<div style="font-size:var(--t-xs);color:var(--fg-dim);margin-bottom:var(--sp-4);padding:6px 10px;background:var(--surface-2);border-radius:4px;border-left:2px solid var(--signal);">
+        <span style="color:var(--fg-dim);">Nervum →</span> <span style="color:var(--fg);font-family:var(--font-mono);">${host}</span>
+      </div>`;
+    } catch(e) {}
+  } else {
+    targetHint = `<div style="font-size:var(--t-xs);color:var(--err);margin-bottom:var(--sp-4);padding:6px 10px;background:var(--surface-2);border-radius:4px;border-left:2px solid var(--err);">
+      Nervum not configured — set NERVUM_URL in environment
+    </div>`;
+  }
+
+  document.getElementById('createModalFields').innerHTML = targetHint + fields.map(f => `
     <div>
       <label class="field-label" for="cf_${f.name}">${f.label}${f.req?' *':''}</label>
       <input id="cf_${f.name}" class="field" type="${f.type||'text'}"

@@ -239,6 +239,13 @@ async function deletePlatform(id, name) {
 
 // Add platform modal
 function openAddPlatform() {
+  document.getElementById('p-name').value     = '';
+  document.getElementById('p-host').value     = '';
+  document.getElementById('p-port').value     = '22';
+  document.getElementById('p-user').value     = '';
+  document.getElementById('p-password').value = '';
+  document.getElementById('p-auth').value     = 'password';
+  toggleAuthFields();
   document.getElementById('addPlatformModal').classList.add('open');
   loadKeysForModal();
 }

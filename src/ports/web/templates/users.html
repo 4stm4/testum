@@ -168,8 +168,8 @@ async function loadUsers() {
           <td class="tbl-mono">${lastLogin}</td>
           <td>
             <div style="display:flex;gap:6px;">
-              <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;" onclick='editUser(${JSON.stringify(user)})'>edit</button>
-              <button class="btn btn-err" style="font-size:11px;padding:4px 8px;" onclick="deleteUser('${user.id}', '${user.username}')">✕</button>
+              <button class="btn btn-ghost btn-sm" onclick='editUser(${JSON.stringify(user)})'>edit</button>
+              <button class="btn btn-err btn-sm" onclick="deleteUser('${user.id}', '${user.username}')">✕</button>
             </div>
           </td>
         </tr>

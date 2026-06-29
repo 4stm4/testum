@@ -198,6 +198,22 @@ const githubFields = document.getElementById('githubFields');
 const webhookField = document.getElementById('webhookField');
 
 function openJobModal() {
+  document.getElementById('jobName').value        = '';
+  document.getElementById('jobDescription').value = '';
+  document.getElementById('jobCommand').value     = '';
+  document.getElementById('jobCron').value        = '';
+  document.getElementById('jobRepo').value        = '';
+  document.getElementById('jobBranch').value      = '';
+  document.getElementById('jobSecret').value      = '';
+  document.getElementById('jobEnv').value         = '';
+  document.getElementById('jobTags').value        = '';
+  document.getElementById('jobTimeout').value     = '900';
+  document.getElementById('jobRetries').value     = '0';
+  document.getElementById('jobTrigger').selectedIndex = 0;
+  document.getElementById('jobScript').selectedIndex  = 0;
+  document.getElementById('jobRunAll').checked    = false;
+  platformsSelect.selectedIndex = -1;
+  platformsSelect.disabled = false;
   document.getElementById('jobModal').classList.add('open');
 }
 function closeJobModal() {
@@ -280,8 +296,8 @@ function renderJobCard(job) {
         <span style="margin-left:auto;">Last run: ${job.last_run_at ? new Date(job.last_run_at).toLocaleString() : '—'}</span>
       </div>
       <div class="auto-actions">
-        <button class="btn btn-ghost" style="font-size:11px;" data-action="toggle">${toggleLabel}</button>
-        <button class="btn btn-err" style="font-size:11px;" data-action="delete">✕ Delete</button>
+        <button class="btn btn-ghost btn-sm" data-action="toggle">${toggleLabel}</button>
+        <button class="btn btn-err btn-sm" data-action="delete">✕ Delete</button>
       </div>
     </article>
   `;

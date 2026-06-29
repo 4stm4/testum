@@ -21,4 +21,9 @@ RUN pip install --upgrade pip \
 # Copy the worker code (engine + executors)
 COPY src/ ./src/
 
+RUN useradd -m -u 1000 appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
 CMD ["python", "-m", "app.worker_launcher"]

@@ -76,7 +76,7 @@ async function loadKeys() {
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div style="font-size:var(--t-xs);color:var(--fg-dim);">by ${k.created_by||'—'} · ${k.created_at?new Date(k.created_at).toLocaleDateString():''}</div>
-          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="deployKey('${k.id}')">⎘ Deploy</button>
+          <button class="btn btn-ghost btn-sm" onclick="deployKey('${k.id}')">⎘ Deploy</button>
         </div>
       </div>`).join('');
   } catch(e) { showSnack('✗ Failed to load keys', 'err'); }
@@ -103,7 +103,12 @@ async function deployKey(keyId) {
   showSnack(`✓ Deploy started to ${allPlatforms.length} platforms`, 'ok');
 }
 
-function openAddKey() { document.getElementById('addKeyModal').classList.add('open'); }
+function openAddKey() {
+  document.getElementById('k-name').value   = '';
+  document.getElementById('k-pubkey').value = '';
+  document.getElementById('k-privkey').value = '';
+  document.getElementById('addKeyModal').classList.add('open');
+}
 function closeAddKey() { document.getElementById('addKeyModal').classList.remove('open'); }
 async function submitAddKey() {
   const name = document.getElementById('k-name').value.trim();

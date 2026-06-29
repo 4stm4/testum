@@ -9,15 +9,12 @@
 {% endblock %}
 
 {% block content %}
-<!-- header row: title + buttons only -->
-<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+<div class="pg-head">
   <div>
-    <div style="font-size:var(--t-xs);text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);margin-bottom:4px;" data-i18n="virtualization">VIRTUALIZATION</div>
-    <h1 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;">
-      <span style="color:var(--signal)">$</span> <span data-i18n="virtVolumes">Volumes</span><span style="display:inline-block;width:0.5em;height:1em;background:var(--signal);vertical-align:text-bottom;margin-left:1px;animation:blink 1.1s step-end infinite;"></span>
-    </h1>
+    <div class="pg-title"><span data-i18n="virtVolumes">Volumes</span><span class="cur"></span></div>
+    <div class="pg-sub" data-i18n="virtualization">Virtualization</div>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;">
+  <div class="toolbar">
     <button class="btn btn-ghost" id="refreshBtn">&#8635; <span data-i18n="refresh">Refresh</span></button>
     <button class="btn btn-signal" id="addVolumeBtn">+ <span data-i18n="addVolume">Add Volume</span></button>
   </div>
@@ -27,7 +24,7 @@
 <select id="poolSelect" style="display:none;" disabled></select>
 
 <!-- Volumes table -->
-<div style="background:var(--surface-1);border:1px solid var(--surface-4);border-radius:var(--r-lg);overflow:hidden;">
+<div class="card" style="padding:0;overflow:hidden;">
   <table class="tbl">
     <thead>
       <tr>
@@ -176,7 +173,7 @@ function renderRow(v) {
         <td>${v.capacity_gb}</td>
         <td>${v.allocation_gb}</td>
         <td>
-            <button class="btn btn-ghost" style="color:var(--err)" onclick="openDeleteModal('${escapeHtml(v.name)}')">&#10006;</button>
+            <button class="btn btn-err btn-sm" onclick="openDeleteModal('${escapeHtml(v.name)}')">&#10006;</button>
         </td>
     </tr>`;
 }

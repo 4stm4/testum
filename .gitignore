@@ -1,8 +1,16 @@
-# Environment
+# Environment — never commit secrets
 .env
+.env.prod
 *.env
 !netos.env
 !.env.example
+!.env.prod.example
+
+# TLS certificates — never commit private keys
+nginx/certs/*.pem
+nginx/certs/*.key
+nginx/certs/*.crt
+nginx/certs/*.p12
 
 # Python
 __pycache__/

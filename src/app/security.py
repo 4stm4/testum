@@ -6,31 +6,53 @@ import hmac
 import os
 from typing import Tuple
 
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
 
-ALGORITHM = "pbkdf2_sha256"
-ITERATIONS = 120_000
+_argon2 = PasswordHasher(
+    time_cost=3,
+    memory_cost=65536,  # 64 MiB
+    parallelism=2,
+    hash_len=32,
+    salt_len=16,
+)
+
+# ── Argon2id (current) ────────────────────────────────────────────────────────
+
+def hash_password(password: str) -> str:
+    return _argon2.hash(password)
 
 
-def _derive_key(password: str, salt: bytes, iterations: int) -> bytes:
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    if hashed_password.startswith("$argon2"):
+        try:
+            return _argon2.verify(hashed_password, plain_password)
+        except (VerifyMismatchError, VerificationError, InvalidHashError):
+            return False
+
+    # ── Legacy PBKDF2-SHA256 (migrate on next login via rehash_if_needed) ────
+    return _pbkdf2_verify(plain_password, hashed_password)
+
+
+def rehash_if_needed(plain_password: str, hashed_password: str) -> str | None:
+    """Return a fresh Argon2id hash if the stored hash uses a legacy scheme, else None."""
+    if not hashed_password.startswith("$argon2"):
+        return hash_password(plain_password)
+    if _argon2.check_needs_rehash(hashed_password):
+        return hash_password(plain_password)
+    return None
+
+
+# ── Legacy PBKDF2-SHA256 ──────────────────────────────────────────────────────
+
+_PBKDF2_ALGORITHM = "pbkdf2_sha256"
+
+
+def _pbkdf2_derive(password: str, salt: bytes, iterations: int) -> bytes:
     return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
 
 
-def hash_password(password: str) -> str:
-    """Hash a plain text password using PBKDF2."""
-
-    salt = os.urandom(16)
-    derived = _derive_key(password, salt, ITERATIONS)
-    return "$".join(
-        [
-            ALGORITHM,
-            str(ITERATIONS),
-            base64.b64encode(salt).decode("utf-8"),
-            base64.b64encode(derived).decode("utf-8"),
-        ]
-    )
-
-
-def _parse_hash(encoded: str) -> Tuple[str, int, bytes, bytes]:
+def _pbkdf2_parse(encoded: str) -> Tuple[str, int, bytes, bytes]:
     algorithm, iterations, salt_b64, hash_b64 = encoded.split("$")
     return (
         algorithm,
@@ -40,16 +62,12 @@ def _parse_hash(encoded: str) -> Tuple[str, int, bytes, bytes]:
     )
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain password against a hashed password."""
-
+def _pbkdf2_verify(plain_password: str, hashed_password: str) -> bool:
     try:
-        algorithm, iterations, salt, expected = _parse_hash(hashed_password)
+        algorithm, iterations, salt, expected = _pbkdf2_parse(hashed_password)
     except Exception:
         return False
-
-    if algorithm != ALGORITHM:
+    if algorithm != _PBKDF2_ALGORITHM:
         return False
-
-    candidate = _derive_key(plain_password, salt, iterations)
+    candidate = _pbkdf2_derive(plain_password, salt, iterations)
     return hmac.compare_digest(candidate, expected)

@@ -103,7 +103,7 @@ async function refreshFleet() {
             <div style="font-size:var(--t-body);font-weight:600;">${p.name}</div>
             <div style="font-size:var(--t-xs);color:var(--fg-dim);">${p.host}:${p.port} · unreachable</div>
           </div>
-          <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px;" onclick="openRunModal('${p.id}')">ping</button>
+          <button class="btn btn-ghost btn-sm" onclick="openRunModal('${p.id}')">ping</button>
         </div>`).join('');
     }
 

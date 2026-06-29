@@ -15,6 +15,7 @@ asyncpg==0.31.0
 # SSH & Crypto
 asyncssh==2.23.0
 cryptography==48.0.0
+argon2-cffi==23.1.0
 
 # S3 Storage
 boto3==1.43.6

@@ -319,9 +319,22 @@
     }
 
     // ── Run modal ──────────────────────────────────────────────────────────
+    let _runPlatformsReady = false;
+    let _pendingRunPlatformId = null;
+
     function openRunModal(platformId) {
+      document.getElementById('modal-cmd').value     = '';
+      document.getElementById('modal-timeout').value = '60';
       const sel = document.getElementById('modal-platform-select');
-      if (platformId) sel.value = platformId;
+      if (platformId) {
+        if (_runPlatformsReady) {
+          sel.value = platformId;
+        } else {
+          _pendingRunPlatformId = platformId;
+        }
+      } else {
+        sel.value = '';
+      }
       document.getElementById('runModal').classList.add('open');
       setTimeout(() => document.getElementById('modal-cmd').focus(), 100);
     }
@@ -356,7 +369,7 @@
     // ── Populate run modal platform list ───────────────────────────────────
     async function loadPlatformsForModal() {
       try {
-        const r = await fetch('/api/platforms/');
+        const r = await fetch('/api/platforms/?limit=200');
         if (r.ok) {
           const ps = await r.json();
           const sel = document.getElementById('modal-platform-select');
@@ -365,6 +378,11 @@
             o.value = p.id; o.textContent = p.name + ' (' + p.host + ')';
             sel.appendChild(o);
           });
+          _runPlatformsReady = true;
+          if (_pendingRunPlatformId) {
+            sel.value = _pendingRunPlatformId;
+            _pendingRunPlatformId = null;
+          }
         }
       } catch(e) {}
     }

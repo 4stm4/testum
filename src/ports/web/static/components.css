@@ -200,6 +200,12 @@
   border-color: color-mix(in srgb, var(--err) 30%, transparent);
 }
 .btn-err:hover { background: color-mix(in srgb, var(--err) 10%, transparent); }
+.btn-ok {
+  background: transparent; color: var(--signal);
+  border-color: color-mix(in srgb, var(--signal) 30%, transparent);
+}
+.btn-ok:hover { background: color-mix(in srgb, var(--signal) 10%, transparent); }
+.btn-sm { padding: 4px 8px; font-size: var(--t-xs); }
 .btn-full { width: 100%; justify-content: center; }
 
 .iconbtn {

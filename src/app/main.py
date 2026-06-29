@@ -33,8 +33,10 @@ from app import db as app_db
 from app.models import User, UserRole
 from app.rate_limiter import RateLimiterMiddleware
 from app.rbac import get_request_user
-from app.security import hash_password, verify_password
+from app.security import hash_password, verify_password, rehash_if_needed
 from app.updater import UpdateError, get_update_info, perform_update
+from sqlalchemy import text
+from adapters.storage.minio import MinioArtifactStore
 from app.db import SessionLocal
 from app.models import AutomationJob, Platform, SSHKey, Script, TaskRun, TaskStatusEnum
 from ports.ws.ws_taskiq import task_stream_websocket
@@ -50,6 +52,7 @@ logger = logging.getLogger(__name__)
 
 
 _WEB_PORT = Path(__file__).parent.parent / "ports" / "web"  # src/app -> src/ports/web
+_minio_store = MinioArtifactStore()
 
 # Templates
 templates = Jinja2Templates(directory=str(_WEB_PORT / "templates"))
@@ -59,7 +62,7 @@ templates = Jinja2Templates(directory=str(_WEB_PORT / "templates"))
 middleware = [
     Middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=config.CORS_ALLOWED_ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -140,7 +143,7 @@ def create_jwt_token(user_id: str, username: str, role: UserRole) -> str:
         "sub": user_id,
         "username": username,
         "role": role.value if isinstance(role, UserRole) else str(role),
-        "exp": datetime.utcnow() + timedelta(hours=24),
+        "exp": datetime.utcnow() + timedelta(hours=config.TOKEN_EXPIRY_HOURS),
         "iat": datetime.utcnow(),
     }
     return jwt.encode(payload, config.SECRET_KEY, algorithm="HS256")
@@ -326,6 +329,9 @@ async def login_endpoint(request: Request):
             return JSONResponse({"error": "Invalid credentials"}, status_code=401)
 
         user.last_login = datetime.utcnow()
+        new_hash = rehash_if_needed(password, user.hashed_password)
+        if new_hash:
+            user.hashed_password = new_hash
         db.commit()
 
         token = create_jwt_token(str(user.id), user.username, user.role)
@@ -472,17 +478,42 @@ async def get_settings_endpoint(request: Request):
 
 
 async def health_check(request: Request):
-    """Health check endpoint with HTML and JSON responses."""
-    health_data = {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+    """Health check endpoint — verifies DB and MinIO connectivity."""
+    checks: dict[str, str] = {}
+    healthy = True
+
+    # DB check
+    try:
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+        checks["db"] = "ok"
+    except Exception as exc:
+        checks["db"] = f"error: {exc}"
+        healthy = False
+
+    # MinIO check — list_buckets() is a lightweight liveness ping
+    try:
+        _minio_store._client.list_buckets()
+        checks["minio"] = "ok"
+    except Exception as exc:
+        checks["minio"] = f"error: {exc}"
+        healthy = False
+
+    status_code = 200 if healthy else 503
+    health_data = {
+        "status": "healthy" if healthy else "degraded",
+        "timestamp": datetime.utcnow().isoformat(),
+        "checks": checks,
+    }
 
     accept_header = request.headers.get("accept", "")
     wants_html = "text/html" in accept_header and "application/json" not in accept_header
 
     if wants_html:
         context = build_template_context(request, "health", health=health_data)
-        return templates.TemplateResponse(request, "health.html", context)
+        return templates.TemplateResponse(request, "health.html", context, status_code=status_code)
 
-    return JSONResponse(health_data)
+    return JSONResponse(health_data, status_code=status_code)
 
 
 async def check_updates_endpoint(request: Request):

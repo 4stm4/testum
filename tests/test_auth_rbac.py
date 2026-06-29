@@ -173,7 +173,7 @@ def test_auth_middleware_html_redirects_to_login_without_cookie(client):
 def test_auth_middleware_public_health_route_accessible(client):
     """The /health endpoint is public and must not require a token."""
     resp = client.get("/health")
-    assert resp.status_code == 200
+    assert resp.status_code in (200, 503)
 
 
 def test_auth_middleware_invalid_token_returns_401_for_api(client):

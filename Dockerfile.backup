@@ -1,0 +1,11 @@
+FROM alpine:3.19
+
+RUN apk add --no-cache postgresql15-client curl python3 py3-pip \
+    && pip install --no-cache-dir --break-system-packages minio
+
+COPY scripts/backup.sh /usr/local/bin/backup.sh
+COPY scripts/backup_runner.py /usr/local/bin/backup_runner.py
+RUN chmod +x /usr/local/bin/backup.sh
+
+# busybox crond requires root to manage crontabs; this container has no external exposure
+CMD ["sh", "-c", "echo '0 3 * * * /usr/local/bin/backup.sh >> /tmp/backup.log 2>&1' | crontab - && crond -f -l 6"]
