@@ -63,7 +63,7 @@ middleware = [
     Middleware(
         CORSMiddleware,
         allow_origins=config.CORS_ALLOWED_ORIGINS,
-        allow_credentials=True,
+        allow_credentials="*" not in config.CORS_ALLOWED_ORIGINS,
         allow_methods=["*"],
         allow_headers=["*"],
     ),
@@ -121,7 +121,7 @@ def ensure_default_admin_user() -> None:
             admin.role = UserRole.ADMIN
             updated = True
 
-        if config.ADMIN_PASSWORD and not verify_password(config.ADMIN_PASSWORD, admin.hashed_password):
+        if config.ADMIN_PASSWORD:
             admin.hashed_password = hash_password(config.ADMIN_PASSWORD)
             updated = True
 
@@ -349,7 +349,7 @@ async def login_endpoint(request: Request):
         response.set_cookie(
             "access_token",
             token,
-            max_age=86400,
+            max_age=config.TOKEN_EXPIRY_HOURS * 3600,
             httponly=True,
             secure=config.APP_ENV == "production",
             samesite="lax",
@@ -404,7 +404,7 @@ async def change_username_endpoint(request: Request):
         response.set_cookie(
             "access_token",
             token,
-            max_age=86400,
+            max_age=config.TOKEN_EXPIRY_HOURS * 3600,
             httponly=True,
             secure=config.APP_ENV == "production",
             samesite="lax",
@@ -493,7 +493,7 @@ async def health_check(request: Request):
 
     # MinIO check — list_buckets() is a lightweight liveness ping
     try:
-        _minio_store._client.list_buckets()
+        _minio_store.ping()
         checks["minio"] = "ok"
     except Exception as exc:
         checks["minio"] = f"error: {exc}"

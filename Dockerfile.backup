@@ -1,11 +1,17 @@
 FROM alpine:3.19
 
 RUN apk add --no-cache postgresql15-client curl python3 py3-pip \
-    && pip install --no-cache-dir --break-system-packages minio
+    && pip install --no-cache-dir --break-system-packages minio \
+    && addgroup -S backupuser \
+    && adduser -S -G backupuser backupuser
 
 COPY scripts/backup.sh /usr/local/bin/backup.sh
 COPY scripts/backup_runner.py /usr/local/bin/backup_runner.py
-RUN chmod +x /usr/local/bin/backup.sh
+RUN chmod +x /usr/local/bin/backup.sh \
+    && mkdir -p /etc/crontabs \
+    && printf '0 3 * * *\t/usr/local/bin/backup.sh >> /tmp/backup.log 2>&1\n' \
+       > /etc/crontabs/backupuser \
+    && chmod 600 /etc/crontabs/backupuser
 
-# busybox crond requires root to manage crontabs; this container has no external exposure
-CMD ["sh", "-c", "echo '0 3 * * * /usr/local/bin/backup.sh >> /tmp/backup.log 2>&1' | crontab - && crond -f -l 6"]
+# crond runs as root but executes the job as backupuser (busybox /etc/crontabs/<user> pattern)
+CMD ["crond", "-f", "-l", "6"]

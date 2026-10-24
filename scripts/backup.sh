@@ -1,7 +1,7 @@
 #!/bin/sh
 # pg_dump → gzip → upload to MinIO
 # Called by cron inside the backup container.
-set -e
+set -eo pipefail
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
 : "${MINIO_ENDPOINT:?MINIO_ENDPOINT is required}"

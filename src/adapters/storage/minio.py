@@ -42,6 +42,10 @@ class MinioArtifactStore:
         logger.info("Uploaded to S3: %s", key)
         return key
 
+    def ping(self) -> None:
+        """Raises on connection failure."""
+        self._client.list_buckets()
+
     def download(self, key: str) -> str:
         obj = self._client.get_object(Bucket=self._bucket, Key=key)
         return obj["Body"].read().decode("utf-8")
