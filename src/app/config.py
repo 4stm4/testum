@@ -31,9 +31,9 @@ class Config:
     TOKEN_EXPIRY_HOURS: int = _int_env("TOKEN_EXPIRY_HOURS", 24)
 
     # CORS — comma-separated origins; "*" only for development
-    CORS_ALLOWED_ORIGINS: list[str] = [
+    CORS_ALLOWED_ORIGINS: tuple[str, ...] = tuple(
         o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",") if o.strip()
-    ]
+    )
 
     # Encryption - REQUIRED
     FERNET_KEY: Optional[str] = os.getenv("FERNET_KEY")
